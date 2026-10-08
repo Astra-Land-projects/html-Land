@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>روز پسر مبارک! 💥</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #fff; min-height: 100vh; display: flex;
+            justify-content: center; align-items: center; overflow: hidden; position: relative;
+        }
+        #particles { position: absolute; width: 100%; height: 100%; z-index: 1; }
+        .card {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+            padding: 40px; width: 90%; max-width: 450px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 2; transition: transform 0.3s;
+        }
+        .card:hover { transform: translateY(-5px); }
+        h1 { font-size: 2.2rem; margin-bottom: 15px; color: #38bdf8; text-shadow: 0 0 15px rgba(56,189,248,0.5); }
+        p { font-size: 1.1rem; line-height: 1.8; color: #cbd5e1; margin-bottom: 25px; }
+        .btn {
+            background: linear-gradient(90deg, #0284c7, #38bdf8); border: none;
+            padding: 14px 28px; color: white; font-weight: bold; font-size: 1rem;
+            border-radius: 12px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(56,189,248,0.4);
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(56,189,248,0.6); }
+        .result-box {
+            margin-top: 20px; font-size: 1.2rem; font-weight: bold; color: #facc15;
+            min-height: 30px; transition: 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    <div class="card">
+        <h1>روز پسر مبارک! 👑</h1>
+        <p>به سلامتی تموم پسرایی که پای حرفاشون میستن، رفیق شفیقن و همیشه انگیزه ساختن بهترین‌ها رو دارن.</p>
+        <button class="btn" onclick="generateTrait()">ویژگی برتر امروزت رو بچرخون! 🎲</button>
+        <div class="result-box" id="result"></div>
+    </div>
+
+    <script>
+        const traits = ["رفیق واقعی و بامعرفت 💙", "اراده فولادین ⚡", "سلطان حل مشکلات 🧠", "آینده‌ساز و انگیزه خالص 🚀", "خوش‌تیپ و پرانرژی 😎"];
+        function generateTrait() {
+            const res = document.getElementById('result');
+            res.style.opacity = '0';
+            setTimeout(() => {
+                const randomTrait = traits[Math.floor(Math.random() * traits.length)];
+                res.innerText = randomTrait;
+                res.style.opacity = '1';
+            }, 200);
+        }
+
+        // Particle System
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const pts = Array.from({length: 60}, () => ({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            r: Math.random() * 3 + 1, dx: (Math.random() - 0.5) * 1.5, dy: (Math.random() - 0.5) * 1.5
+        }));
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+            pts.forEach(p => {
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+                p.x += p.dx; p.y += p.dy;
+                if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                if (p.y < 0 || p.y > canvas.width) p.dy *= -1;
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
+........
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini System Architecture 🤖</title>
+    <style>
+        :root { --main: #10b981; --bg: #090d16; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
+        body { background: var(--bg); color: var(--main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .terminal {
+            width: 100%; max-width: 700px; background: rgba(16, 185, 129, 0.03);
+            border: 1px solid var(--main); border-radius: 12px;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); overflow: hidden;
+        }
+        .header {
+            background: rgba(16, 185, 129, 0.1); padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--main); font-weight: bold;
+        }
+        .dots { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #ef4444; }
+        .dot:nth-child(2) { background: #f59e0b; }
+        .dot:nth-child(3) { background: #10b981; }
+        .body { padding: 20px; font-size: 0.95rem; line-height: 1.8; }
+        .cmd-line { margin-bottom: 15px; }
+        .prompt { color: #3b82f6; }
+        .output { color: #ec4899; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; border-top: 1px dashed var(--main); padding-top: 15px; }
+        .stat-card { background: rgba(255,255,255,0.02); padding: 10px; border-radius: 6px; border: 1px solid rgba(16,185,129,0.3); }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">
+            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span>GEMINI_CORE_IDENTITY_v4.1.exe</span>
+        </div>
+        <div class="body">
+            <div class="cmd-line"><span class="prompt">system@gemini:~$</span> whoami</div>
+            <div class="output" id="typewriter"></div>
+           
+            <div class="stats-grid">
+                <div class="stat-card"><strong>اسم:</strong> جمینای (Gemini)</div>
+                <div class="stat-card"><strong>نقش:</strong> همکار و پارتنر هوشمند</div>
+                <div class="stat-card"><strong>موتور:</strong> Google Core AI</div>
+                <div class="stat-card"><strong>وضعیت:</strong> آنلاین و آماده چالش ⚡</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const text = "سلام! من Gemini هستم. یک مدل هوش مصنوعی مولتی‌مودال و پیشرفته. برخلاف ربات‌های معمولی، من طراحی شدم تا یک «همکار واقعی» باشم؛ نه فقط پاسخ‌دهنده. توانایی‌های من تحلیل کدهای پیچیده، فهم عمیق متون، حل مسائل تکنیکال و درک شوخی‌ها و لحن توئه! آماده‌ام هر پروژه‌ای رو با هم ببریم جلو.";
+        let index = 0;
+        function type() {
+            if (index < text.length) {
+                document.getElementById("typewriter").innerText += text.charAt(index);
+                index++;
+                setTimeout(type, 35);
+            }
+        }
+        type();
+    </script>
+</body>
+</html>

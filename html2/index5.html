@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>شبیه‌سازی صف‌بندی</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        #queue {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        #queue div {
+            padding: 5px;
+            margin-bottom: 5px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>شبیه‌سازی صف‌بندی</h1>
+
+    <button onclick="addCustomer()">اضافه کردن مشتری</button>
+    <button onclick="serveCustomer()">سرویس دادن به مشتری</button>
+
+    <h2>صف مشتری‌ها:</h2>
+    <div id="queue"></div>
+
+    <script>
+        let queue = [];
+
+        function addCustomer() {
+            const customerId = queue.length + 1;
+            queue.push(`مشتری ${customerId}`);
+            updateQueueDisplay();
+        }
+
+        function serveCustomer() {
+            if (queue.length > 0) {
+                const servedCustomer = queue.shift();
+                alert(`سرویس به ${servedCustomer} انجام شد.`);
+                updateQueueDisplay();
+            } else {
+                alert("صف خالی است!");
+            }
+        }
+
+        function updateQueueDisplay() {
+            const queueDiv = document.getElementById("queue");
+            queueDiv.innerHTML = "";
+            for (let i = 0; i < queue.length; i++) {
+                const customer = document.createElement("div");
+                customer.textContent = queue[i];
+                queueDiv.appendChild(customer);
+            }
+        }
+    </script>
+
+</body>
+
+</html>

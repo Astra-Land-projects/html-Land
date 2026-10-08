@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>مدیریت لیست کارها</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        li.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>لیست کارها</h1>
+
+    <input type="text" id="newTask" placeholder="کار جدید را وارد کنید">
+    <button onclick="addTask()">اضافه کردن</button>
+
+    <ul id="taskList">
+    </ul>
+
+    <script>
+        function addTask() {
+            const task = document.getElementById("newTask").value;
+            if (task) {
+                const li = document.createElement("li");
+                li.textContent = task;
+                li.onclick = function () {
+                    this.classList.toggle("completed");
+                };
+                document.getElementById("taskList").appendChild(li);
+                document.getElementById("newTask").value = "";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astra Browser</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#21262d;--text:#f0f6fc;
+  --muted:#8b949e;--accent:#58a6ff;--border:#30363d;--hover:#30363d;
+}
+body.light{--bg:#f6f8fa;--panel:#fff;--panel2:#eef1f4;--text:#1f2328;--muted:#656d76;--accent:#0969da;--border:#d0d7de;--hover:#d8dee4}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;height:100vh;overflow:hidden}
+.browser{height:100vh;display:flex;flex-direction:column}
+.tabs{height:46px;background:var(--panel);display:flex;align-items:end;padding:6px 8px 0;gap:5px;border-bottom:1px solid var(--border)}
+.tab{height:40px;min-width:150px;max-width:230px;background:var(--panel2);border:1px solid var(--border);border-bottom:0;border-radius:10px 10px 0 0;display:flex;align-items:center;padding:0 10px;gap:9px;cursor:pointer}
+.tab.active{background:var(--bg)}
+.tab-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:13px}
+.close{color:var(--muted);font-size:16px}.close:hover{color:var(--text)}
+.add{font-size:23px;width:38px;height:38px;border:0;background:transparent;color:var(--text);cursor:pointer}
+.toolbar{height:58px;background:var(--panel);display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.tool{width:38px;height:38px;border:0;border-radius:50%;background:transparent;color:var(--text);font-size:19px;cursor:pointer}
+.tool:hover{background:var(--hover)}
+.address-wrap{height:40px;display:flex;align-items:center;flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:22px;padding:0 13px;gap:8px}
+.address-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.lock{color:var(--muted)}
+#address{border:0;outline:0;background:transparent;color:var(--text);width:100%;font-size:14px}
+.menu{font-size:22px}
+.content{flex:1;position:relative;overflow:hidden}
+.page{width:100%;height:100%;border:0;background:var(--bg)}
+.home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+.logo{font-size:56px;font-weight:800;letter-spacing:-3px;margin-bottom:8px}
+.logo span{color:var(--accent)}
+.subtitle{color:var(--muted);margin-bottom:30px}
+.search{width:min(680px,90%);height:52px;background:var(--panel2);border:1px solid var(--border);border-radius:27px;display:flex;align-items:center;padding:0 18px}
+.search input{flex:1;border:0;outline:0;background:transparent;color:var(--text);font-size:16px}
+.search button{border:0;background:transparent;color:var(--accent);font-size:20px;cursor:pointer}
+.cards{display:flex;gap:10px;margin-top:25px;flex-wrap:wrap;justify-content:center}
+.card{padding:10px 15px;border:1px solid var(--border);border-radius:18px;color:var(--muted);cursor:pointer;background:var(--panel)}
+.card:hover{color:var(--text);border-color:var(--accent)}
+.hidden{display:none!important}
+.toast{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--border);padding:10px 16px;border-radius:10px;color:var(--text);display:none}
+</style>
+</head>
+<body>
+<div class="browser">
+  <div class="tabs" id="tabs"></div>
+  <div class="toolbar">
+    <button class="tool" onclick="goBack()" title="Back">←</button>
+    <button class="tool" onclick="goForward()" title="Forward">→</button>
+    <button class="tool" onclick="reload()" title="Reload">↻</button>
+    <button class="tool" onclick="home()" title="Home">⌂</button>
+    <div class="address-wrap">
+      <span class="lock">🔒</span>
+      <input id="address" autocomplete="off" spellcheck="false" placeholder="Search Google or enter a URL">
+    </div>
+    <button class="tool" onclick="bookmark()" title="Bookmark">☆</button>
+    <button class="tool menu" onclick="toggleTheme()" title="Theme">⋮</button>
+  </div>
+  <div class="content" id="content"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const state={tabs:[],active:0};
+let id=0;
+
+function createTab(url=null){
+  const tab={id:++id,title:"New Tab",url:url||"",history:[],index:-1};
+  state.tabs.push(tab); state.active=state.tabs.length-1;
+  renderTabs(); navigate(url||"");
+}
+function current(){return state.tabs[state.active]}
+function renderTabs(){
+  const el=document.getElementById("tabs"); el.innerHTML="";
+  state.tabs.forEach((t,i)=>{
+    const d=document.createElement("div"); d.className="tab "+(i===state.active?"active":"");
+    d.onclick=()=>{state.active=i;renderTabs();showCurrent()};
+    d.innerHTML=`<span>🌐</span><span class="tab-title">${escapeHtml(t.title)}</span><span class="close" onclick="closeTab(event,${i})">×</span>`;
+    el.appendChild(d);
+  });
+  const add=document.createElement("button");add.className="add";add.textContent="+";
+  add.onclick=()=>createTab();el.appendChild(add);
+}
+function closeTab(e,i){
+  e.stopPropagation();state.tabs.splice(i,1);
+  if(!state.tabs.length) createTab(); else {state.active=Math.min(state.active,state.tabs.length-1);renderTabs();showCurrent()}
+}
+function navigate(input,addHistory=true){
+  input=(input||"").trim();
+  if(!input){home();return}
+  let target=input;
+  if(!/^https?:\/\//i.test(target)){
+    if(/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(target)) target="https://"+target;
+    else target="https://www.google.com/search?q="+encodeURIComponent(target);
+  }
+  const t=current();
+  if(addHistory){t.history=t.history.slice(0,t.index+1);t.history.push(target);t.index++}
+  t.url=target;
+  try{
+    const u=new URL(target);
+    t.title=u.hostname.replace(/^www\./,"")||"Astra Browser";
+    document.getElementById("address").value=target;
+    document.getElementById("content").innerHTML=`<iframe class="page" src="${escapeAttr(target)}" referrerpolicy="no-referrer"></iframe>`;
+    renderTabs();
+  }catch{home()}
+}
+function showCurrent(){
+  const t=current();document.getElementById("address").value=t.url;
+  if(t.url) navigate(t.url,false); else home();
+}
+function home(){
+  const t=current();t.url="";t.title="New Tab";
+  document.getElementById("address").value="";
+  document.getElementById("content").innerHTML=`
+  <div class="home">
+    <div class="logo">ASTRA<span>•</span></div>
+    <div class="subtitle">A lightweight web interface</div>
+    <div class="search"><span>🔍</span><input id="homeSearch" placeholder="Search Google or enter a URL"><button onclick="homeSearch()">➜</button></div>
+    <div class="cards">
+      <div class="card" onclick="navigate('https://www.google.com')">Google</div>
+      <div class="card" onclick="navigate('https://www.wikipedia.org')">Wikipedia</div>
+      <div class="card" onclick="navigate('https://github.com')">GitHub</div>
+    </div>
+  </div>`;
+  const x=document.getElementById("homeSearch");x.addEventListener("keydown",e=>{if(e.key==="Enter")homeSearch()});
+  renderTabs();
+}
+function homeSearch(){navigate(document.getElementById("homeSearch").value)}
+function goBack(){
+  const t=current();if(t.index>0){t.index--;t.url=t.history[t.index];navigate(t.url,false)}
+  else toast("No previous page");
+}
+function goForward(){
+  const t=current();if(t.index<t.history.length-1){t.index++;t.url=t.history[t.index];navigate(t.url,false)}
+  else toast("No next page");
+}
+function reload(){showCurrent()}
+function bookmark(){toast("⭐ Bookmark saved (local demo)")}
+function toggleTheme(){document.body.classList.toggle("light");localStorage.setItem("astra-theme",document.body.classList.contains("light")?"light":"dark")}
+function toast(msg){const x=document.getElementById("toast");x.textContent=msg;x.style.display="block";setTimeout(()=>x.style.display="none",1600)}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function escapeAttr(s){return escapeHtml(s)}
+document.getElementById("address").addEventListener("keydown",e=>{if(e.key==="Enter")navigate(e.target.value)});
+if(localStorage.getItem("astra-theme")==="light")document.body.classList.add("light");
+createTab();
+</script>
+</body>
+</html>

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Project Celebration</title>
+
+<style>
+:root{
+    --theme:#00aaff;
+    --theme-rgb:0,170,255;
+    --bg:#020408;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+body{
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(var(--theme-rgb),.12) 0%,
+            rgba(var(--theme-rgb),.035) 28%,
+            transparent 65%
+        ),
+        #020408;
+
+    color:white;
+
+    font-family:
+        Inter,
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    text-align:center;
+}
+
+
+/* ================================
+   AMBIENT LIGHT
+================================ */
+
+.ambient{
+    position:fixed;
+
+    width:70vw;
+    height:70vw;
+
+    max-width:900px;
+    max-height:900px;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(var(--theme-rgb),.14),
+            rgba(var(--theme-rgb),.04) 35%,
+            transparent 70%
+        );
+
+    filter:blur(35px);
+
+    pointer-events:none;
+
+    animation:
+        ambientPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes ambientPulse{
+
+    from{
+        transform:
+            translate(-50%,-50%)
+            scale(.85);
+
+        opacity:.5;
+    }
+
+    to{
+        transform:
+            translate(-50%,-50%)
+            scale(1.12);
+
+        opacity:1;
+    }
+}
+
+
+/* ================================
+   FIREWORK CANVAS
+================================ */
+
+#fireworks{
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    pointer-events:none;
+
+    z-index:1;
+}
+
+
+/* ================================
+   MAIN CONTENT
+================================ */
+
+.content{
+    position:fixed;
+
+    z-index:5;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:95vw;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    pointer-events:none;
+}
+
+
+/* ================================
+   BADGE
+================================ */
+
+.badge{
+    margin-bottom:24px;
+
+    color:var(--theme);
+
+    font-size:12px;
+
+    font-weight:800;
+
+    letter-spacing:4px;
+
+    text-shadow:
+        0 0 10px rgba(var(--theme-rgb),.8),
+        0 0 25px rgba(var(--theme-rgb),.35);
+
+    opacity:.95;
+}
+
+
+/* ================================
+   MAIN NUMBER
+================================ */
+
+.number{
+
+    font-size:
+        clamp(100px,20vw,220px);
+
+    line-height:.8;
+
+    font-weight:1000;
+
+    letter-spacing:-10px;
+
+    color:var(--theme);
+
+    text-shadow:
+
+        0 0 8px var(--theme),
+
+        0 0 25px rgba(var(--theme-rgb),.9),
+
+        0 0 60px rgba(var(--theme-rgb),.65),
+
+        0 0 120px rgba(var(--theme-rgb),.35);
+
+    animation:
+
+        numberPulse 2.4s ease-in-out infinite alternate,
+
+        numberFloat 5s ease-in-out infinite;
+}
+
+@keyframes numberPulse{
+
+    from{
+        filter:
+            brightness(.9)
+            drop-shadow(
+                0 0 20px rgba(var(--theme-rgb),.5)
+            );
+    }
+
+    to{
+        filter:
+            brightness(1.35)
+            drop-shadow(
+                0 0 50px rgba(var(--theme-rgb),.9)
+            );
+    }
+}
+
+@keyframes numberFloat{
+
+    0%,100%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-9px);
+    }
+}
+
+
+/* ================================
+   TITLE
+================================ */
+
+.title{
+
+    margin-top:38px;
+
+    font-size:
+        clamp(24px,4vw,44px);
+
+    font-weight:900;
+
+    letter-spacing:6px;
+
+    color:white;
+
+    text-shadow:
+        0 0 18px rgba(255,255,255,.15);
+}
+
+.title span{
+
+    color:var(--theme);
+
+    text-shadow:
+        0 0 12px rgba(var(--theme-rgb),.8),
+        0 0 35px rgba(var(--theme-rgb),.35);
+}
+
+
+/* ================================
+   DESCRIPTION
+================================ */
+
+.description{
+
+    margin-top:20px;
+
+    max-width:700px;
+
+    padding:0 20px;
+
+    color:#aeb5bf;
+
+    font-size:15px;
+
+    line-height:1.8;
+
+    text-shadow:
+        0 0 15px rgba(0,0,0,.8);
+}
+
+
+/* ================================
+   STATS
+================================ */
+
+.stats{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:45px;
+
+    margin-top:30px;
+
+    flex-wrap:wrap;
+}
+
+.stat strong{
+
+    display:block;
+
+    color:var(--theme);
+
+    font-size:25px;
+
+    text-shadow:
+        0 0 15px rgba(var(--theme-rgb),.8);
+}
+
+.stat small{
+
+    color:#777;
+
+    font-size:9px;
+
+    letter-spacing:3px;
+}
+
+
+/* ================================
+   BUTTON
+================================ */
+
+.celebrate{
+
+    pointer-events:auto;
+
+    margin-top:35px;
+
+    padding:14px 28px;
+
+    border:1px solid rgba(var(--theme-rgb),.55);
+
+    border-radius:999px;
+
+    background:
+        rgba(var(--theme-rgb),.08);
+
+    color:var(--theme);
+
+    font-weight:900;
+
+    letter-spacing:2px;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 0 20px rgba(var(--theme-rgb),.12);
+
+    transition:.25s ease;
+}
+
+.celebrate:hover{
+
+    transform:
+        translateY(-3px)
+        scale(1.05);
+
+    background:
+        rgba(var(--theme-rgb),.18);
+
+    box-shadow:
+        0 0 35px rgba(var(--theme-rgb),.4);
+}
+
+
+/* ================================
+   CONTROLS
+================================ */
+
+.controls{
+
+    position:fixed;
+
+    z-index:20;
+
+    left:50%;
+
+    bottom:18px;
+
+    transform:translateX(-50%);
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:8px 12px;
+
+    border-radius:14px;
+
+    background:rgba(0,0,0,.35);
+
+    backdrop-filter:blur(8px);
+
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.controls label{
+
+    color:#777;
+
+    font-size:10px;
+
+    letter-spacing:1px;
+}
+
+#numberInput{
+
+    width:90px;
+
+    padding:7px 9px;
+
+    border:1px solid rgba(var(--theme-rgb),.4);
+
+    outline:none;
+
+    border-radius:8px;
+
+    background:#080b10;
+
+    color:white;
+
+    font-weight:700;
+
+    text-align:center;
+}
+
+#colorInput{
+
+    width:32px;
+
+    height:32px;
+
+    padding:0;
+
+    border:none;
+
+    background:none;
+
+    cursor:pointer;
+}
+
+#colorInput::-webkit-color-swatch-wrapper{
+    padding:0;
+}
+
+#colorInput::-webkit-color-swatch{
+    border:1px solid rgba(255,255,255,.4);
+
+    border-radius:8px;
+}
+
+
+/* ================================
+   FOOTER
+================================ */
+
+.footer{
+
+    position:fixed;
+
+    bottom:70px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:5;
+
+    color:#454b53;
+
+    font-size:9px;
+
+    letter-spacing:5px;
+
+    white-space:nowrap;
+}
+
+
+/* MOBILE */
+
+@media(max-width:600px){
+
+    .stats{
+        gap:20px;
+    }
+
+    .description{
+        font-size:13px;
+    }
+
+    .title{
+        letter-spacing:3px;
+    }
+
+    .footer{
+        display:none;
+    }
+
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="ambient"></div>
+
+<canvas id="fireworks"></canvas>
+
+
+<!-- ================================
+     MAIN CONTENT
+================================ -->
+
+<main class="content">
+
+    <div class="badge">
+        PROJECT MILESTONE •
+        <span id="badgeCount"></span>
+    </div>
+
+    <div
+        class="number"
+        id="mainNumber">
+    </div>
+
+    <div class="title">
+        <span>PROJECTS</span> COMPLETED.
+    </div>
+
+    <div class="description">
+        <span id="descriptionCount"></span>
+        projects created, explored, tested and built.
+        One milestone reached — and the next one is already ahead.
+    </div>
+
+    <div class="stats">
+
+        <div class="stat">
+            <strong id="statsCount"></strong>
+            <small>PROJECTS</small>
+        </div>
+
+        <div class="stat">
+            <strong>∞</strong>
+            <small>IDEAS</small>
+        </div>
+
+        <div class="stat">
+            <strong>1</strong>
+            <small>VISION</small>
+        </div>
+
+    </div>
+
+    <button
+        class="celebrate"
+        id="celebrateButton">
+    </button>
+
+</main>
+
+
+<div class="footer">
+    BUILD • CREATE • LEARN •
+    <span id="footerCount"></span>
+</div>
+
+
+<!-- ================================
+     LIVE CONTROLS
+================================ -->
+
+<div class="controls">
+
+    <label>COUNT</label>
+
+    <input
+        id="numberInput"
+        type="number"
+        min="0"
+        value="1200"
+    >
+
+    <label>COLOR</label>
+
+    <input
+        id="colorInput"
+        type="color"
+        value="#00aaff"
+    >
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   🚀🚀🚀 MAIN SETTINGS
+   ONLY CHANGE THESE TWO VALUES
+   ========================================================= */
+
+const PROJECT_COUNT = 1200;
+
+const THEME_COLOR = "#00aaff";
+
+
+/* =========================================================
+   INTERNAL SYSTEM
+   DON'T NEED TO TOUCH
+   ========================================================= */
+
+let currentCount = PROJECT_COUNT;
+
+let currentColor = THEME_COLOR;
+
+
+/* ================================
+   COLOR CONVERTER
+================================ */
+
+function hexToRgb(hex){
+
+    hex = hex.replace("#","");
+
+    if(hex.length === 3){
+
+        hex =
+            hex[0]+hex[0]+
+            hex[1]+hex[1]+
+            hex[2]+hex[2];
+    }
+
+    const number =
+        parseInt(hex,16);
+
+    return {
+
+        r:(number >> 16) & 255,
+
+        g:(number >> 8) & 255,
+
+        b:number & 255
+    };
+}
+
+
+/* ================================
+   APPLY THEME
+================================ */
+
+function applyTheme(){
+
+    const rgb =
+        hexToRgb(currentColor);
+
+    document.documentElement
+        .style
+        .setProperty(
+            "--theme",
+            currentColor
+        );
+
+    document.documentElement
+        .style
+        .setProperty(
+            "--theme-rgb",
+            `${rgb.r},${rgb.g},${rgb.b}`
+        );
+}
+
+
+/* ================================
+   UPDATE EVERYTHING
+================================ */
+
+function updateProject(){
+
+    const formatted =
+        Number(currentCount).toLocaleString();
+
+    document.title =
+        `${formatted} Projects — Celebration`;
+
+    document.getElementById(
+        "badgeCount"
+    ).textContent =
+        formatted;
+
+    document.getElementById(
+        "mainNumber"
+    ).textContent =
+        formatted;
+
+    document.getElementById(
+        "descriptionCount"
+    ).textContent =
+        formatted;
+
+    document.getElementById(
+        "statsCount"
+    ).textContent =
+        formatted;
+
+    document.getElementById(
+        "footerCount"
+    ).textContent =
+        formatted;
+
+    document.getElementById(
+        "celebrateButton"
+    ).textContent =
+        `✦ CELEBRATE ${formatted} ✦`;
+
+    applyTheme();
+}
+
+
+/* ================================
+   INITIALIZE
+================================ */
+
+document.getElementById(
+    "numberInput"
+).value =
+    currentCount;
+
+document.getElementById(
+    "colorInput"
+).value =
+    currentColor;
+
+updateProject();
+
+
+/* ================================
+   LIVE NUMBER CHANGE
+================================ */
+
+document.getElementById(
+    "numberInput"
+).addEventListener(
+    "input",
+    function(){
+
+        currentCount =
+            Math.max(
+                0,
+                Number(this.value) || 0
+            );
+
+        updateProject();
+
+    }
+);
+
+
+/* ================================
+   LIVE COLOR CHANGE
+================================ */
+
+document.getElementById(
+    "colorInput"
+).addEventListener(
+    "input",
+    function(){
+
+        currentColor =
+            this.value;
+
+        updateProject();
+
+    }
+);
+
+
+/* =========================================================
+   FIREWORK ENGINE
+   ========================================================= */
+
+const canvas =
+    document.getElementById("fireworks");
+
+const ctx =
+    canvas.getContext("2d");
+
+let W =
+    canvas.width =
+    window.innerWidth;
+
+let H =
+    canvas.height =
+    window.innerHeight;
+
+
+window.addEventListener(
+    "resize",
+    function(){
+
+        W =
+            canvas.width =
+            window.innerWidth;
+
+        H =
+            canvas.height =
+            window.innerHeight;
+
+    }
+);
+
+
+let rockets = [];
+
+let particles = [];
+
+
+/* ================================
+   FIREWORK
+================================ */
+
+function createFirework(x,y){
+
+    const rgb =
+        hexToRgb(currentColor);
+
+    const count =
+        80;
+
+    for(let i=0;i<count;i++){
+
+        const angle =
+            (Math.PI * 2 * i / count)
+            +
+            (Math.random()-.5)*.12;
+
+        const speed =
+            Math.random()*5 + 2.5;
+
+        particles.push({
+
+            x:x,
+            y:y,
+
+            vx:
+                Math.cos(angle)
+                * speed,
+
+            vy:
+                Math.sin(angle)
+                * speed,
+
+            life:1,
+
+            decay:
+                Math.random()*.012+.008,
+
+            size:
+                Math.random()*2.8+1,
+
+            r:rgb.r,
+            g:rgb.g,
+            b:rgb.b
+
+        });
+    }
+}
+
+
+/* ================================
+   ROCKET
+================================ */
+
+function launchRocket(){
+
+    rockets.push({
+
+        x:
+            Math.random()*W,
+
+        y:
+            H+20,
+
+        targetY:
+            H*(.12+Math.random()*.48),
+
+        speed:
+            Math.random()*4+7
+
+    });
+}
+
+
+/* ================================
+   ANIMATION
+================================ */
+
+function animate(){
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* ROCKETS */
+
+    for(
+        let i=rockets.length-1;
+        i>=0;
+        i--
+    ){
+
+        const r =
+            rockets[i];
+
+        r.y -= r.speed;
+
+
+        const rgb =
+            hexToRgb(currentColor);
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            r.x,
+            r.y,
+            2.2,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+
+        ctx.shadowBlur =
+            20;
+
+        ctx.shadowColor =
+            currentColor;
+
+        ctx.fill();
+
+
+        if(
+            r.y <=
+            r.targetY
+        ){
+
+            createFirework(
+                r.x,
+                r.y
+            );
+
+            rockets.splice(
+                i,
+                1
+            );
+        }
+    }
+
+
+    /* PARTICLES */
+
+    for(
+        let i=particles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p =
+            particles[i];
+
+
+        p.x += p.vx;
+
+        p.y += p.vy;
+
+        p.vy += .045;
+
+        p.vx *= .985;
+
+        p.vy *= .985;
+
+        p.life -= p.decay;
+
+
+        if(
+            p.life <= 0
+        ){
+
+            particles.splice(
+                i,
+                1
+            );
+
+            continue;
+        }
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.fillStyle =
+            `rgba(
+                ${p.r},
+                ${p.g},
+                ${p.b},
+                ${p.life}
+            )`;
+
+
+        ctx.shadowBlur =
+            18;
+
+        ctx.shadowColor =
+            currentColor;
+
+        ctx.fill();
+
+    }
+
+
+    ctx.shadowBlur = 0;
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+
+animate();
+
+
+/* =========================================================
+   CELEBRATION
+   ========================================================= */
+
+function celebrate(){
+
+    for(
+        let i=0;
+        i<7;
+        i++
+    ){
+
+        setTimeout(
+            launchRocket,
+            i*180
+        );
+    }
+}
+
+
+/* BUTTON */
+
+document.getElementById(
+    "celebrateButton"
+).addEventListener(
+    "click",
+    celebrate
+);
+
+
+/* AUTO CELEBRATIONS */
+
+setTimeout(
+    celebrate,
+    500
+);
+
+setTimeout(
+    celebrate,
+    2500
+);
+
+setTimeout(
+    celebrate,
+    5000
+);
+
+</script>
+
+</body>
+</html>

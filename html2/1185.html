@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>1185 Projects — Celebration</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+body{
+
+    background:
+        radial-gradient(
+            circle at center,
+            #2b2005 0%,
+            #0d0b04 38%,
+            #020202 100%
+        );
+
+    color:white;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+
+/* =====================================
+   CANVAS
+===================================== */
+
+canvas{
+
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    pointer-events:none;
+}
+
+
+/* =====================================
+   LIGHT
+===================================== */
+
+.light{
+
+    position:fixed;
+
+    width:700px;
+    height:700px;
+
+    left:50%;
+    top:50%;
+
+    transform:
+        translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(255,200,40,.15),
+            transparent 65%
+        );
+
+    pointer-events:none;
+
+    animation:
+        breathe 4s ease-in-out infinite;
+}
+
+
+@keyframes breathe{
+
+    0%,100%{
+        transform:
+            translate(-50%,-50%)
+            scale(.9);
+    }
+
+    50%{
+        transform:
+            translate(-50%,-50%)
+            scale(1.15);
+    }
+}
+
+
+/* =====================================
+   MAIN
+===================================== */
+
+.container{
+
+    position:relative;
+
+    z-index:5;
+
+    width:100%;
+    height:100%;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    text-align:center;
+}
+
+
+.card{
+
+    width:
+        min(92vw,850px);
+
+    padding:
+        45px 25px;
+
+    border:
+        1px solid
+        rgba(255,210,70,.25);
+
+    border-radius:30px;
+
+    background:
+        rgba(255,255,255,.025);
+
+    backdrop-filter:
+        blur(12px);
+
+    box-shadow:
+
+        0 0 40px
+        rgba(255,190,30,.08),
+
+        inset 0 0 60px
+        rgba(255,200,50,.025);
+}
+
+
+/* =====================================
+   BADGE
+===================================== */
+
+.badge{
+
+    display:inline-block;
+
+    padding:
+        9px 18px;
+
+    border:
+        1px solid
+        rgba(255,215,80,.55);
+
+    border-radius:100px;
+
+    color:#ffd75a;
+
+    font-size:12px;
+
+    letter-spacing:4px;
+
+    margin-bottom:25px;
+
+    box-shadow:
+        0 0 20px
+        rgba(255,200,30,.15);
+}
+
+
+/* =====================================
+   NUMBER
+===================================== */
+
+.number{
+
+    font-size:
+        clamp(80px,18vw,190px);
+
+    line-height:.8;
+
+    font-weight:900;
+
+    letter-spacing:
+        clamp(-8px,-1vw,-2px);
+
+    background:
+
+        linear-gradient(
+            180deg,
+            #fff8c7 0%,
+            #ffe16a 25%,
+            #ffbd17 55%,
+            #b87500 80%,
+            #fff0a0 100%
+        );
+
+    -webkit-background-clip:text;
+
+    color:transparent;
+
+    filter:
+        drop-shadow(
+            0 0 20px
+            rgba(255,190,30,.35)
+        );
+
+    animation:
+        numberPulse 3s ease-in-out infinite;
+}
+
+
+@keyframes numberPulse{
+
+    0%,100%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.035);
+    }
+}
+
+
+/* =====================================
+   TITLE
+===================================== */
+
+.title{
+
+    margin-top:35px;
+
+    font-size:
+        clamp(22px,4vw,42px);
+
+    font-weight:800;
+
+    letter-spacing:2px;
+}
+
+
+.title span{
+
+    color:#ffd23f;
+
+    text-shadow:
+        0 0 15px
+        rgba(255,200,30,.35);
+}
+
+
+/* =====================================
+   DESCRIPTION
+===================================== */
+
+.description{
+
+    max-width:650px;
+
+    margin:
+        18px auto 30px;
+
+    color:#aaa;
+
+    font-size:16px;
+
+    line-height:1.8;
+}
+
+
+/* =====================================
+   STATS
+===================================== */
+
+.stats{
+
+    display:flex;
+
+    justify-content:center;
+
+    flex-wrap:wrap;
+
+    gap:14px;
+
+    margin-bottom:25px;
+}
+
+
+.stat{
+
+    min-width:140px;
+
+    padding:
+        17px 22px;
+
+    border:
+        1px solid
+        rgba(255,210,70,.16);
+
+    border-radius:18px;
+
+    background:
+        rgba(255,255,255,.025);
+}
+
+
+.stat strong{
+
+    display:block;
+
+    color:#ffd23f;
+
+    font-size:25px;
+
+    margin-bottom:5px;
+}
+
+
+.stat small{
+
+    color:#777;
+
+    letter-spacing:1px;
+}
+
+
+/* =====================================
+   BUTTON
+===================================== */
+
+button{
+
+    border:none;
+
+    padding:
+        16px 32px;
+
+    border-radius:100px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:800;
+
+    color:#241800;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            #fff3a6,
+            #ffc51b,
+            #e49a00
+        );
+
+    box-shadow:
+
+        0 0 20px
+        rgba(255,190,20,.35),
+
+        0 0 60px
+        rgba(255,190,20,.1);
+
+    transition:.25s;
+}
+
+
+button:hover{
+
+    transform:scale(1.08);
+
+    box-shadow:
+
+        0 0 30px
+        rgba(255,210,50,.65),
+
+        0 0 80px
+        rgba(255,190,20,.25);
+}
+
+
+/* =====================================
+   FOOTER
+===================================== */
+
+.footer{
+
+    margin-top:25px;
+
+    color:#5d5233;
+
+    font-size:11px;
+
+    letter-spacing:3px;
+}
+
+
+/* =====================================
+   FLASH
+===================================== */
+
+#flash{
+
+    position:fixed;
+
+    inset:0;
+
+    background:white;
+
+    opacity:0;
+
+    pointer-events:none;
+
+    z-index:20;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<canvas id="canvas"></canvas>
+
+<div class="light"></div>
+
+<div id="flash"></div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="badge">
+
+            PROJECT MILESTONE • 1185
+
+        </div>
+
+
+        <div class="number">
+
+            1185
+
+        </div>
+
+
+        <div class="title">
+
+            <span>PROJECTS</span> COMPLETED.
+
+        </div>
+
+
+        <div class="description">
+
+            1,185 projects.
+            Thousands of lines of code,
+            countless ideas, experiments,
+            failures, fixes and discoveries.
+
+            <br><br>
+
+            The number keeps growing.
+
+        </div>
+
+
+        <div class="stats">
+
+            <div class="stat">
+
+                <strong>1,185</strong>
+
+                <small>PROJECTS</small>
+
+            </div>
+
+
+            <div class="stat">
+
+                <strong>∞</strong>
+
+                <small>IDEAS</small>
+
+            </div>
+
+
+            <div class="stat">
+
+                <strong>1</strong>
+
+                <small>CREATOR</small>
+
+            </div>
+
+        </div>
+
+
+        <button onclick="celebrate()">
+
+            🎉 CELEBRATE 1185 🎉
+
+        </button>
+
+
+        <div class="footer">
+
+            BUILD • CREATE • LEARN • 1185
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+/* =====================================
+   FIREWORK ENGINE
+===================================== */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const flash =
+    document.getElementById("flash");
+
+
+let W;
+let H;
+
+let fireworks=[];
+let particles=[];
+
+
+function resize(){
+
+    W =
+        canvas.width =
+        window.innerWidth;
+
+    H =
+        canvas.height =
+        window.innerHeight;
+}
+
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =====================================
+   COLORS
+===================================== */
+
+const colors=[
+
+    "#ffd43b",
+    "#fff0a3",
+    "#ffffff",
+    "#ffb300",
+    "#ffe477",
+    "#d99b00"
+
+];
+
+
+/* =====================================
+   PARTICLE
+===================================== */
+
+class Particle{
+
+    constructor(x,y){
+
+        this.x=x;
+        this.y=y;
+
+        const angle =
+            Math.random() *
+            Math.PI * 2;
+
+        const speed =
+            Math.random()*8+2;
+
+        this.vx =
+            Math.cos(angle)*speed;
+
+        this.vy =
+            Math.sin(angle)*speed;
+
+        this.gravity=.075;
+
+        this.life=1;
+
+        this.decay =
+            Math.random()*.012+.008;
+
+        this.size =
+            Math.random()*3+1;
+
+        this.color =
+            colors[
+                Math.floor(
+                    Math.random()*
+                    colors.length
+                )
+            ];
+    }
+
+
+    update(){
+
+        this.x+=this.vx;
+
+        this.y+=this.vy;
+
+        this.vy+=this.gravity;
+
+        this.vx*=.985;
+
+        this.vy*=.985;
+
+        this.life-=this.decay;
+    }
+
+
+    draw(){
+
+        ctx.globalAlpha =
+            Math.max(
+                this.life,
+                0
+            );
+
+        ctx.fillStyle =
+            this.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            this.x,
+            this.y,
+            this.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.globalAlpha=1;
+    }
+}
+
+
+/* =====================================
+   FIREWORK
+===================================== */
+
+class Firework{
+
+    constructor(){
+
+        this.x =
+            Math.random()*W;
+
+        this.y =
+            H+20;
+
+        this.vy =
+            -(Math.random()*7+11);
+
+        this.exploded=false;
+    }
+
+
+    update(){
+
+        this.y+=this.vy;
+
+        this.vy+=.12;
+
+
+        if(
+            this.vy>=0 &&
+            !this.exploded
+        ){
+
+            this.explode();
+
+            this.exploded=true;
+        }
+    }
+
+
+    explode(){
+
+        for(
+            let i=0;
+            i<130;
+            i++
+        ){
+
+            particles.push(
+                new Particle(
+                    this.x,
+                    this.y
+                )
+            );
+        }
+    }
+
+
+    draw(){
+
+        ctx.fillStyle="#ffd43b";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            this.x,
+            this.y,
+            3,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+}
+
+
+/* =====================================
+   CELEBRATION
+===================================== */
+
+function celebrate(){
+
+    /* flash */
+
+    flash.style.transition =
+        "opacity .1s";
+
+    flash.style.opacity=".75";
+
+
+    setTimeout(()=>{
+
+        flash.style.transition =
+            "opacity 1s";
+
+        flash.style.opacity="0";
+
+    },100);
+
+
+    /* fireworks */
+
+    for(
+        let i=0;
+        i<18;
+        i++
+    ){
+
+        setTimeout(()=>{
+
+            fireworks.push(
+                new Firework()
+            );
+
+        },i*120);
+    }
+
+
+    /* massive particles */
+
+    for(
+        let i=0;
+        i<800;
+        i++
+    ){
+
+        particles.push(
+            new Particle(
+                Math.random()*W,
+                Math.random()*H*.7
+            )
+        );
+    }
+}
+
+
+/* =====================================
+   ANIMATION
+===================================== */
+
+function animate(){
+
+    ctx.fillStyle =
+        "rgba(2,2,2,.16)";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    fireworks.forEach(
+        (fw,index)=>{
+
+            fw.update();
+            fw.draw();
+
+            if(
+                fw.exploded
+            ){
+
+                fireworks.splice(
+                    index,
+                    1
+                );
+            }
+        }
+    );
+
+
+    particles.forEach(
+        (p,index)=>{
+
+            p.update();
+            p.draw();
+
+            if(
+                p.life<=0
+            ){
+
+                particles.splice(
+                    index,
+                    1
+                );
+            }
+        }
+    );
+
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+
+animate();
+
+
+/* =====================================
+   AUTOMATIC CELEBRATION
+===================================== */
+
+setTimeout(
+    celebrate,
+    700
+);
+
+setTimeout(
+    celebrate,
+    3200
+);
+
+setTimeout(
+    celebrate,
+    5800
+);
+
+</script>
+
+</body>
+</html>

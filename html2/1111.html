@@ -1,0 +1,496 @@
+Astra-1111-Projects-Celebration
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1111 — Four Ones</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at 50% 45%, #18113b 0%, #080711 48%, #020204 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+}
+
+.container {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    width: 92%;
+    max-width: 1000px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 9px 19px;
+    border: 1px solid rgba(190,150,255,.6);
+    border-radius: 50px;
+    color: #d9baff;
+    font-size: 13px;
+    letter-spacing: 4px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 25px rgba(155,90,255,.25);
+}
+
+.number {
+    display: flex;
+    justify-content: center;
+    gap: clamp(8px, 2vw, 25px);
+}
+
+.one {
+    font-size: clamp(90px, 19vw, 190px);
+    font-weight: 900;
+    line-height: .8;
+
+    background: linear-gradient(
+        180deg,
+        #ffffff,
+        #e7caff 35%,
+        #a45cff 70%,
+        #6b25c9
+    );
+
+    -webkit-background-clip: text;
+    color: transparent;
+
+    text-shadow:
+        0 0 15px rgba(174,100,255,.7),
+        0 0 45px rgba(130,60,255,.45);
+
+    animation: float 2.8s ease-in-out infinite;
+}
+
+.one:nth-child(2) { animation-delay: .15s; }
+.one:nth-child(3) { animation-delay: .3s; }
+.one:nth-child(4) { animation-delay: .45s; }
+
+@keyframes float {
+    0%,100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-13px);
+    }
+}
+
+.title {
+    margin-top: 35px;
+    font-size: clamp(23px, 4vw, 40px);
+    font-weight: 800;
+}
+
+.title span {
+    color: #c994ff;
+}
+
+.description {
+    margin: 18px auto;
+    max-width: 680px;
+    color: #aaa6b7;
+    line-height: 1.8;
+    font-size: 16px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 28px 0;
+}
+
+.card {
+    min-width: 135px;
+    padding: 17px 20px;
+
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(180,130,255,.18);
+    border-radius: 18px;
+
+    backdrop-filter: blur(12px);
+}
+
+.card strong {
+    display: block;
+    font-size: 25px;
+    color: #cf9eff;
+    margin-bottom: 5px;
+}
+
+.card small {
+    color: #8d8998;
+}
+
+button {
+    margin-top: 10px;
+    padding: 16px 35px;
+
+    border: none;
+    border-radius: 100px;
+
+    font-size: 16px;
+    font-weight: 800;
+
+    color: #160c20;
+
+    background: linear-gradient(
+        135deg,
+        #ffffff,
+        #d5a6ff,
+        #9c4cff
+    );
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 20px rgba(164,80,255,.4),
+        0 0 50px rgba(164,80,255,.15);
+
+    transition: .25s;
+}
+
+button:hover {
+    transform: scale(1.08);
+    box-shadow:
+        0 0 30px rgba(190,120,255,.7),
+        0 0 70px rgba(150,70,255,.4);
+}
+
+.footer {
+    margin-top: 28px;
+    color: #625d6b;
+    font-size: 12px;
+    letter-spacing: 3px;
+}
+
+#flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<div id="flash"></div>
+
+<div class="container">
+
+    <div class="tag">
+        MILESTONE • FOUR ONES • 1111
+    </div>
+
+    <div class="number">
+        <div class="one">1</div>
+        <div class="one">1</div>
+        <div class="one">1</div>
+        <div class="one">1</div>
+    </div>
+
+    <div class="title">
+        <span>1111 PROJECTS</span> REACHED.
+    </div>
+
+    <div class="description">
+        Four ones. One creator. One journey.
+        <br>
+        From the first project to 1,111 — every project became
+        another step toward something bigger.
+    </div>
+
+    <div class="cards">
+
+        <div class="card">
+            <strong>1,111</strong>
+            <small>Projects</small>
+        </div>
+
+        <div class="card">
+            <strong>4 × 1</strong>
+            <small>Four Ones</small>
+        </div>
+
+        <div class="card">
+            <strong>∞</strong>
+            <small>Next Ideas</small>
+        </div>
+
+    </div>
+
+    <button onclick="celebrate()">
+        ✨ CELEBRATE 1111 ✨
+    </button>
+
+    <div class="footer">
+        BUILD • LEARN • CREATE • REPEAT
+    </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const flash = document.getElementById("flash");
+
+let W;
+let H;
+
+let particles = [];
+let fireworks = [];
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+const colors = [
+    "#ffffff",
+    "#e5c8ff",
+    "#c084ff",
+    "#9c4cff",
+    "#7b2cff"
+];
+
+class Particle {
+
+    constructor(x, y, power = 1) {
+
+        this.x = x;
+        this.y = y;
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 7 + 2) * power;
+
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+
+        this.life = 1;
+        this.decay = Math.random() * .012 + .008;
+
+        this.size = Math.random() * 3.5 + 1;
+
+        this.color =
+            colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    update() {
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        this.vy += .075;
+
+        this.vx *= .985;
+        this.vy *= .985;
+
+        this.life -= this.decay;
+    }
+
+    draw() {
+
+        ctx.globalAlpha = Math.max(this.life, 0);
+
+        ctx.fillStyle = this.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            this.x,
+            this.y,
+            this.size,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+    }
+}
+
+class Firework {
+
+    constructor(x = Math.random() * W) {
+
+        this.x = x;
+        this.y = H + 20;
+
+        this.target =
+            Math.random() * H * .55 + 80;
+
+        this.vy =
+            -(Math.random() * 7 + 11);
+
+        this.exploded = false;
+    }
+
+    update() {
+
+        this.y += this.vy;
+
+        this.vy += .12;
+
+        if (
+            this.vy >= 0 &&
+            !this.exploded
+        ) {
+
+            this.explode();
+
+            this.exploded = true;
+        }
+    }
+
+    explode() {
+
+        for (let i = 0; i < 120; i++) {
+
+            particles.push(
+                new Particle(
+                    this.x,
+                    this.y,
+                    .9
+                )
+            );
+        }
+    }
+
+    draw() {
+
+        ctx.fillStyle = "#d8a5ff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            this.x,
+            this.y,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+    }
+}
+
+function celebrate() {
+
+    flash.style.transition = "opacity .1s";
+    flash.style.opacity = ".85";
+
+    setTimeout(() => {
+
+        flash.style.transition = "opacity 1s";
+        flash.style.opacity = "0";
+
+    }, 100);
+
+    // Fireworks
+    for (let i = 0; i < 15; i++) {
+
+        setTimeout(() => {
+
+            fireworks.push(
+                new Firework(
+                    Math.random() * W
+                )
+            );
+
+        }, i * 130);
+    }
+
+    // Massive particle burst
+    for (let i = 0; i < 700; i++) {
+
+        particles.push(
+            new Particle(
+                Math.random() * W,
+                Math.random() * H * .7,
+                1.2
+            )
+        );
+    }
+}
+
+function animate() {
+
+    ctx.fillStyle =
+        "rgba(2,2,4,.18)";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    fireworks.forEach(
+        (fw, index) => {
+
+            fw.update();
+            fw.draw();
+
+            if (fw.exploded) {
+                fireworks.splice(index, 1);
+            }
+
+        }
+    );
+
+    particles.forEach(
+        (p, index) => {
+
+            p.update();
+            p.draw();
+
+            if (p.life <= 0) {
+                particles.splice(index, 1);
+            }
+
+        }
+    );
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+// Automatic opening celebration
+setTimeout(celebrate, 700);
+setTimeout(celebrate, 3200);
+setTimeout(celebrate, 6000);
+
+</script>
+
+</body>
+</html>

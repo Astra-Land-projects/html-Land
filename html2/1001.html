@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Forge #1001</title>
+<style>
+:root{--bg:#140e08;--card:#201710;--line:#3b2a1a;--gold:#ffc766;--amber:#ff9d3c;--text:#fff3e0;--mute:#b9a68d}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,#47290f,var(--bg) 60%);color:var(--text);font-family:Georgia,"Times New Roman",serif;display:flex;justify-content:center;padding:28px 16px 48px}
+main{width:100%;max-width:560px}
+h1{font-size:2rem;margin:0 0 4px;letter-spacing:.02em}
+.sub{color:var(--mute);margin:0 0 24px;font-family:system-ui,sans-serif;font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 0 40px rgba(255,157,60,.12)}
+.tag{display:inline-block;font:600 .8rem system-ui,sans-serif;color:#1b1109;background:linear-gradient(90deg,var(--gold),var(--amber));padding:4px 10px;border-radius:99px}
+.idea{font-size:1.45rem;line-height:1.35;margin:14px 0 8px}
+.meta{color:var(--mute);font:.9rem/1.5 system-ui,sans-serif}
+.row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+button{font:600 1rem system-ui,sans-serif;border:0;border-radius:12px;padding:12px 18px;cursor:pointer;color:#1b1109;background:linear-gradient(90deg,var(--gold),var(--amber))}
+button.alt{background:transparent;color:var(--gold);border:1px solid var(--line)}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+h2{font-size:1.15rem;margin:30px 0 10px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;font:.95rem/1.4 system-ui,sans-serif}
+li button{padding:6px 10px;font-size:.85rem}
+.empty{color:var(--mute);font:.95rem system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+  <h1>Project Forge</h1>
+  <p class="sub">Roll the idea for project #1001.</p>
+  <section class="card" aria-live="polite">
+    <span class="tag" id="tag">Ready</span>
+    <p class="idea" id="idea">Press Forge to get your next build.</p>
+    <p class="meta" id="meta"></p>
+    <div class="row">
+      <button id="forge">Forge idea</button>
+      <button class="alt" id="save">Save</button>
+      <button class="alt" id="copy">Copy</button>
+    </div>
+  </section>
+  <h2>Saved ideas</h2>
+  <ul id="list"></ul>
+</main>
+<script>
+const DATA = {
+  "AI/ML": {
+    things: ["image classifier", "sentiment analyzer", "tiny recommender", "gesture recognizer", "anomaly detector"],
+    tech: ["Python + NumPy", "TensorFlow Lite", "scikit-learn", "TensorFlow.js"]
+  },
+  "Robotics": {
+    things: ["line-following robot", "obstacle-avoiding rover", "robotic arm controller", "maze-solving bot"],
+    tech: ["Arduino + C++", "Raspberry Pi + Python", "ESP32 + MicroPython"]
+  },
+  "Mechatronics": {
+    things: ["smart plant waterer", "automatic door", "self-balancing platform", "conveyor sorter"],
+    tech: ["Arduino + sensors", "ESP32 + servos", "PID control loop"]
+  },
+  "Embedded": {
+    things: ["TinyML sensor node", "weather station", "smart energy meter"],
+    tech: ["ESP32", "STM32", "MicroPython"]
+  },
+  "Web": {
+    things: ["live dashboard", "habit tracker", "portfolio generator", "markdown notebook"],
+    tech: ["single-file HTML + JS", "Canvas API", "Django"]
+  },
+  "Game": {
+    things: ["physics sandbox", "tap-to-earn clicker", "procedural dungeon", "3D farming scene"],
+    tech: ["Canvas 2D", "Three.js", "vanilla JS"]
+  },
+  "Automation": {
+    things: ["file organizer", "price watcher", "log analyzer", "daily report builder"],
+    tech: ["Python scripts", "Node.js", "Bash"]
+  }
+};
+const TWISTS = [
+  "it must work fully offline",
+  "it must fit in under 300 lines",
+  "it must have a voice or sound feature",
+  "it must be controllable from a phone",
+  "it must visualize its own data live",
+  "it must explain itself to a beginner",
+  "it must be finished in one evening"
+];
+const KEY = "forge-saved-v1";
+const $ = id => document.getElementById(id);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+let current = null;
+let saved = [];
+
+function load() {
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { saved = []; }
+  if (!Array.isArray(saved)) saved = [];
+}
+function store() {
+  try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* storage unavailable */ }
+}
+function forge() {
+  const domain = pick(Object.keys(DATA));
+  const d = DATA[domain];
+  const level = 1 + Math.floor(Math.random() * 5);
+  current = {
+    domain,
+    title: "Build a " + pick(d.things),
+    tech: pick(d.tech),
+    twist: pick(TWISTS),
+    level
+  };
+  render();
+}
+function text(i) {
+  return i.title + " (" + i.domain + ") with " + i.tech + ", but " + i.twist + ". Difficulty " + i.level + "/5";
+}
+function render() {
+  if (!current) return;
+  $("tag").textContent = current.domain;
+  $("idea").textContent = current.title;
+  $("meta").textContent = "Tech: " + current.tech + " | Twist: " + current.twist + " | Difficulty: " + "★".repeat(current.level) + "☆".repeat(5 - current.level);
+}
+function renderList() {
+  const ul = $("list");
+  ul.textContent = "";
+  if (!saved.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Nothing saved yet. Forge an idea and press Save.";
+    ul.appendChild(p);
+    return;
+  }
+  saved.forEach((item, i) => {
+    const li = document.createElement("li");
+    const span = document.createElement("span");
+    span.textContent = text(item);
+    const b = document.createElement("button");
+    b.className = "alt";
+    b.textContent = "Remove";
+    b.onclick = () => { saved.splice(i, 1); store(); renderList(); };
+    li.append(span, b);
+    ul.appendChild(li);
+  });
+}
+$("forge").onclick = forge;
+$("save").onclick = () => {
+  if (!current) return;
+  if (saved.some(s => text(s) === text(current))) return;
+  saved.unshift(current);
+  store();
+  renderList();
+};
+$("copy").onclick = () => {
+  if (!current) return;
+  const t = text(current);
+  const done = () => { $("copy").textContent = "Copied"; setTimeout(() => { $("copy").textContent = "Copy"; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, () => {});
+  }
+};
+load();
+renderList();
+forge();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>روز برنامه‌نویس مبارک</title>
+    <style>
+        body { font-family: tahoma; text-align: center; background: #282c34; color: #61dafb; padding-top: 50px; }
+        .box { border: 2px solid #61dafb; padding: 20px; border-radius: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>تبریک روز برنامه‌نویس!</h1>
+        <p id="code">کدِ امروز: print("Hello, World!")</p>
+        <button onclick="changeCode()">کد بعدی</button>
+    </div>
+    <script>
+        const codes = ['console.log("Happy Coder Day!");', 'System.out.println("Hello, World");', 'print("روزت مبارک کدنویس!")', 'std::cout << "Happy Programmer Day";'];
+        function changeCode() {
+            document.getElementById('code').innerText = "کدِ امروز: " + codes[Math.floor(Math.random() * codes.length)];
+        }
+    </script>
+</body>
+</html>
+............
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>برنامه‌ریز درسی</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        input { padding: 10px; width: 200px; }
+        button { padding: 10px; cursor: pointer; }
+        ul { list-style: none; margin-top: 20px; }
+        li { background: white; padding: 10px; margin: 5px 0; border-right: 5px solid #ff5722; }
+    </style>
+</head>
+<body>
+    <h2>تکالیف امروز من</h2>
+    <input type="text" id="taskInput" placeholder="اسم درس را بنویس...">
+    <button onclick="addTask()">اضافه کن</button>
+    <ul id="taskList"></ul>
+
+    <script>
+        function addTask() {
+            let task = document.getElementById('taskInput').value;
+            if(!task) return;
+            let li = document.createElement('li');
+            li.innerText = task;
+            document.getElementById('taskList').appendChild(li);
+            document.getElementById('taskInput').value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>روز پسر مبارک 💙</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:'Vazirmatn',sans-serif;
+background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+min-height:100vh;overflow-x:hidden;color:#fff;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+position:relative;
+}
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+.particle{
+position:absolute;width:6px;height:6px;background:#00d4ff;
+border-radius:50%;opacity:0.7;animation:float 8s infinite ease-in-out;
+}
+@keyframes float{
+0%,100%{transform:translateY(0) rotate(0deg);opacity:0.7}
+50%{transform:translateY(-100px) rotate(180deg);opacity:1}
+}
+.container{position:relative;z-index:10;text-align:center;padding:2rem;max-width:900px}
+h1{
+font-size:clamp(2.5rem,8vw,5rem);font-weight:900;
+background:linear-gradient(90deg,#00d4ff,#7b2cbf,#ff006e);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+animation:glow 2s ease-in-out infinite alternate;
+margin-bottom:1rem;
+}
+@keyframes glow{
+from{filter:drop-shadow(0 0 10px #00d4ff)}
+to{filter:drop-shadow(0 0 25px #ff006e)}
+}
+.subtitle{font-size:1.4rem;opacity:0.9;margin-bottom:2rem}
+.card{
+background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,0.15);border-radius:24px;
+padding:2.5rem;margin:1.5rem 0;box-shadow:0 20px 50px rgba(0,0,0,0.4);
+transition:transform 0.3s;
+}
+.card:hover{transform:translateY(-8px)}
+.emoji{font-size:4rem;display:block;margin-bottom:1rem;animation:bounce 1.5s infinite}
+@keyframes bounce{
+0%,100%{transform:translateY(0)}
+50%{transform:translateY(-15px)}
+}
+.message{font-size:1.3rem;line-height:1.8;margin:1rem 0}
+.btn{
+display:inline-block;margin:0.8rem;padding:1rem 2.2rem;
+background:linear-gradient(90deg,#00d4ff,#7b2cbf);
+border:none;border-radius:50px;color:#fff;font-size:1.1rem;font-weight:700;
+cursor:pointer;transition:all 0.3s;box-shadow:0 8px 25px rgba(0,212,255,0.4);
+}
+.btn:hover{transform:scale(1.08);box-shadow:0 12px 35px rgba(0,212,255,0.6)}
+.quote-box{
+background:rgba(0,212,255,0.1);border-right:4px solid #00d4ff;
+padding:1.2rem 1.5rem;border-radius:12px;margin:1.5rem 0;font-style:italic;
+}
+.stats{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:2rem}
+.stat{text-align:center}
+.stat-num{font-size:2.5rem;font-weight:900;color:#00d4ff}
+.footer{margin-top:3rem;opacity:0.6;font-size:0.9rem}
+.confetti{position:fixed;width:10px;height:10px;pointer-events:none;z-index:100}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="container">
+<div class="emoji">👦💙</div>
+<h1>روز پسر مبارک!</h1>
+<p class="subtitle">به تمام پسرهای خفن، باحال و آینده‌ساز دنیا</p>
+
+<div class="card">
+<p class="message">امروز روز توئه داداش!<br>
+روزی برای قدردانی از تمام انرژی، خنده، شیطنت و قلب بزرگی که داری.</p>
+<div class="quote-box" id="quote">
+«پسر بودن یعنی شجاعت، مهربانی و رویاهای بزرگ.»
+</div>
+<button class="btn" onclick="newQuote()">پیام جدید بده 🔄</button>
+<button class="btn" onclick="launchConfetti()">جشن بگیر 🎉</button>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="stat-num" id="boys">∞</div><div>پسر خفن</div></div>
+<div class="stat"><div class="stat-num">100%</div><div>باحال بودن</div></div>
+<div class="stat"><div class="stat-num">∞</div><div>عشق به زندگی</div></div>
+</div>
+
+<p class="footer">ساخته شده با 💙 برای تمام پسرهای دنیا | فقط برای تو</p>
+</div>
+
+<script>
+const quotes = [
+"پسر بودن یعنی شجاعت، مهربانی و رویاهای بزرگ.",
+"تو همون قهرمان داستان خودتی داداش.",
+"امروز فقط برای توئه... لبخند بزن و دنیا رو فتح کن!",
+"پسرها قلب‌های بزرگی دارن که دنیا رو روشن می‌کنن.",
+"شیطنت امروزت، موفقیت فرداست 😎",
+"تو قوی‌تری از چیزی که فکر می‌کنی. همیشه.",
+"روز پسر یعنی روز قدردانی از وجود باارزشت."
+];
+function newQuote(){
+document.getElementById('quote').innerText = '«' + quotes[Math.floor(Math.random()*quotes.length)] + '»';
+}
+function createParticles(){
+const container = document.getElementById('particles');
+for(let i=0;i<40;i++){
+const p = document.createElement('div');
+p.className = 'particle';
+p.style.left = Math.random()*100 + '%';
+p.style.top = Math.random()*100 + '%';
+p.style.animationDelay = Math.random()*5 + 's';
+p.style.background = ['#00d4ff','#7b2cbf','#ff006e','#00ff9f'][Math.floor(Math.random()*4)];
+container.appendChild(p);
+}
+}
+function launchConfetti(){
+for(let i=0;i<80;i++){
+const c = document.createElement('div');
+c.className = 'confetti';
+c.style.left = Math.random()*100 + 'vw';
+c.style.top = '-20px';
+c.style.background = ['#00d4ff','#7b2cbf','#ff006e','#00ff9f','#ffd700'][Math.floor(Math.random()*5)];
+c.style.transform = `rotate(${Math.random()*360}deg)`;
+document.body.appendChild(c);
+const anim = c.animate([
+{transform:`translateY(0) rotate(0deg)`,opacity:1},
+{transform:`translateY(100vh) rotate(${Math.random()*720}deg)`,opacity:0}
+],{duration:2000+Math.random()*2000,easing:'cubic-bezier(0.25,0.46,0.45,0.94)'});
+anim.onfinish = ()=>c.remove();
+}
+}
+createParticles();
+</script>
+</body>
+</html>

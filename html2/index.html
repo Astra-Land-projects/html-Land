@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fa">
+
+<head>
+    <meta charset="UTF-8">
+    <title>مولد رمز عبور تصادفی</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            direction: rtl;
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        input[type="checkbox"] {
+            margin-left: 5px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        #result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e0f2f1;
+            word-break: break-all;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>مولد رمز عبور</h1>
+
+    <div class="group">
+        <label for="length">طول رمز (حداقل 4):</label>
+        <input type="number" id="length" min="4" max="64" value="12">
+    </div>
+
+    <div class="group">
+        <label>کاراکترهای مورد استفاده:</label>
+        <input type="checkbox" id="lowercase" checked> حروف کوچک (a‑z)
+        <input type="checkbox" id="uppercase" checked> حروف بزرگ (A‑Z)
+        <input type="checkbox" id="numbers" checked> اعداد (0‑9)
+        <input type="checkbox" id="symbols"> نمادها (!@#$…)
+    </div>
+
+    <button id="generateBtn">تولید رمز</button>
+
+    <div id="result"></div>
+
+    <script>
+        // ترکیب تمام کاراکترهای انتخابی
+        function getCharSet() {
+            const lower = "abcdefghijklmnopqrstuvwxyz";
+            const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const nums = "0123456789";
+            const sym = "!@#$%^&*()-_=+[]{}|;:,.<>/?";
+
+            let set = "";
+            if (document.getElementById("lowercase").checked) set += lower;
+            if (document.getElementById("uppercase").checked) set += upper;
+            if (document.getElementById("numbers").checked) set += nums;
+            if (document.getElementById("symbols").checked) set += sym;
+            return set;
+        }
+
+        // تولید رمز بر پایهٔ کاراکترهای موجود
+        function generatePassword(length, charset) {
+            let password = "";
+            const n = charset.length;
+            for (let i = 0; i < length; i++) {
+                const idx = Math.floor(Math.random() * n);
+                password += charset.charAt(idx);
+            }
+            return password;
+        }
+
+        document.getElementById("generateBtn").addEventListener("click", function () {
+            const len = parseInt(document.getElementById("length").value, 10);
+            const charset = getCharSet();
+
+            if (charset.length === 0) {
+                alert("حداقل یک نوع کاراکتر باید انتخاب شود.");
+                return;
+            }
+            if (isNaN(len) || len < 4) {
+                alert("لطفاً طول معتبر (حداقل 4) را وارد کنید.");
+                return;
+            }
+
+            const pwd = generatePassword(len, charset);
+            document.getElementById("result").textContent = pwd;
+        });
+    </script>
+
+</body>
+
+</html>

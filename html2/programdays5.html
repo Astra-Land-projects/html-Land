@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>روز برنامه‌نویس مبارک 🎉</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden;font-family:Tahoma,monospace;}
+  canvas{position:fixed;top:0;left:0;z-index:0;}
+  .content{position:relative;z-index:1;color:#0f0;text-align:center;padding-top:60px;}
+  h1{font-size:2.2em;text-shadow:0 0 10px #0f0;}
+  #terminal{background:rgba(0,0,0,.8);border:1px solid #0f0;max-width:500px;margin:20px auto;padding:15px;text-align:left;border-radius:8px;min-height:120px;}
+  #joke{color:#0ff;margin-top:10px;font-size:1.1em;min-height:30px;}
+  button{background:#0f0;color:#000;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold;margin:5px;}
+  button:hover{background:#0c0;}
+  .cursor{animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:0;}}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div class="content">
+  <h1>🎉 روز برنامه‌نویس مبارک! 🎉</h1>
+  <p>256 دلیل برای جشن گرفتن... چون 2^8 = 256 😄</p>
+  <div id="terminal">$ <span id="typed"></span><span class="cursor">|</span></div>
+  <button onclick="compile()">Compile 🚀</button>
+  <button onclick="tellJoke()">یک جوک بگو 😂</button>
+  <div id="joke"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const letters = "01ABCDEFابجدهزحطیکلمنسعفصقرشتثخذضظغ";
+const fontSize = 16;
+const columns = canvas.width/fontSize;
+const drops = Array(Math.floor(columns)).fill(1);
+
+function drawMatrix(){
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#0f0";
+  ctx.font = fontSize+"px monospace";
+  for(let i=0;i<drops.length;i++){
+    const text = letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+    if(drops[i]*fontSize > canvas.height && Math.random()>0.975){
+      drops[i]=0;
+    }
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 33);
+
+window.addEventListener('resize', ()=>{
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const messages = [
+  "Hello World! این کد بدون هیچ باگی کار می‌کند 😅",
+  "// TODO: بعدا درستش می‌کنم (هفت سال پیش نوشته شده)",
+  "git commit -m 'fix everything'",
+  "sudo make me a sandwich",
+];
+let msgIndex = 0;
+function typeMessage(){
+  const msg = messages[msgIndex % messages.length];
+  const el = document.getElementById('typed');
+  el.textContent = '';
+  let i=0;
+  const interval = setInterval(()=>{
+    el.textContent += msg[i];
+    i++;
+    if(i>=msg.length){
+      clearInterval(interval);
+      setTimeout(()=>{ msgIndex++; typeMessage(); }, 2000);
+    }
+  }, 60);
+}
+typeMessage();
+
+function compile(){
+  const t = document.getElementById('terminal');
+  const line = document.createElement('div');
+  line.textContent = "$ compiling... ✅ Build succeeded! 0 errors, 1000 warnings 😂";
+  line.style.color = "#ff0";
+  t.appendChild(line);
+}
+
+const jokes = [
+  "چرا برنامه‌نویس‌ها عاشق طبیعت نیستن؟ چون پر از باگ (bug) هست! 🐛",
+  "یه برنامه‌نویس میره نون بخره، زنش میگه یه نون بخر، اگه تخم‌مرغ بود ۱۰ تا بخر. برنامه‌نویس ۱۰ نون میخره!",
+  "چرا برنامه‌نویس‌ها همیشه سردشونه؟ چون همیشه تو Windows هستن ❄️",
+  "There are 10 types of programmers: those who understand binary, and those who don't.",
+  "کد من کار می‌کند، نمی‌دانم چرا. کد من کار نمی‌کند، نمی‌دانم چرا."
+];
+function tellJoke(){
+  const j = jokes[Math.floor(Math.random()*jokes.length)];
+  document.getElementById('joke').textContent = j;
+}
+</script>
+</body>
+</html>

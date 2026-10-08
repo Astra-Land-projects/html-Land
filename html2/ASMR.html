@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Astra Soft Objects ASMR</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 50% 10%, #202532, #080a0f 65%);
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.app {
+    width: min(1100px, 94vw);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.subtitle {
+    color: #8d94a5;
+    margin-top: 5px;
+    font-size: 13px;
+}
+
+.badge {
+    border: 1px solid #333846;
+    border-radius: 30px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #aeb5c4;
+}
+
+.scene {
+    height: 620px;
+    position: relative;
+    overflow: hidden;
+
+    border-radius: 22px;
+    border: 1px solid #292d39;
+
+    background:
+        radial-gradient(
+            circle at 50% 20%,
+            #252a37,
+            #11141b 40%,
+            #07080c 80%
+        );
+
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.65);
+}
+
+/* زمین */
+
+.floor {
+    position: absolute;
+    bottom: 14%;
+    left: 5%;
+    width: 90%;
+    height: 3px;
+
+    background: #626978;
+
+    box-shadow:
+        0 0 20px rgba(160,170,190,.2);
+}
+
+/* میله */
+
+.rod {
+    position: absolute;
+
+    left: 50%;
+    top: 12%;
+
+    width: 14px;
+    height: 74%;
+
+    transform: translateX(-50%);
+
+    border-radius: 50px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #666d7b,
+            #f5f6f8,
+            #747b88
+        );
+
+    box-shadow:
+        0 0 30px rgba(255,255,255,.12);
+}
+
+/* شیء */
+
+.object {
+    position: absolute;
+
+    left: 50%;
+    top: -150px;
+
+    width: 160px;
+    height: 90px;
+
+    transform: translateX(-50%);
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff,
+            #858c99
+        );
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,.5);
+}
+
+/* افتادن */
+
+.object.drop {
+    animation:
+        dropObject
+        1.25s
+        cubic-bezier(.18,.85,.25,1)
+        forwards;
+}
+
+@keyframes dropObject {
+
+    0% {
+        top: -130px;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    55% {
+        top: 53%;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    67% {
+        top: 62%;
+        transform:
+            translateX(-50%)
+            scale(1.15,.32);
+    }
+
+    78% {
+        top: 58%;
+        transform:
+            translateX(-50%)
+            scale(1.3,.42);
+    }
+
+    100% {
+        top: 62%;
+        transform:
+            translateX(-50%)
+            scale(1.05,.5);
+    }
+}
+
+/* رد شدن از میله */
+
+.object.pass-rod {
+    animation:
+        passRod
+        1.5s
+        cubic-bezier(.15,.8,.2,1)
+        forwards;
+}
+
+@keyframes passRod {
+
+    0% {
+        top: -130px;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    38% {
+        top: 30%;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    53% {
+        top: 43%;
+        transform:
+            translateX(-50%)
+            scale(1.05,.75);
+    }
+
+    65% {
+        top: 53%;
+        transform:
+            translateX(-50%)
+            scale(1.25,.35);
+    }
+
+    78% {
+        top: 58%;
+        transform:
+            translateX(-50%)
+            scale(1.4,.4);
+    }
+
+    100% {
+        top: 70%;
+        transform:
+            translateX(-50%)
+            scale(1.05,.55);
+    }
+}
+
+/* کنترل ها */
+
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+button,
+select {
+    border: 1px solid #343947;
+
+    background: #151821;
+
+    color: white;
+
+    padding: 12px 15px;
+
+    border-radius: 12px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:hover,
+select:hover {
+    background: #222631;
+}
+
+.primary {
+    background: white;
+    color: black;
+}
+
+.status {
+    margin-top: 10px;
+
+    color: #858c9b;
+
+    font-size: 13px;
+}
+
+/* موبایل */
+
+@media(max-width:600px) {
+
+    h1 {
+        font-size: 23px;
+    }
+
+    .scene {
+        height: 520px;
+    }
+
+    .object {
+        width: 120px;
+        height: 70px;
+    }
+
+    .rod {
+        height: 70%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+
+    <div>
+        <h1>Soft Objects · ASMR</h1>
+
+        <div class="subtitle">
+            Random satisfying physics experiments
+        </div>
+    </div>
+
+    <div class="badge">
+        ONE HTML FILE
+    </div>
+
+</header>
+
+
+<div class="scene" id="scene">
+
+    <div class="rod"></div>
+
+    <div class="floor"></div>
+
+    <div
+        class="object"
+        id="object">
+    </div>
+
+</div>
+
+
+<div class="controls">
+
+    <button
+        class="primary"
+        onclick="playRandom()">
+        ▶ Play Random
+    </button>
+
+    <button
+        onclick="randomObject()">
+        🎲 Random Object
+    </button>
+
+    <button
+        onclick="toggleSound()"
+        id="soundButton">
+        🔊 Sound On
+    </button>
+
+    <select id="shapeSelect">
+
+        <option value="random">
+            Random Shape
+        </option>
+
+        <option value="block">
+            Soft Block
+        </option>
+
+        <option value="sphere">
+            Sphere
+        </option>
+
+        <option value="capsule">
+            Capsule
+        </option>
+
+        <option value="ring">
+            Ring
+        </option>
+
+        <option value="blob">
+            Blob
+        </option>
+
+        <option value="star">
+            Star
+        </option>
+
+    </select>
+
+</div>
+
+
+<div
+    class="status"
+    id="status">
+
+    Ready — press Play
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   OBJECTS
+========================= */
+
+const objects = {
+
+    block: {
+        name: "Soft Block",
+        width: "160px",
+        height: "90px",
+        radius: "20px",
+        background:
+            "linear-gradient(135deg,#ffffff,#858c99)"
+    },
+
+    sphere: {
+        name: "Soft Sphere",
+        width: "105px",
+        height: "105px",
+        radius: "50%",
+        background:
+            "radial-gradient(circle at 30% 25%,#ffffff,#737b89)"
+    },
+
+    capsule: {
+        name: "Soft Capsule",
+        width: "180px",
+        height: "75px",
+        radius: "100px",
+        background:
+            "linear-gradient(135deg,#f5f6f8,#707887)"
+    },
+
+    ring: {
+        name: "Soft Ring",
+        width: "125px",
+        height: "125px",
+        radius: "50%",
+        background:
+            "radial-gradient(circle,#0b0d12 0 30%,#f0f2f5 32% 68%,#747c8b 70%)"
+    },
+
+    blob: {
+        name: "Liquid Blob",
+        width: "155px",
+        height: "115px",
+        radius: "45% 55% 60% 40%",
+        background:
+            "radial-gradient(circle at 30% 25%,#ffffff,#76909c)"
+    },
+
+    star: {
+        name: "Soft Star",
+        width: "145px",
+        height: "145px",
+        radius: "20px",
+        background:
+            "linear-gradient(135deg,#ffffff,#747b89)"
+    }
+
+};
+
+
+/* =========================
+   VARIABLES
+========================= */
+
+const objectElement =
+    document.getElementById("object");
+
+const statusElement =
+    document.getElementById("status");
+
+const shapeSelect =
+    document.getElementById("shapeSelect");
+
+const soundButton =
+    document.getElementById("soundButton");
+
+let soundEnabled = true;
+
+let audioContext;
+
+
+/* =========================
+   RANDOM OBJECT
+========================= */
+
+function randomObject() {
+
+    let selected =
+        shapeSelect.value;
+
+    if (selected === "random") {
+
+        const keys =
+            Object.keys(objects);
+
+        selected =
+            keys[
+                Math.floor(
+                    Math.random() * keys.length
+                )
+            ];
+    }
+
+    applyObject(selected);
+
+    statusElement.innerText =
+        objects[selected].name;
+
+}
+
+
+/* =========================
+   APPLY OBJECT
+========================= */
+
+function applyObject(type) {
+
+    const data =
+        objects[type];
+
+    objectElement.style.width =
+        data.width;
+
+    objectElement.style.height =
+        data.height;
+
+    objectElement.style.borderRadius =
+        data.radius;
+
+    objectElement.style.background =
+        data.background;
+
+
+    if (type === "star") {
+
+        objectElement.style.clipPath =
+            "polygon(" +
+
+            "50% 0%," +
+            "61% 35%," +
+            "100% 35%," +
+            "68% 57%," +
+            "80% 100%," +
+            "50% 72%," +
+            "20% 100%," +
+            "32% 57%," +
+            "0% 35%," +
+            "39% 35%" +
+
+            ")";
+
+    } else {
+
+        objectElement.style.clipPath =
+            "none";
+
+    }
+
+}
+
+
+/* =========================
+   PLAY
+========================= */
+
+function playRandom() {
+
+    randomObject();
+
+    objectElement.classList.remove(
+        "drop",
+        "pass-rod"
+    );
+
+    /*
+       Force browser to restart
+       animation.
+    */
+
+    void objectElement.offsetWidth;
+
+
+    const passRod =
+        Math.random() < 0.65;
+
+
+    if (passRod) {
+
+        objectElement.classList.add(
+            "pass-rod"
+        );
+
+        statusElement.innerText +=
+            " → passing through the rod";
+
+        setTimeout(
+            playASMR,
+            650
+        );
+
+    } else {
+
+        objectElement.classList.add(
+            "drop"
+        );
+
+        statusElement.innerText +=
+            " → soft impact";
+
+        setTimeout(
+            playASMR,
+            650
+        );
+    }
+
+}
+
+
+/* =========================
+   SOUND ENGINE
+========================= */
+
+function playASMR() {
+
+    if (!soundEnabled)
+        return;
+
+
+    if (!audioContext) {
+
+        audioContext =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+
+    const now =
+        audioContext.currentTime;
+
+
+    /*
+       Low impact sound
+    */
+
+    const oscillator =
+        audioContext.createOscillator();
+
+    const gain =
+        audioContext.createGain();
+
+
+    oscillator.type =
+        "sine";
+
+
+    oscillator.frequency.setValueAtTime(
+        120,
+        now
+    );
+
+    oscillator.frequency.exponentialRampToValueAtTime(
+        45,
+        now + 0.6
+    );
+
+
+    gain.gain.setValueAtTime(
+        0.0001,
+        now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.18,
+        now + 0.02
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + 0.7
+    );
+
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        audioContext.destination
+    );
+
+
+    oscillator.start(now);
+
+    oscillator.stop(
+        now + 0.7
+    );
+
+
+    /*
+       Soft noise
+    */
+
+    const buffer =
+        audioContext.createBuffer(
+            1,
+            audioContext.sampleRate * 0.35,
+            audioContext.sampleRate
+        );
+
+
+    const data =
+        buffer.getChannelData(0);
+
+
+    for (
+        let i = 0;
+        i < data.length;
+        i++
+    ) {
+
+        data[i] =
+            (Math.random() * 2 - 1)
+            *
+            Math.exp(
+                -i / data.length * 8
+            );
+
+    }
+
+
+    const noise =
+        audioContext.createBufferSource();
+
+
+    noise.buffer =
+        buffer;
+
+
+    const noiseGain =
+        audioContext.createGain();
+
+
+    noiseGain.gain.value =
+        0.035;
+
+
+    noise.connect(
+        noiseGain
+    );
+
+    noiseGain.connect(
+        audioContext.destination
+    );
+
+
+    noise.start(
+        now + 0.03
+    );
+
+}
+
+
+/* =========================
+   SOUND TOGGLE
+========================= */
+
+function toggleSound() {
+
+    soundEnabled =
+        !soundEnabled;
+
+
+    if (soundEnabled) {
+
+        soundButton.innerText =
+            "🔊 Sound On";
+
+    } else {
+
+        soundButton.innerText =
+            "🔇 Sound Off";
+
+    }
+
+}
+
+
+/* =========================
+   INITIAL OBJECT
+========================= */
+
+applyObject("block");
+
+</script>
+
+</body>
+</html>

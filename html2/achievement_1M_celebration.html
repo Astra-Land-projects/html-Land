@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>1M+ Achievements Celebration</title>
+<style>
+:root{
+  --accent:#a855f7;
+  --accent2:#d946ef;
+  --bg:#08050d;
+  --card:rgba(255,255,255,.07);
+  --text:#fff;
+  --muted:#c9bfd1;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; overflow:hidden;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 50% 15%, color-mix(in srgb,var(--accent) 28%,transparent), transparent 35%),
+    radial-gradient(circle at 15% 80%, color-mix(in srgb,var(--accent2) 18%,transparent), transparent 30%),
+    var(--bg);
+}
+canvas{position:fixed;inset:0;pointer-events:none}
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{
+  width:min(900px,96vw); text-align:center; padding:42px 28px 32px;
+  border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);
+  border-radius:32px; background:var(--card); backdrop-filter:blur(16px);
+  box-shadow:0 0 70px color-mix(in srgb,var(--accent) 18%,transparent), inset 0 1px rgba(255,255,255,.08);
+}
+.badge{
+ display:inline-block;padding:8px 15px;border-radius:999px;
+ background:color-mix(in srgb,var(--accent) 18%,transparent);
+ color:var(--accent);font-weight:800;letter-spacing:2px;font-size:12px;
+}
+h1{font-size:clamp(42px,8vw,84px);line-height:1;margin:20px 0 8px}
+.sub{font-size:clamp(17px,2.5vw,25px);color:var(--muted)}
+.number{
+ font-size:clamp(90px,19vw,190px);font-weight:950;line-height:.9;margin:25px 0 15px;
+ color:var(--accent); text-shadow:0 0 25px color-mix(in srgb,var(--accent) 45%,transparent),0 0 80px color-mix(in srgb,var(--accent) 25%,transparent);
+ letter-spacing:-7px;
+}
+.message{font-size:18px;color:#eee;max-width:680px;margin:0 auto 25px;line-height:1.6}
+.controls{
+ display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;
+ padding:16px;margin-top:18px;border-radius:20px;background:rgba(0,0,0,.22)
+}
+input,select,button{
+ border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;
+ background:#17121d;color:white;font-size:15px;outline:none
+}
+input{width:150px;text-align:center;font-weight:800}
+button{cursor:pointer;font-weight:800;background:var(--accent);border-color:transparent}
+button:hover{filter:brightness(1.12)}
+.credit{margin-top:18px;color:#9f95a8;font-size:12px}
+@media(max-width:600px){.card{padding:30px 16px}.controls{flex-direction:column}.controls>*{width:100%!important}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+ <main class="card">
+  <div class="badge">🏆 ACHIEVEMENT MILESTONE</div>
+  <h1 id="headline">A MILLION ACHIEVEMENTS!</h1>
+  <div class="number" id="number">1M+</div>
+  <div class="sub">One million+ achievements. One unforgettable celebration. 🎉</div>
+  <p class="message" id="message">
+    This isn't just a number — it's the result of consistency, learning, creativity, and never stopping.
+    Here's to the next milestone! 🚀
+  </p>
+  <div class="controls">
+   <input id="numInput" value="1M+" aria-label="Achievement number">
+   <select id="theme" aria-label="Theme">
+    <option value="#a855f7">💜 Purple</option>
+    <option value="#22c55e">💚 Green</option>
+    <option value="#3b82f6">💙 Blue</option>
+    <option value="#f59e0b">💛 Gold</option>
+    <option value="#ef4444">❤️ Red</option>
+    <option value="#ec4899">🩷 Pink</option>
+    <option value="#06b6d4">🩵 Cyan</option>
+    <option value="#f97316">🧡 Orange</option>
+   </select>
+   <button id="celebrate">🎆 CELEBRATE!</button>
+  </div>
+  <div class="credit">Change the milestone or theme anytime — the whole celebration updates automatically.</div>
+ </main>
+</div>
+
+<script>
+const canvas=document.getElementById('fx'),ctx=canvas.getContext('2d');
+let W,H,rockets=[],sparks=[],confetti=[];
+const colors=['#fff','#fde68a','#fca5a5','#93c5fd','#86efac','#f0abfc'];
+
+function resize(){W=canvas.width=innerWidth*devicePixelRatio;H=canvas.height=innerHeight*devicePixelRatio;canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+addEventListener('resize',resize);resize();
+
+function accent(){return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#a855f7'}
+function hexToRgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function lighten(hex,n=45){let [r,g,b]=hexToRgb(hex);r=Math.min(255,r+n);g=Math.min(255,g+n);b=Math.min(255,b+n);return `rgb(${r},${g},${b})`}
+
+function launch(){
+ const x=70+Math.random()*(innerWidth-140), target=90+Math.random()*innerHeight*.45;
+ rockets.push({x,y:innerHeight+8,v:-7-Math.random()*3,target,trail:[]});
+}
+function explode(x,y){
+ const base=accent();
+ for(let i=0;i<75;i++){
+  const a=Math.random()*Math.PI*2, s=1.5+Math.random()*5.2;
+  sparks.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,size:1+Math.random()*2.5,color:Math.random()<.65?base:lighten(base,35)});
+ }
+}
+function burstConfetti(){
+ for(let i=0;i<100;i++) confetti.push({x:innerWidth/2,y:innerHeight*.45,vx:(Math.random()-.5)*12,vy:-4-Math.random()*9,g:0.18,life:1,r:Math.random()*6.3,s:5+Math.random()*8});
+}
+function loop(){
+ ctx.clearRect(0,0,innerWidth,innerHeight);
+ rockets.forEach((r,i)=>{
+  r.trail.push({x:r.x,y:r.y}); if(r.trail.length>9)r.trail.shift();
+  ctx.beginPath();ctx.moveTo(r.x,r.y);ctx.lineTo(r.x,r.y+22);ctx.strokeStyle=accent();ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;
+  r.y+=r.v;r.v+=.055;
+  if(r.y<=r.target){explode(r.x,r.y);rockets.splice(i,1)}
+ });
+ sparks.forEach((p,i)=>{
+  p.x+=p.vx;p.y+=p.vy;p.vy+=.055;p.vx*=.985;p.life-=.012;
+  ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  if(p.life<=0)sparks.splice(i,1)
+ });
+ confetti.forEach((p,i)=>{
+  p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.r+=.12;p.life-=.009;
+  ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=i%2?accent():colors[i%colors.length];
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillRect(-3,-5,p.s,p.s*.55);ctx.restore();
+  if(p.life<=0)confetti.splice(i,1)
+ });
+ ctx.globalAlpha=1;requestAnimationFrame(loop)
+}
+loop();
+
+setInterval(()=>{if(Math.random()<.9)launch()},900);
+setInterval(()=>{if(Math.random()<.7)launch()},1500);
+setTimeout(launch,500);setTimeout(launch,1200);
+
+const input=document.getElementById('numInput'),num=document.getElementById('number'),theme=document.getElementById('theme');
+function updateNumber(){
+ let v=input.value.trim()||'1M+';
+ num.textContent=v;
+ document.getElementById('headline').textContent=
+   v.toUpperCase().includes('M') ? 'A MILLION+ ACHIEVEMENTS!' : 'ACHIEVEMENT MILESTONE!';
+ document.getElementById('message').textContent=
+   `This isn't just a number — it's the result of consistency, learning, creativity, and never stopping. Here's to ${v} and the next milestone! 🚀`;
+}
+input.addEventListener('input',updateNumber);
+theme.addEventListener('change',()=>{
+ document.documentElement.style.setProperty('--accent',theme.value);
+ document.documentElement.style.setProperty('--accent2',lighten(theme.value,35));
+});
+document.getElementById('celebrate').onclick=()=>{
+ for(let i=0;i<6;i++)setTimeout(launch,i*170);
+ burstConfetti();
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SchoolStart 2026 🎒</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+    --bg:#07080d;
+    --card:#10131c;
+    --card2:#151923;
+    --gold:#f5c542;
+    --gold2:#ffe58a;
+    --text:#f5f7fb;
+    --muted:#929aaa;
+    --green:#55e6a5;
+    --border:rgba(255,255,255,.09);
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:
+        radial-gradient(circle at 15% 10%,rgba(245,197,66,.13),transparent 28%),
+        radial-gradient(circle at 85% 35%,rgba(80,100,255,.10),transparent 28%),
+        var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* Grid */
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.13;
+
+    background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+
+    background-size:45px 45px;
+}
+
+/* Floating emojis */
+
+.float{
+    position:fixed;
+    pointer-events:none;
+    font-size:22px;
+    opacity:.15;
+    animation:float 12s linear infinite;
+}
+
+@keyframes float{
+    from{
+        transform:translateY(110vh) rotate(0deg);
+    }
+
+    to{
+        transform:translateY(-15vh) rotate(360deg);
+    }
+}
+
+/* Navbar */
+
+nav{
+    position:sticky;
+    top:0;
+    z-index:50;
+
+    backdrop-filter:blur(18px);
+    background:rgba(7,8,13,.75);
+
+    border-bottom:1px solid var(--border);
+}
+
+.nav{
+    max-width:1100px;
+    margin:auto;
+
+    padding:17px 22px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    font-weight:900;
+    letter-spacing:1px;
+}
+
+.logo-box{
+    width:38px;
+    height:38px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:11px;
+
+    background:rgba(245,197,66,.08);
+    border:1px solid rgba(245,197,66,.3);
+
+    font-size:20px;
+}
+
+.nav a{
+    color:var(--muted);
+    text-decoration:none;
+    margin-left:22px;
+    font-size:14px;
+}
+
+.nav a:hover{
+    color:var(--gold);
+}
+
+/* Hero */
+
+.hero{
+    max-width:1100px;
+    margin:auto;
+
+    min-height:650px;
+
+    padding:90px 22px 70px;
+
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:50px;
+    align-items:center;
+}
+
+.badge{
+    display:inline-block;
+
+    padding:8px 14px;
+
+    border-radius:100px;
+
+    background:rgba(245,197,66,.07);
+    border:1px solid rgba(245,197,66,.3);
+
+    color:var(--gold2);
+
+    font-size:13px;
+    font-weight:bold;
+
+    margin-bottom:22px;
+}
+
+.hero h1{
+    font-size:clamp(48px,7vw,82px);
+
+    line-height:.95;
+
+    letter-spacing:-5px;
+}
+
+.hero h1 span{
+    color:var(--gold);
+
+    text-shadow:
+        0 0 35px rgba(245,197,66,.25);
+}
+
+.hero p{
+    margin-top:25px;
+
+    max-width:620px;
+
+    color:var(--muted);
+
+    font-size:18px;
+    line-height:1.7;
+}
+
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+
+    margin-top:30px;
+}
+
+.btn{
+    padding:14px 20px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    transition:.2s;
+}
+
+.primary{
+    border:0;
+
+    background:var(--gold);
+    color:#111;
+}
+
+.primary:hover{
+    transform:translateY(-3px);
+
+    box-shadow:
+        0 15px 35px rgba(245,197,66,.2);
+}
+
+.secondary{
+    background:rgba(255,255,255,.04);
+
+    color:var(--text);
+
+    border:1px solid var(--border);
+}
+
+.secondary:hover{
+    border-color:rgba(245,197,66,.4);
+}
+
+/* School illustration */
+
+.school{
+    position:relative;
+
+    min-height:380px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.school-building{
+    width:330px;
+    height:230px;
+
+    position:relative;
+
+    background:
+        linear-gradient(145deg,#171b27,#0c0f17);
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:18px 18px 8px 8px;
+
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.45),
+        0 0 50px rgba(245,197,66,.07);
+}
+
+.roof{
+    position:absolute;
+
+    top:-75px;
+    left:-25px;
+
+    width:380px;
+    height:100px;
+
+    background:#11151e;
+
+    clip-path:polygon(50% 0,100% 100%,0 100%);
+
+    border-bottom:2px solid var(--gold);
+}
+
+.school-title{
+    position:absolute;
+
+    top:25px;
+    left:0;
+    right:0;
+
+    text-align:center;
+
+    color:var(--gold);
+
+    font-weight:900;
+
+    letter-spacing:2px;
+}
+
+.windows{
+    position:absolute;
+
+    left:35px;
+    right:35px;
+    top:75px;
+
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+}
+
+.window{
+    height:50px;
+
+    border:1px solid rgba(245,197,66,.25);
+
+    background:
+        linear-gradient(135deg,
+        rgba(245,197,66,.12),
+        rgba(255,255,255,.03));
+
+    border-radius:7px;
+
+    box-shadow:
+        inset 0 0 20px rgba(245,197,66,.05);
+}
+
+.door{
+    position:absolute;
+
+    bottom:0;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    width:65px;
+    height:105px;
+
+    background:#090b10;
+
+    border:1px solid rgba(255,255,255,.1);
+
+    border-radius:8px 8px 0 0;
+}
+
+.flag{
+    position:absolute;
+
+    right:35px;
+    top:-65px;
+
+    width:3px;
+    height:90px;
+
+    background:#aaa;
+}
+
+.flag::after{
+    content:"";
+
+    position:absolute;
+
+    top:0;
+    left:3px;
+
+    width:55px;
+    height:30px;
+
+    background:var(--gold);
+
+    clip-path:polygon(
+        0 0,
+        100% 0,
+        80% 50%,
+        100% 100%,
+        0 100%
+    );
+}
+
+/* Sections */
+
+section{
+    max-width:1100px;
+    margin:auto;
+
+    padding:70px 22px;
+}
+
+.small-title{
+    color:var(--gold);
+
+    font-size:12px;
+    font-weight:bold;
+
+    letter-spacing:2px;
+}
+
+.section-title{
+    margin-top:8px;
+
+    font-size:36px;
+}
+
+/* Cards */
+
+.cards{
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:18px;
+
+    margin-top:30px;
+}
+
+.card{
+    padding:25px;
+
+    border-radius:18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.055),
+            rgba(255,255,255,.018)
+        );
+
+    border:1px solid var(--border);
+
+    transition:.25s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+
+    border-color:
+        rgba(245,197,66,.35);
+}
+
+.card-icon{
+    font-size:31px;
+
+    margin-bottom:18px;
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+.card p{
+    color:var(--muted);
+
+    line-height:1.6;
+
+    font-size:14px;
+}
+
+/* Countdown */
+
+.countdown{
+    margin-top:30px;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:15px;
+}
+
+.time-box{
+    text-align:center;
+
+    padding:25px 10px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:16px;
+}
+
+.time{
+    font-size:42px;
+
+    font-weight:900;
+
+    color:var(--gold);
+}
+
+.label{
+    margin-top:7px;
+
+    color:var(--muted);
+
+    font-size:12px;
+
+    text-transform:uppercase;
+}
+
+/* Goals */
+
+.goal-box{
+    margin-top:30px;
+
+    padding:28px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:20px;
+}
+
+.goal-input{
+    display:flex;
+
+    gap:10px;
+
+    margin-top:18px;
+}
+
+.goal-input input{
+    flex:1;
+
+    padding:14px;
+
+    border-radius:11px;
+
+    border:1px solid var(--border);
+
+    background:#090b10;
+
+    color:white;
+
+    outline:none;
+}
+
+.goal-input input:focus{
+    border-color:var(--gold);
+}
+
+.goals{
+    margin-top:20px;
+
+    display:grid;
+
+    gap:10px;
+}
+
+.goal{
+    display:flex;
+
+    justify-content:space-between;
+    align-items:center;
+
+    padding:13px 15px;
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+}
+
+.goal.done{
+    opacity:.55;
+
+    text-decoration:line-through;
+}
+
+.goal button{
+    border:0;
+
+    background:none;
+
+    color:var(--gold);
+
+    cursor:pointer;
+
+    font-size:17px;
+}
+
+/* Challenge */
+
+.challenge{
+    margin-top:30px;
+
+    padding:30px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(245,197,66,.09),
+            rgba(255,255,255,.02)
+        );
+
+    border:1px solid rgba(245,197,66,.18);
+
+    border-radius:20px;
+}
+
+.question{
+    font-size:20px;
+
+    line-height:1.6;
+
+    margin:20px 0;
+}
+
+.options{
+    display:grid;
+
+    gap:10px;
+}
+
+.option{
+    padding:15px;
+
+    text-align:left;
+
+    border-radius:11px;
+
+    background:rgba(0,0,0,.2);
+
+    color:var(--text);
+
+    border:1px solid var(--border);
+
+    cursor:pointer;
+}
+
+.option:hover{
+    border-color:rgba(245,197,66,.4);
+}
+
+.correct{
+    border-color:var(--green)!important;
+
+    background:rgba(85,230,165,.08);
+}
+
+.wrong{
+    border-color:#ff647c!important;
+
+    background:rgba(255,100,124,.08);
+}
+
+#answerResult{
+    margin-top:17px;
+
+    min-height:22px;
+
+    font-weight:bold;
+}
+
+/* Quote */
+
+.quote{
+    text-align:center;
+
+    padding:110px 22px;
+}
+
+.quote h2{
+    font-size:clamp(35px,6vw,62px);
+
+    line-height:1.05;
+}
+
+.quote span{
+    color:var(--gold);
+}
+
+.quote p{
+    max-width:600px;
+
+    margin:20px auto;
+
+    color:var(--muted);
+
+    line-height:1.7;
+}
+
+/* Toast */
+
+.toast{
+    position:fixed;
+
+    right:20px;
+    bottom:20px;
+
+    z-index:100;
+
+    padding:15px 18px;
+
+    background:#121620;
+
+    border:1px solid rgba(245,197,66,.3);
+
+    border-radius:12px;
+
+    transform:translateY(120px);
+
+    opacity:0;
+
+    transition:.3s;
+}
+
+.toast.show{
+    transform:translateY(0);
+
+    opacity:1;
+}
+
+/* Footer */
+
+footer{
+    padding:30px 20px;
+
+    text-align:center;
+
+    color:var(--muted);
+
+    border-top:1px solid var(--border);
+
+    font-size:13px;
+}
+
+footer span{
+    color:var(--gold);
+}
+
+/* Responsive */
+
+@media(max-width:800px){
+
+    .hero{
+        grid-template-columns:1fr;
+
+        padding-top:65px;
+    }
+
+    .school-building{
+        transform:scale(.85);
+    }
+
+    .cards{
+        grid-template-columns:1fr;
+    }
+
+    .countdown{
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+    .nav-links{
+        display:none;
+    }
+}
+
+@media(max-width:450px){
+
+    .hero h1{
+        letter-spacing:-3px;
+    }
+
+    .school-building{
+        transform:scale(.65);
+    }
+
+    .countdown{
+        gap:8px;
+    }
+
+    .time{
+        font-size:32px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Floating decorations -->
+
+<div class="float" style="left:7%;animation-delay:0s">📚</div>
+<div class="float" style="left:18%;animation-delay:3s">✏️</div>
+<div class="float" style="left:31%;animation-delay:6s">🎒</div>
+<div class="float" style="left:48%;animation-delay:2s">📐</div>
+<div class="float" style="left:65%;animation-delay:5s">💻</div>
+<div class="float" style="left:82%;animation-delay:1s">🚀</div>
+<div class="float" style="left:94%;animation-delay:7s">📖</div>
+
+
+<!-- NAV -->
+
+<nav>
+
+    <div class="nav">
+
+        <div class="logo">
+
+            <div class="logo-box">
+                🎒
+            </div>
+
+            SCHOOLSTART
+
+        </div>
+
+        <div class="nav-links">
+
+            <a href="#features">Features</a>
+            <a href="#countdown">Countdown</a>
+            <a href="#goals">Goals</a>
+            <a href="#challenge">Challenge</a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+<!-- HERO -->
+
+<header class="hero">
+
+    <div>
+
+        <div class="badge">
+            🎓 BACK TO SCHOOL 2026
+        </div>
+
+        <h1>
+            New Year.<br>
+            New Goals.<br>
+            <span>New Me.</span>
+        </h1>
+
+        <p>
+            A fresh school year means new lessons,
+            new challenges, new memories and new
+            opportunities to become a better version
+            of yourself.
+        </p>
+
+        <div class="buttons">
+
+            <button
+                class="btn primary"
+                onclick="scrollToGoals()">
+
+                🎯 Set My Goals
+
+            </button>
+
+            <button
+                class="btn secondary"
+                onclick="celebrate()">
+
+                🎉 Let's Go!
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- SCHOOL -->
+
+    <div class="school">
+
+        <div class="school-building">
+
+            <div class="roof"></div>
+
+            <div class="flag"></div>
+
+            <div class="school-title">
+                SCHOOL 2026
+            </div>
+
+            <div class="windows">
+
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="window"></div>
+
+            </div>
+
+            <div class="door"></div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- FEATURES -->
+
+<section id="features">
+
+    <div class="small-title">
+        01 / NEW BEGINNING
+    </div>
+
+    <h2 class="section-title">
+        Ready for a new chapter?
+    </h2>
+
+
+    <div class="cards">
+
+        <div class="card">
+
+            <div class="card-icon">📚</div>
+
+            <h3>
+                Learn
+            </h3>
+
+            <p>
+                Discover new subjects, skills and
+                ideas. Every lesson is a step forward.
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">🎯</div>
+
+            <h3>
+                Focus
+            </h3>
+
+            <p>
+                Set meaningful goals and turn big
+                dreams into small daily actions.
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">🚀</div>
+
+            <h3>
+                Grow
+            </h3>
+
+            <p>
+                Make mistakes, learn from them and
+                keep improving throughout the year.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- COUNTDOWN -->
+
+<section id="countdown">
+
+    <div class="small-title">
+        02 / THE NEW CHAPTER
+    </div>
+
+    <h2 class="section-title">
+        School year countdown
+    </h2>
+
+    <div class="countdown">
+
+        <div class="time-box">
+
+            <div
+                class="time"
+                id="days">
+                00
+            </div>
+
+            <div class="label">
+                Days
+            </div>
+
+        </div>
+
+
+        <div class="time-box">
+
+            <div
+                class="time"
+                id="hours">
+                00
+            </div>
+
+            <div class="label">
+                Hours
+            </div>
+
+        </div>
+
+
+        <div class="time-box">
+
+            <div
+                class="time"
+                id="minutes">
+                00
+            </div>
+
+            <div class="label">
+                Minutes
+            </div>
+
+        </div>
+
+
+        <div class="time-box">
+
+            <div
+                class="time"
+                id="seconds">
+                00
+            </div>
+
+            <div class="label">
+                Seconds
+            </div>
+
+        </div>
+
+    </div>
+
+    <p
+        style="
+        color:var(--muted);
+        margin-top:15px;
+        font-size:13px;
+        ">
+
+        Countdown target:
+        September 23, 2026
+
+    </p>
+
+</section>
+
+
+<!-- GOALS -->
+
+<section id="goals">
+
+    <div class="small-title">
+        03 / MY GOALS
+    </div>
+
+    <h2 class="section-title">
+        What will you achieve?
+    </h2>
+
+
+    <div class="goal-box">
+
+        <p style="color:var(--muted)">
+            Write a goal for this school year.
+        </p>
+
+        <div class="goal-input">
+
+            <input
+                id="goalInput"
+                type="text"
+                placeholder="e.g. Learn Python deeply...">
+
+            <button
+                class="btn primary"
+                onclick="addGoal()">
+
+                Add
+
+            </button>
+
+        </div>
+
+
+        <div
+            class="goals"
+            id="goalsList">
+
+            <div class="goal">
+
+                <span>
+                    🚀 Make this year count
+                </span>
+
+                <button
+                    onclick="completeGoal(this)">
+                    ✓
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- CHALLENGE -->
+
+<section id="challenge">
+
+    <div class="small-title">
+        04 / MINI CHALLENGE
+    </div>
+
+    <h2 class="section-title">
+        Warm up your brain 🧠
+    </h2>
+
+
+    <div class="challenge">
+
+        <div style="color:var(--gold);font-weight:bold">
+            ⚡ Question #001
+        </div>
+
+        <div class="question">
+
+            Which language is commonly used
+            for web page interactivity?
+
+        </div>
+
+
+        <div class="options">
+
+            <button
+                class="option"
+                onclick="checkAnswer(this,false)">
+
+                Python
+
+            </button>
+
+
+            <button
+                class="option"
+                onclick="checkAnswer(this,false)">
+
+                HTML
+
+            </button>
+
+
+            <button
+                class="option"
+                onclick="checkAnswer(this,true)">
+
+                JavaScript
+
+            </button>
+
+
+            <button
+                class="option"
+                onclick="checkAnswer(this,false)">
+
+                SQL
+
+            </button>
+
+        </div>
+
+
+        <div id="answerResult"></div>
+
+    </div>
+
+</section>
+
+
+<!-- FINAL -->
+
+<section class="quote">
+
+    <h2>
+        Your next chapter<br>
+        starts <span>now.</span>
+    </h2>
+
+    <p>
+        Don't try to become perfect.
+        Try to become better than yesterday.
+    </p>
+
+    <button
+        class="btn primary"
+        onclick="celebrate()">
+
+        🎒 Start the Year
+
+    </button>
+
+</section>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+    Made with
+    <span>&lt;/&gt;</span>
+    + 📚
+    + ☕
+    + ambition
+
+    <br><br>
+
+    SchoolStart © 2026
+
+</footer>
+
+
+<!-- TOAST -->
+
+<div
+    class="toast"
+    id="toast">
+</div>
+
+
+<script>
+
+/* ==============================
+   COUNTDOWN
+============================== */
+
+const schoolDate =
+    new Date("September 23, 2026 00:00:00").getTime();
+
+
+function updateCountdown(){
+
+    const now =
+        new Date().getTime();
+
+    const distance =
+        schoolDate - now;
+
+
+    if(distance <= 0){
+
+        document.getElementById("days").textContent = "00";
+        document.getElementById("hours").textContent = "00";
+        document.getElementById("minutes").textContent = "00";
+        document.getElementById("seconds").textContent = "00";
+
+        return;
+    }
+
+
+    const days =
+        Math.floor(
+            distance /
+            (1000 * 60 * 60 * 24)
+        );
+
+
+    const hours =
+        Math.floor(
+            (distance /
+            (1000 * 60 * 60)) % 24
+        );
+
+
+    const minutes =
+        Math.floor(
+            (distance /
+            (1000 * 60)) % 60
+        );
+
+
+    const seconds =
+        Math.floor(
+            (distance / 1000) % 60
+        );
+
+
+    document.getElementById("days")
+        .textContent = String(days).padStart(2,"0");
+
+
+    document.getElementById("hours")
+        .textContent = String(hours).padStart(2,"0");
+
+
+    document.getElementById("minutes")
+        .textContent = String(minutes).padStart(2,"0");
+
+
+    document.getElementById("seconds")
+        .textContent = String(seconds).padStart(2,"0");
+}
+
+
+updateCountdown();
+
+setInterval(updateCountdown,1000);
+
+/* ==============================
+   GOALS
+============================== */
+
+function addGoal(){
+
+    const input =
+        document.getElementById("goalInput");
+
+    const text =
+        input.value.trim();
+
+
+    if(!text){
+
+        showToast("✏️ Write a goal first!");
+
+        return;
+    }
+
+
+    const goal =
+        document.createElement("div");
+
+    goal.className = "goal";
+
+
+    goal.innerHTML = `
+
+        <span>
+            🎯 ${escapeHTML(text)}
+        </span>
+
+        <button
+            onclick="completeGoal(this)">
+            ✓
+        </button>
+
+    `;
+
+
+    document
+        .getElementById("goalsList")
+        .appendChild(goal);
+
+
+    input.value = "";
+
+    showToast("🎯 Goal added!");
+
+}
+
+
+function completeGoal(button){
+
+    const goal =
+        button.parentElement;
+
+    goal.classList.toggle("done");
+
+    if(goal.classList.contains("done")){
+
+        showToast("🏆 Goal completed!");
+
+    }else{
+
+        showToast("🔄 Goal reopened!");
+
+    }
+
+}
+
+
+/* Prevent HTML injection */
+
+function escapeHTML(text){
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+
+/* ==============================
+   CHALLENGE
+============================== */
+
+function checkAnswer(button,correct){
+
+    const options =
+        document.querySelectorAll(".option");
+
+
+    options.forEach(option=>{
+        option.disabled = true;
+    });
+
+
+    const result =
+        document.getElementById("answerResult");
+
+
+    if(correct){
+
+        button.classList.add("correct");
+
+        result.textContent =
+            "✅ Correct! Your brain is ready for school.";
+
+        result.style.color =
+            "var(--green)";
+
+        showToast("🧠 Correct answer!");
+
+    }else{
+
+        button.classList.add("wrong");
+
+        result.textContent =
+            "❌ Not quite. Keep learning!";
+
+        result.style.color =
+            "#ff647c";
+
+    }
+
+}
+
+
+/* ==============================
+   NAVIGATION
+============================== */
+
+function scrollToGoals(){
+
+    document
+        .getElementById("goals")
+        .scrollIntoView({
+            behavior:"smooth"
+        });
+
+}
+
+
+/* ==============================
+   CELEBRATION
+============================== */
+
+function celebrate(){
+
+    showToast(
+        "🎉 New school year. New goals. Let's go!"
+    );
+
+
+    for(let i=0;i<35;i++){
+
+        const piece =
+            document.createElement("div");
+
+
+        piece.style.position =
+            "fixed";
+
+        piece.style.left =
+            Math.random()*100 + "vw";
+
+        piece.style.top =
+            "-10px";
+
+        piece.style.width =
+            "8px";
+
+        piece.style.height =
+            "8px";
+
+        piece.style.borderRadius =
+            "2px";
+
+        piece.style.background =
+            Math.random() > .5
+            ? "#f5c542"
+            : "#ffffff";
+
+        piece.style.zIndex =
+            "999";
+
+
+        document.body.appendChild(piece);
+
+
+        const duration =
+            1400 +
+            Math.random()*2200;
+
+
+        piece.animate(
+
+            [
+                {
+                    transform:
+                        "translateY(0) rotate(0deg)",
+                    opacity:1
+                },
+
+                {
+                    transform:
+                        `translateY(110vh)
+                         rotate(${Math.random()*900}deg)`,
+                    opacity:0
+                }
+            ],
+
+            {
+                duration:duration,
+                easing:"cubic-bezier(.2,.7,.3,1)"
+            }
+
+        );
+
+
+        setTimeout(()=>{
+            piece.remove();
+        },duration);
+
+    }
+
+}
+
+
+/* ==============================
+   TOAST
+============================== */
+
+let toastTimer;
+
+
+function showToast(message){
+
+    const toast =
+        document.getElementById("toast");
+
+
+    toast.textContent =
+        message;
+
+
+    toast.classList.add("show");
+
+
+    clearTimeout(toastTimer);
+
+
+    toastTimer =
+        setTimeout(()=>{
+
+            toast.classList.remove("show");
+
+        },2500);
+
+}
+
+
+/* ==============================
+   ENTER KEY FOR GOALS
+============================== */
+
+document
+    .getElementById("goalInput")
+    .addEventListener("keydown",function(event){
+
+        if(event.key === "Enter"){
+
+            addGoal();
+
+        }
+
+    });
+
+</script>
+
+</body>
+</html>

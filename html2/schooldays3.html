@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بازگشایی مدرسه</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Tahoma, Arial, sans-serif;
+      color: #1e293b;
+      background: linear-gradient(135deg, #dbeafe, #fef3c7 50%, #dcfce7);
+      padding: 25px 15px 45px;
+    }
+
+    .container {
+      max-width: 1060px;
+      margin: auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 5vw, 48px);
+      color: #1d4ed8;
+    }
+
+    .intro {
+      margin: 0;
+      color: #475569;
+      font-size: 16px;
+      line-height: 1.9;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 24px 0;
+    }
+
+    .stat {
+      padding: 20px 12px;
+      text-align: center;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 8px 24px rgba(30, 64, 175, 0.1);
+    }
+
+    .stat strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #1d4ed8;
+      font-size: 28px;
+    }
+
+    .stat span {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+
+    .panel {
+      padding: 22px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 0 10px 30px rgba(30, 64, 175, 0.12);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      color: #0f766e;
+      font-size: 22px;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 14px;
+      overflow: hidden;
+      border-radius: 50px;
+      background: #e2e8f0;
+      margin-bottom: 18px;
+    }
+
+    #progress {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #14b8a6);
+      transition: width 0.25s ease;
+    }
+
+    #progressText {
+      margin: 0 0 18px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .task:hover {
+      background: #f8fafc;
+    }
+
+    .task:last-child {
+      border-bottom: 0;
+    }
+
+    .task input {
+      width: 20px;
+      height: 20px;
+      accent-color: #16a34a;
+      cursor: pointer;
+    }
+
+    .task span {
+      flex: 1;
+      line-height: 1.8;
+    }
+
+    .task.done span {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+
+    .schedule {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+
+    .schedule th,
+    .schedule td {
+      padding: 12px 8px;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .schedule th {
+      color: white;
+      background: #2563eb;
+      font-size: 14px;
+    }
+
+    .schedule td {
+      font-size: 14px;
+    }
+
+    .schedule tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .tip {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 15px;
+      color: #7c2d12;
+      background: #ffedd5;
+      line-height: 1.9;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      border: none;
+      border-radius: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 15px;
+      color: white;
+      background: #ef4444;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      background: #dc2626;
+    }
+
+    @media (max-width: 760px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎒 به مدرسه خوش آمدی!</h1>
+      <p class="intro">
+        یک شروع تازه، فرصت‌های تازه و کلی چیز جدید برای یاد گرفتن.
+        با این برنامه آماده‌ی سال تحصیلی باش.
+      </p>
+    </header>
+
+    <section class="stats">
+      <div class="stat">
+        <strong id="day">--</strong>
+        <span>امروز چندم ماه است</span>
+      </div>
+
+      <div class="stat">
+        <strong id="time">--:--</strong>
+        <span>ساعت فعلی</span>
+      </div>
+
+      <div class="stat">
+        <strong id="completed">0</strong>
+        <span>کار انجام‌شده</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>✅ چک‌لیست آماده‌شدن برای مدرسه</h2>
+
+        <div class="progress-wrap">
+          <div id="progress"></div>
+        </div>
+
+        <p id="progressText">هنوز کاری انتخاب نشده است.</p>
+
+        <label class="task">
+          <input type="checkbox" data-id="bag">
+          <span>کیف مدرسه را مرتب کردم.</span>
+        </label>
+
+        <label class="task">
+          <input type="checkbox" data-id="books">
+          <span>کتاب‌ها و دفترها را آماده کردم.</span>
+        </label>
+
+        <label class="task">
+          <input type="checkbox" data-id="stationery">
+          <span>مداد، خودکار، پاک‌کن و تراش را گذاشتم.</span>
+        </label>
+
+        <label class="task">
+          <input type="checkbox" data-id="uniform">
+          <span>لباس فرم یا لباس فردا را آماده کردم.</span>
+        </label>
+
+        <label class="task">
+          <input type="checkbox" data-id="sleep">
+          <span>برای خواب به‌موقع برنامه دارم.</span>
+        </label>
+
+        <label class="task">
+          <input type="checkbox" data-id="goal">
+          <span>یک هدف برای سال تحصیلی نوشته‌ام.</span>
+        </label>
+
+        <button onclick="resetTasks()">پاک کردن تیک‌ها</button>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h2>📚 نمونه برنامه‌ی کلاسی</h2>
+
+          <table class="schedule">
+            <thead>
+              <tr>
+                <th>زنگ</th>
+                <th>درس</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>اول</td>
+                <td>ریاضی</td>
+              </tr>
+              <tr>
+                <td>دوم</td>
+                <td>علوم</td>
+              </tr>
+              <tr>
+                <td>سوم</td>
+                <td>فارسی</td>
+              </tr>
+              <tr>
+                <td>چهارم</td>
+                <td>انگلیسی</td>
+              </tr>
+              <tr>
+                <td>پنجم</td>
+                <td>ورزش / هنر</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tip" id="tip">
+          💡 نکته امروز: لازم نیست از همان روز اول کامل باشی؛ مهم این است که با انگیزه و نظم شروع کنی.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const progress = document.getElementById("progress");
+    const progressText = document.getElementById("progressText");
+    const completed = document.getElementById("completed");
+
+    const tips = [
+      "💡 نکته امروز: لازم نیست از همان روز اول کامل باشی؛ مهم این است که با انگیزه و نظم شروع کنی.",
+      "📌 هر شب فقط ۱۰ دقیقه برای مرتب کردن کیف فردا وقت بگذار.",
+      "🧠 سؤال پرسیدن نشانه‌ی ضعف نیست؛ نشانه‌ی یادگیری است.",
+      "🎯 هدف‌های کوچک و روزانه، به موفقیت‌های بزرگ تبدیل می‌شوند.",
+      "🌟 با احترام به معلم و هم‌کلاسی‌ها، مدرسه جای بهتری می‌شود."
+    ];
+
+    document.getElementById("tip").textContent =
+      tips[Math.floor(Math.random() * tips.length)];
+
+    function updateClock() {
+      const now = new Date();
+
+      document.getElementById("time").textContent =
+        now.toLocaleTimeString("fa-IR", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+      document.getElementById("day").textContent =
+        now.toLocaleDateString("fa-IR", {
+          day: "numeric",
+          month: "long"
+        });
+    }
+
+    function updateTasks() {
+      let count = 0;
+
+      checkboxes.forEach((checkbox) => {
+        const saved = localStorage.getItem("school-" + checkbox.dataset.id);
+        checkbox.checked = saved === "true";
+
+        checkbox.closest(".task").classList.toggle("done", checkbox.checked);
+
+        if (checkbox.checked) count++;
+      });
+
+      const percent = (count / checkboxes.length) * 100;
+
+      progress.style.width = percent + "%";
+      completed.textContent = count;
+
+      if (count === 0) {
+        progressText.textContent = "هنوز کاری انتخاب نشده است.";
+      } else if (count === checkboxes.length) {
+        progressText.textContent = "عالیه! برای مدرسه کاملاً آماده‌ای 🎉";
+      } else {
+        progressText.textContent =
+          count + " کار از " + checkboxes.length + " کار انجام شده است.";
+      }
+    }
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        localStorage.setItem(
+          "school-" + checkbox.dataset.id,
+          checkbox.checked
+        );
+
+        checkbox.closest(".task").classList.toggle("done", checkbox.checked);
+        updateTasks();
+      });
+    });
+
+    function resetTasks() {
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+        localStorage.removeItem("school-" + checkbox.dataset.id);
+      });
+
+      updateTasks();
+    }
+
+    updateClock();
+    updateTasks();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

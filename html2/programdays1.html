@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programmer's Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#100e0a;
+    --bg-panel:#17140f;
+    --ink:#f4ead9;
+    --amber:#ffb547;
+    --amber-dim:#8a6a3a;
+    --teal:#3fc9b0;
+    --line:#2c261c;
+    --danger:#e8604c;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4ead9;
+      --bg-panel:#ffffff;
+      --ink:#1a1610;
+      --line:#e3d7bf;
+      --amber-dim:#b08a4e;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4ead9;
+    --bg-panel:#ffffff;
+    --ink:#1a1610;
+    --line:#e3d7bf;
+    --amber-dim:#b08a4e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'JetBrains Mono', ui-monospace, monospace;
+    min-height:100vh;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  canvas#rain{
+    position:fixed; inset:0; width:100%; height:100%;
+    opacity:0.14; pointer-events:none; z-index:0;
+  }
+  .wrap{
+    position:relative; z-index:1;
+    max-width:760px;
+    margin:0 auto;
+    padding:48px 20px 80px;
+  }
+  .term{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,0.5);
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    color:var(--amber-dim);
+    font-size:13px;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--amber-dim);opacity:0.5;}
+  .term-body{padding:28px 24px 32px; min-height:150px;}
+  .prompt{color:var(--teal);}
+  #typed{white-space:pre-wrap; font-size:17px;}
+  #typed .cursor{display:inline-block;width:9px;height:1.1em;background:var(--amber);vertical-align:text-bottom;margin-left:2px;animation:blink 1s step-end infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  h1.headline{
+    font-size:clamp(28px, 6vw, 44px);
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:40px 0 6px;
+    color:var(--amber);
+  }
+  p.sub{color:var(--amber-dim); margin:0 0 40px; font-size:15px;}
+
+  .log-entry{
+    display:grid;
+    grid-template-columns:76px 1fr;
+    gap:16px;
+    padding:16px 0;
+    border-top:1px solid var(--line);
+  }
+  .log-entry:last-child{border-bottom:1px solid var(--line);}
+  .log-year{color:var(--teal); font-weight:700; font-size:14px; padding-top:2px;}
+  .log-msg{font-size:14.5px;}
+  .log-hash{color:var(--amber-dim); font-size:12px; margin-right:8px;}
+
+  section{margin-top:56px;}
+  h2.section-title{
+    font-size:15px; font-weight:700; color:var(--teal);
+    margin:0 0 4px; text-transform:none;
+  }
+
+  .joke-box{
+    margin-top:16px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px 20px;
+    min-height:70px;
+    font-size:15.5px;
+  }
+  .joke-box .q{color:var(--ink);}
+  .joke-box .out{color:var(--amber-dim); margin-top:8px; font-size:13.5px;}
+  button{
+    margin-top:16px;
+    font-family:inherit;
+    background:transparent;
+    color:var(--amber);
+    border:1px solid var(--amber-dim);
+    border-radius:6px;
+    padding:10px 18px;
+    font-size:14px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  button:hover{border-color:var(--amber);}
+  button:active{transform:scale(0.98);}
+  button:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+
+  footer{
+    margin-top:60px;
+    color:var(--amber-dim);
+    font-size:12.5px;
+    border-top:1px solid var(--line);
+    padding-top:20px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #typed .cursor{animation:none;}
+  }
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div class="wrap">
+
+  <div class="term">
+    <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;&nbsp;whoami</div>
+    <div class="term-body">
+      <span class="prompt">$</span> <span id="typed"></span>
+    </div>
+  </div>
+
+  <h1 class="headline">Happy Programmer's Day.</h1>
+  <p class="sub">The 256th day of the year — the highest power of two that fits. Somebody had to notice.</p>
+
+  <section>
+    <h2 class="section-title">git log --oneline --the-craft</h2>
+    <div id="log"></div>
+  </section>
+
+  <section>
+    <h2 class="section-title">run ./cope.sh</h2>
+    <div class="joke-box">
+      <div class="q" id="joke-q">Click run to compile a joke. No warnings guaranteed.</div>
+      <div class="out" id="joke-a"></div>
+    </div>
+    <button id="joke-btn">▶ run</button>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- typed intro line ----
+  var typedEl = document.getElementById('typed');
+  var line = "one more line of code closer to done.";
+  var i = 0;
+  function typeStep(){
+    if(i <= line.length){
+      typedEl.textContent = line.slice(0, i);
+      i++;
+      setTimeout(typeStep, 34);
+    } else {
+      var cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      typedEl.appendChild(cursor);
+    }
+  }
+  typeStep();
+
+  // ---- commit log of programming milestones ----
+  var entries = [
+    { year: "1843", hash: "a1b2c3d", msg: "Ada Lovelace writes the first published algorithm, for the Analytical Engine." },
+    { year: "1957", hash: "e4f5a6b", msg: "FORTRAN ships. Compilers stop being a research curiosity." },
+    { year: "1969", hash: "7c8d9e0", msg: "Unix begins at Bell Labs, on a spare PDP-7." },
+    { year: "1991", hash: "f1a2b3c", msg: "Linus Torvalds posts about a hobby OS. It was not just a hobby." },
+    { year: "1995", hash: "d4e5f6a", msg: "JavaScript is written in ten days and never really slows down." },
+    { year: "2004", hash: "b7c8d9e", msg: "Git is created to manage the Linux kernel's history." },
+    { year: "2026", hash: "you----", msg: "You show up and ship something anyway. That's the job." }
+  ];
+  var log = document.getElementById('log');
+  entries.forEach(function(e){
+    var row = document.createElement('div');
+    row.className = 'log-entry';
+    row.innerHTML =
+      '<div class="log-year">' + e.year + '</div>' +
+      '<div class="log-msg"><span class="log-hash">' + e.hash + '</span>' + e.msg + '</div>';
+    log.appendChild(row);
+  });
+
+  // ---- joke generator ----
+  var jokes = [
+    ["Why do programmers prefer dark mode?", "Because light attracts bugs."],
+    ["How many programmers does it take to change a light bulb?", "None — that's a hardware problem."],
+    ["Why did the developer go broke?", "They used up all their cache."],
+    ["What's a programmer's favorite place?", "The foo bar."],
+    ["Why do Java developers wear glasses?", "Because they don't C#."],
+    ["What do you call a programmer from Finland?", "Nerdic."],
+    ["Why was the function sad after a party?", "It didn't get called."],
+    ["What's the object-oriented way to become wealthy?", "Inheritance."]
+  ];
+  var used = [];
+  var btn = document.getElementById('joke-btn');
+  var qEl = document.getElementById('joke-q');
+  var aEl = document.getElementById('joke-a');
+  btn.addEventListener('click', function(){
+    if(used.length === jokes.length) used = [];
+    var idx;
+    do { idx = Math.floor(Math.random() * jokes.length); } while(used.indexOf(idx) !== -1);
+    used.push(idx);
+    qEl.textContent = jokes[idx][0];
+    aEl.textContent = "> " + jokes[idx][1];
+  });
+
+  // ---- footer timestamp ----
+  document.getElementById('foot').textContent =
+    "compiled on " + new Date().toDateString() + " — zero errors, several life choices.";
+
+  // ---- subtle falling-code backdrop ----
+  var canvas = document.getElementById('rain');
+  var ctx = canvas.getContext('2d');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cols, drops, glyphs = "01{}<>/;=+-*[]#".split("");
+  var fontSize = 15;
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = new Array(cols).fill(0).map(function(){ return Math.random() * -50; });
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function draw(){
+    ctx.fillStyle = 'rgba(16,14,10,0.06)';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    ctx.fillStyle = '#ffb547';
+    ctx.font = fontSize + 'px monospace';
+    for(var x = 0; x < cols; x++){
+      var g = glyphs[Math.floor(Math.random()*glyphs.length)];
+      ctx.fillText(g, x*fontSize, drops[x]*fontSize);
+      if(drops[x]*fontSize > canvas.height && Math.random() > 0.975){
+        drops[x] = 0;
+      }
+      drops[x]++;
+    }
+  }
+  if(!reduceMotion){
+    setInterval(draw, 60);
+  }
+})();
+</script>
+</body>
+</html>

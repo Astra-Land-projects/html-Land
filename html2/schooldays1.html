@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Back to School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf6ec;
+    --paper-line:#dfd6bd;
+    --ink:#2b3a55;
+    --ink-soft:#6b7a99;
+    --highlight:#ffd966;
+    --coral:#e8604c;
+    --panel:#ffffff;
+    --margin-line:#e3a1a1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#211d17;
+      --paper-line:#3a3327;
+      --ink:#f2ece0;
+      --ink-soft:#b7ac97;
+      --panel:#2a2419;
+      --margin-line:#7a4b4b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#211d17;
+    --paper-line:#3a3327;
+    --ink:#f2ece0;
+    --ink-soft:#b7ac97;
+    --panel:#2a2419;
+    --margin-line:#7a4b4b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 31px, var(--paper-line) 32px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    min-height:100vh;
+  }
+  .margin-rule{
+    position:fixed; top:0; bottom:0; left:56px; width:1px;
+    background:var(--margin-line); opacity:0.5; z-index:0;
+  }
+  @media (max-width:640px){ .margin-rule{ display:none; } }
+
+  .wrap{
+    position:relative; z-index:1;
+    max-width:820px;
+    margin:0 auto;
+    padding:56px 24px 90px 88px;
+  }
+  @media (max-width:640px){ .wrap{ padding:40px 20px 70px; } }
+
+  h1{
+    font-family:'Caveat', cursive;
+    font-weight:700;
+    font-size:clamp(40px, 8vw, 64px);
+    margin:0 0 2px;
+    color:var(--coral);
+    line-height:1;
+  }
+  p.sub{
+    color:var(--ink-soft);
+    margin:0 0 44px;
+    font-size:15.5px;
+    max-width:56ch;
+  }
+
+  section{margin-bottom:52px;}
+  h2{
+    font-family:'Caveat', cursive;
+    font-weight:700;
+    font-size:28px;
+    color:var(--ink);
+    margin:0 0 14px;
+  }
+
+  /* countdown */
+  .countdown-row{
+    display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+  }
+  .stamp{
+    background:var(--panel);
+    border:2px solid var(--ink);
+    border-radius:10px;
+    padding:14px 22px;
+    text-align:center;
+    transform:rotate(-2deg);
+  }
+  .stamp .n{ font-size:40px; font-weight:700; line-height:1; }
+  .stamp .l{ font-size:12px; color:var(--ink-soft); letter-spacing:0.03em; margin-top:4px;}
+  .date-field{
+    display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--ink-soft);
+  }
+  input[type="date"]{
+    font-family:'Inter', sans-serif;
+    font-size:15px;
+    padding:8px 10px;
+    border:1.5px solid var(--paper-line);
+    border-radius:8px;
+    background:var(--panel);
+    color:var(--ink);
+  }
+  input[type="date"]:focus-visible, input[type="text"]:focus-visible, button:focus-visible{
+    outline:2px solid var(--coral); outline-offset:2px;
+  }
+
+  /* schedule */
+  .schedule{
+    background:var(--panel);
+    border:1.5px solid var(--paper-line);
+    border-radius:12px;
+    padding:6px;
+    overflow-x:auto;
+  }
+  table{ border-collapse:collapse; width:100%; min-width:520px; }
+  th{
+    font-size:12px; color:var(--ink-soft); font-weight:600;
+    text-align:left; padding:8px 10px; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  td{ padding:2px; }
+  td input{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    padding:8px 8px;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    border-radius:6px;
+  }
+  td input:hover{ background:var(--paper); }
+  td:first-child{ }
+  .day-label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; padding-left:10px; white-space:nowrap; }
+
+  /* checklist */
+  .checklist{ display:flex; flex-direction:column; gap:2px; }
+  .item{
+    display:flex; align-items:center; gap:12px;
+    background:var(--panel);
+    border:1.5px solid var(--paper-line);
+    border-radius:8px;
+    padding:11px 14px;
+    margin-bottom:8px;
+  }
+  .item input[type="checkbox"]{
+    width:19px; height:19px; accent-color:var(--coral); cursor:pointer; flex-shrink:0;
+  }
+  .item span{ font-size:14.5px; flex:1; }
+  .item.done span{ text-decoration:line-through; color:var(--ink-soft); }
+  .add-row{ display:flex; gap:8px; margin-top:10px; }
+  .add-row input[type="text"]{
+    flex:1; padding:10px 12px; border:1.5px solid var(--paper-line);
+    border-radius:8px; font-family:'Inter', sans-serif; font-size:14px;
+    background:var(--panel); color:var(--ink);
+  }
+  .del{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer;
+    font-size:16px; padding:2px 6px; line-height:1;
+  }
+  .del:hover{ color:var(--coral); }
+
+  button.primary{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    background:var(--coral);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:10px 18px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  button.primary:hover{ filter:brightness(1.05); }
+  button.primary:active{ transform:scale(0.98); }
+
+  footer{
+    color:var(--ink-soft); font-size:12.5px; margin-top:60px;
+    border-top:1px solid var(--paper-line); padding-top:18px;
+  }
+</style>
+</head>
+<body>
+<div class="margin-rule"></div>
+<div class="wrap">
+
+  <h1>First Day Countdown</h1>
+  <p class="sub">New notebooks, sharpened pencils, and a schedule that isn't finished yet. Set your date, build the week, and check off what's already in the bag.</p>
+
+  <section>
+    <h2>Days left</h2>
+    <div class="countdown-row">
+      <div class="stamp">
+        <div class="n" id="days-num">—</div>
+        <div class="l">DAYS TO GO</div>
+      </div>
+      <div class="date-field">
+        First day of school
+        <input type="date" id="first-day">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Weekly schedule</h2>
+    <div class="schedule">
+      <table id="schedule-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Period 1</th>
+            <th>Period 2</th>
+            <th>Period 3</th>
+            <th>Period 4</th>
+          </tr>
+        </thead>
+        <tbody id="schedule-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Supply checklist</h2>
+    <div class="checklist" id="checklist"></div>
+    <div class="add-row">
+      <input type="text" id="new-item" placeholder="Add a supply, e.g. graph paper">
+      <button class="primary" id="add-btn">Add</button>
+    </div>
+  </section>
+
+  <footer>Everything here is saved on this device only.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function safeGet(key, fallback){
+    try{
+      var v = localStorage.getItem(key);
+      return v === null ? fallback : JSON.parse(v);
+    } catch(e){ return fallback; }
+  }
+  function safeSet(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); } catch(e){ /* storage unavailable, continue silently */ }
+  }
+
+  // ---- countdown ----
+  var dateInput = document.getElementById('first-day');
+  var daysNum = document.getElementById('days-num');
+
+  function nextLikelySchoolStart(){
+    var now = new Date();
+    var y = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear(); // simple default: Sept 1 this year, or next year if passed
+    var d = new Date(y, 8, 1); // September 1
+    if(d < now) d = new Date(y + 1, 8, 1);
+    return d.toISOString().slice(0,10);
+  }
+
+  var savedDate = safeGet('bts-first-day', null) || nextLikelySchoolStart();
+  dateInput.value = savedDate;
+
+  function updateCountdown(){
+    var target = new Date(dateInput.value + 'T00:00:00');
+    var now = new Date();
+    var diffMs = target.setHours(0,0,0,0) - new Date().setHours(0,0,0,0);
+    var days = Math.round(diffMs / 86400000);
+    daysNum.textContent = days >= 0 ? days : 0;
+    safeSet('bts-first-day', dateInput.value);
+  }
+  dateInput.addEventListener('change', updateCountdown);
+  updateCountdown();
+
+  // ---- schedule ----
+  var days = ["Mon","Tue","Wed","Thu","Fri"];
+  var body = document.getElementById('schedule-body');
+  var savedSchedule = safeGet('bts-schedule', {});
+
+  days.forEach(function(day){
+    var row = document.createElement('tr');
+    var label = document.createElement('td');
+    label.className = 'day-label';
+    label.textContent = day;
+    row.appendChild(label);
+
+    for(var p = 1; p <= 4; p++){
+      var cell = document.createElement('td');
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = '—';
+      var key = day + '-' + p;
+      input.value = savedSchedule[key] || '';
+      input.addEventListener('input', function(k){
+        return function(e){
+          var s = safeGet('bts-schedule', {});
+          s[k] = e.target.value;
+          safeSet('bts-schedule', s);
+        };
+      }(key));
+      cell.appendChild(input);
+      row.appendChild(cell);
+    }
+    body.appendChild(row);
+  });
+
+  // ---- checklist ----
+  var defaultItems = [
+    "Backpack", "Notebooks", "Pens & pencils", "Pencil case",
+    "Calculator", "Water bottle", "Lunch box"
+  ];
+  var checklist = document.getElementById('checklist');
+  var items = safeGet('bts-checklist', null);
+  if(!items){
+    items = defaultItems.map(function(name){ return { name: name, done: false }; });
+  }
+
+  function saveItems(){ safeSet('bts-checklist', items); }
+
+  function renderItems(){
+    checklist.innerHTML = '';
+    items.forEach(function(item, idx){
+      var row = document.createElement('div');
+      row.className = 'item' + (item.done ? ' done' : '');
+
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = item.done;
+      cb.addEventListener('change', function(){
+        items[idx].done = cb.checked;
+        saveItems();
+        renderItems();
+      });
+
+      var span = document.createElement('span');
+      span.textContent = item.name;
+
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.setAttribute('aria-label', 'Remove ' + item.name);
+      del.textContent = '✕';
+      del.addEventListener('click', function(){
+        items.splice(idx, 1);
+        saveItems();
+        renderItems();
+      });
+
+      row.appendChild(cb);
+      row.appendChild(span);
+      row.appendChild(del);
+      checklist.appendChild(row);
+    });
+  }
+  renderItems();
+
+  var newItemInput = document.getElementById('new-item');
+  var addBtn = document.getElementById('add-btn');
+  function addItem(){
+    var val = newItemInput.value.trim();
+    if(!val) return;
+    items.push({ name: val, done: false });
+    saveItems();
+    renderItems();
+    newItemInput.value = '';
+    newItemInput.focus();
+  }
+  addBtn.addEventListener('click', addItem);
+  newItemInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') addItem();
+  });
+})();
+</script>
+</body>
+</html>

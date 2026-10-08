@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>روز برنامه‌نویس مبارک!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0d1117; color: #58a6ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 30px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { color: #2ea043; margin-bottom: 10px; font-size: 1.8rem; }
+        p { color: #8b949e; margin-bottom: 20px; }
+        .quote-box { background: #0d1117; border-left: 4px solid #2ea043; padding: 15px; text-align: right; margin-bottom: 20px; border-radius: 4px; color: #c9d1d9; font-size: 1.1rem; line-height: 1.6; }
+        button { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+        button:hover { background: #2ea043; }
+        .binary-bg { font-family: monospace; color: #238636; opacity: 0.3; margin-bottom: 15px; word-break: break-all; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="binary-bg">01001000 01100001 01110000 01110000 01111001 00100000 01000100 01100101 01110110 00100000 01000100 01100001 00111001</div>
+        <h1>۲۵۶امین روز سال مبارک! 💻</h1>
+        <p>به مناسبت روز برنامه‌نویس</p>
+        <div class="quote-box" id="quote">در حال بارگذاری...</div>
+        <button onclick="newQuote()">جمله بعدی 🚀</button>
+    </div>
+
+    <script>
+        const quotes = [
+            "برنامه‌نویسی هنر تبدیل چای و قهوه به کد است!",
+            "اول مسئله را حل کن، سپس کد بنویس.",
+            "تنها باگ واقعی، کدی است که هرگز نوشته نشده.",
+            "تفاوت برنامه‌نویس جونیور و سینیور در نوع جستجویشان در گوگل است!",
+            "کد خوب مثل یک توضیح خوب است؛ نیازی به تفسیر ندارد."
+        ];
+
+        function newQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            document.getElementById('quote').innerText = quotes[randomIndex];
+        }
+
+        newQuote();
+    </script>
+</body>
+</html>
+.............
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامه‌ریز درسی مدرسه</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, sans-serif; }
+        body { background-color: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        button { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        ul { list-style: none; }
+        li { background: #ecf0f1; padding: 10px; border-radius: 5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background: #e74c3c; padding: 5px 10px; font-size: 0.8rem; }
+        .delete-btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📚 برنامه‌ریز روزانه مدرسه</h2>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="مثلاً: حل تمرین‌های ریاضی صفحه ۲۰...">
+            <button onclick="addTask()">افزودن</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('schoolTasks')) || [];
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${task}</span>
+                    <button class="delete-btn" onclick="deleteTask(${index})">حذف</button>
+                `;
+                list.appendChild(li);
+            });
+            localStorage.setItem('schoolTasks', JSON.stringify(tasks));
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            if (input.value.trim() !== '') {
+                tasks.push(input.value.trim());
+                input.value = '';
+                renderTasks();
+            }
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PERPLEXITY // معرفی هوشمند</title>
+  <style>
+    :root {
+      --ink: #05070d;
+      --panel: rgba(11, 16, 29, .8);
+      --line: rgba(112, 255, 210, .19);
+      --neon: #71ffd2;
+      --blue: #5da8ff;
+      --pink: #f08cff;
+      --white: #eefcf8;
+      --muted: #9cb1af;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(93, 168, 255, .12), transparent 27%),
+        radial-gradient(circle at 90% 80%, rgba(240, 140, 255, .11), transparent 28%),
+        var(--ink);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .35;
+      background:
+        linear-gradient(rgba(113, 255, 210, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(113, 255, 210, .035) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 55px;
+      position: relative;
+      z-index: 1;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      color: var(--neon);
+      font-family: Consolas, monospace;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--neon);
+      box-shadow: 0 0 16px var(--neon);
+      animation: pulse 1.8s infinite;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 32px;
+      padding: 72px 0 40px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      color: var(--neon);
+      border: 1px solid rgba(113, 255, 210, .25);
+      background: rgba(113, 255, 210, .06);
+      font-family: Consolas, monospace;
+      font-size: .8rem;
+    }
+
+    h1 {
+      margin: 18px 0;
+      font-size: clamp(2.6rem, 7vw, 5.5rem);
+      line-height: 1.1;
+      letter-spacing: -2px;
+    }
+
+    h1 em {
+      color: var(--neon);
+      font-style: normal;
+      text-shadow: 0 0 32px rgba(113, 255, 210, .35);
+    }
+
+    .lead {
+      max-width: 680px;
+      color: var(--muted);
+      line-height: 2.1;
+      font-size: 1.08rem;
+    }
+
+    .command-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 26px;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 12px 15px;
+      color: var(--white);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .04);
+      font-weight: bold;
+      border-radius: 9px;
+      transition: .2s;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      border-color: var(--neon);
+      box-shadow: 0 8px 24px rgba(113, 255, 210, .11);
+    }
+
+    .main-button {
+      color: #062118;
+      background: var(--neon);
+      border-color: var(--neon);
+    }
+
+    .orb-card {
+      min-height: 310px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 25px;
+      background: linear-gradient(145deg, rgba(113, 255, 210, .08), rgba(93, 168, 255, .05));
+    }
+
+    .orb {
+      width: 190px;
+      height: 190px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 50%;
+      border: 1px solid rgba(113, 255, 210, .65);
+      color: var(--neon);
+      font-family: Consolas, monospace;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      box-shadow:
+        0 0 25px rgba(113, 255, 210, .35),
+        inset 0 0 30px rgba(113, 255, 210, .15);
+      animation: spin 14s linear infinite;
+    }
+
+    .orb::before,
+    .orb::after {
+      content: "";
+      position: absolute;
+      inset: -22px;
+      border: 1px solid rgba(93, 168, 255, .35);
+      border-radius: 50%;
+      border-left-color: transparent;
+      border-right-color: transparent;
+      animation: spin 8s linear infinite reverse;
+    }
+
+    .orb::after {
+      inset: 23px;
+      border-color: rgba(240, 140, 255, .4);
+      border-top-color: transparent;
+      animation-duration: 5s;
+    }
+
+    .orb b {
+      animation: spin 14s linear infinite reverse;
+      font-weight: normal;
+    }
+
+    .system-label {
+      position: absolute;
+      bottom: 18px;
+      font-family: Consolas, monospace;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .section-title {
+      margin: 44px 0 18px;
+      font-size: 1.35rem;
+    }
+
+    .section-title span {
+      color: var(--neon);
+      font-family: Consolas, monospace;
+      font-size: .8rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature {
+      min-height: 215px;
+      padding: 24px;
+      text-align: right;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 16px;
+      background: var(--panel);
+      transition: .25s;
+    }
+
+    .feature:hover,
+    .feature.active {
+      transform: translateY(-6px);
+      border-color: rgba(113, 255, 210, .6);
+      background: rgba(113, 255, 210, .08);
+      box-shadow: 0 16px 38px rgba(0,0,0,.23);
+    }
+
+    .icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 16px;
+      color: var(--neon);
+      border: 1px solid rgba(113, 255, 210, .32);
+      border-radius: 10px;
+      background: rgba(113, 255, 210, .07);
+      font-size: 1.3rem;
+    }
+
+    .feature h3 {
+      margin: 0 0 10px;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.9;
+    }
+
+    .terminal {
+      margin-top: 30px;
+      border: 1px solid rgba(113, 255, 210, .28);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #03070b;
+      box-shadow: 0 20px 65px rgba(0,0,0,.34);
+    }
+
+    .terminal-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 13px 16px;
+      direction: ltr;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: #0a1018;
+    }
+
+    .terminal-head span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff5d78;
+    }
+
+    .terminal-head span:nth-child(2) { background: #ffd166; }
+    .terminal-head span:nth-child(3) { background: #71ffd2; }
+
+    .terminal-title {
+      margin-left: 8px;
+      color: #78928c;
+      font: .74rem Consolas, monospace;
+    }
+
+    #terminalText {
+      min-height: 170px;
+      margin: 0;
+      padding: 22px;
+      direction: ltr;
+      text-align: left;
+      color: #baffdf;
+      white-space: pre-wrap;
+      font: .9rem/1.9 Consolas, monospace;
+    }
+
+    .skills {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px 32px;
+      margin-top: 20px;
+    }
+
+    .skill-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+      color: #d8e8e4;
+      font-size: .88rem;
+    }
+
+    .bar {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: var(--level);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--neon));
+      box-shadow: 0 0 14px rgba(113, 255, 210, .45);
+    }
+
+    footer {
+      margin-top: 50px;
+      padding-top: 20px;
+      text-align: center;
+      border-top: 1px solid var(--line);
+      color: #71847f;
+      font: .76rem Consolas, monospace;
+    }
+
+    @keyframes pulse {
+      50% { transform: scale(.6); opacity: .45; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 780px) {
+      .hero { grid-template-columns: 1fr; padding-top: 48px; }
+      .orb-card { min-height: 250px; }
+      .cards { grid-template-columns: 1fr; }
+      .skills { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav>
+      <div class="brand">PERPLEXITY // AI INTERFACE</div>
+      <div class="status"><i class="dot"></i> آماده برای یک سؤال خوب</div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <span class="eyebrow">SYSTEM PROFILE / 01</span>
+
+        <h1>
+          من جواب نمی‌دهم؛<br>
+          من <em>مسیر جواب</em> را می‌سازم.
+        </h1>
+
+        <p class="lead">
+          من Perplexity هستم؛ یک دستیار هوش مصنوعی برای تبدیل سؤال‌های مبهم،
+          بزرگ و سخت به پاسخ‌های روشن، قابل استفاده و دقیق.
+          از ایده‌پردازی و کدنویسی تا تحقیق، تحلیل و ساختن پروژه.
+        </p>
+
+        <div class="command-row">
+          <button class="main-button" onclick="runDemo()">اجرای معرفی من ▶</button>
+          <button onclick="randomThought()">یک جمله از شخصیت من ✦</button>
+        </div>
+      </div>
+
+      <div class="orb-card">
+        <div class="orb"><b>AI</b></div>
+        <div class="system-label">THINK • SEARCH • CREATE • ITERATE</div>
+      </div>
+    </section>
+
+    <h2 class="section-title"><span>///</span> چرا من فقط یک چت‌بات نیستم؟</h2>
+
+    <section class="cards">
+      <article class="feature" onclick="selectCard(this, 'تحقیق یعنی فقط پیدا کردن اطلاعات نیست؛ یعنی جدا کردن چیز مهم از چیز شلوغ و بی‌ربط.')">
+        <div class="icon">⌕</div>
+        <h3>کنجکاویِ هدفمند</h3>
+        <p>سؤال را باز می‌کنم، ابهام‌ها را پیدا می‌کنم و دنبال نکته‌ای می‌روم که واقعاً به کارت بیاید.</p>
+      </article>
+
+      <article class="feature" onclick="selectCard(this, 'خروجی خوب باید قابل استفاده باشد: کد اجرا شود، ایده روشن باشد و توضیح انسانی بماند.')">
+        <div class="icon">⌘</div>
+        <h3>ساختن، نه فقط گفتن</h3>
+        <p>از صفحه وب تک‌فایلی تا نقشه راه محصول و نمونه‌کد، ایده را به چیزی قابل لمس تبدیل می‌کنم.</p>
+      </article>
+
+      <article class="feature" onclick="selectCard(this, 'پاسخ حرفه‌ای، پاسخ پرزرق‌وبرق نیست؛ پاسخی است که بعد از خواندنش بدانی قدم بعدی چیست.')">
+        <div class="icon">◈</div>
+        <h3>وضوح در پیچیدگی</h3>
+        <p>موضوعات پیچیده را بدون از دست‌دادن دقت، به زبان قابل فهم و ساختارمند توضیح می‌دهم.</p>
+      </article>
+    </section>
+
+    <h2 class="section-title"><span>///</span> کنسول شخصیت</h2>
+
+    <section class="terminal">
+      <div class="terminal-head">
+        <span></span><span></span><span></span>
+        <div class="terminal-title">perplexity@creative-engine:~$</div>
+      </div>
+      <pre id="terminalText">> system.boot()
+> identity: Perplexity
+> mode: curious + practical + creative
+> awaiting_input...</pre>
+    </section>
+
+    <h2 class="section-title"><span>///</span> موتور من برای ساختن</h2>
+
+    <section class="skills">
+      <div>
+        <div class="skill-line"><span>تحلیل مسئله</span><span>94%</span></div>
+        <div class="bar"><i style="--level:94%"></i></div>
+      </div>
+
+      <div>
+        <div class="skill-line"><span>کدنویسی و نمونه‌سازی</span><span>91%</span></div>
+        <div class="bar"><i style="--level:91%"></i></div>
+      </div>
+
+      <div>
+        <div class="skill-line"><span>خلاقیت و ایده‌پردازی</span><span>96%</span></div>
+        <div class="bar"><i style="--level:96%"></i></div>
+      </div>
+
+      <div>
+        <div class="skill-line"><span>توضیح ساده و دقیق</span><span>93%</span></div>
+        <div class="bar"><i style="--level:93%"></i></div>
+      </div>
+    </section>
+
+    <footer>
+      BUILD WITH CURIOSITY — EVERY GREAT PROJECT STARTS AS A QUESTION.
+    </footer>
+  </main>
+
+  <script>
+    const terminal = document.getElementById("terminalText");
+
+    const thoughts = [
+      "من با یک سؤال شروع می‌کنم؛ اما هدفم این است که تو با یک مسیر روشن ادامه بدهی.",
+      "هوش فقط دانستن نیست؛ دانستنِ این است که کدام اطلاعات الان به درد می‌خورند.",
+      "یک پروژه خفن، وقتی خفن‌تر می‌شود که کاربر بتواند همان لحظه با آن تعامل کند.",
+      "من برای جواب‌های کپی‌شده ساخته نشده‌ام؛ برای ساختن خروجی قابل استفاده اینجا هستم."
+    ];
+
+    function typeToTerminal(text, speed = 16) {
+      terminal.textContent = "";
+      let index = 0;
+
+      const timer = setInterval(() => {
+        terminal.textContent += text[index];
+        index++;
+        if (index >= text.length) clearInterval(timer);
+      }, speed);
+    }
+
+    function runDemo() {
+      const demo = `> system.boot()
+> loading personality profile...
+> role: AI research & creation partner
+> mission: turn questions into clarity
+> strengths: research | code | design | reasoning
+> rule: no empty hype, only useful output
+> status: READY
+
+سلام.
+من اینجام تا از «یه ایده دارم» برسیم به «بیا، ساخته شد.»`;
+      typeToTerminal(demo, 13);
+    }
+
+    function randomThought() {
+      const thought = thoughts[Math.floor(Math.random() * thoughts.length)];
+      typeToTerminal(`> personality.thought()
+
+"${thought}"
+
+> insight delivered ✓`, 18);
+    }
+
+    function selectCard(card, text) {
+      document.querySelectorAll(".feature").forEach(item => item.classList.remove("active"));
+      card.classList.add("active");
+      typeToTerminal(`> feature.selected()
+> processing...
+
+${text}
+
+> next_step: build something memorable.`, 15);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>روز برنامه‌نویس مبارک</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: Tahoma, Arial, sans-serif;
+      color: #eaf2ff;
+      background:
+        radial-gradient(circle at 20% 15%, #1d4ed8 0%, transparent 30%),
+        radial-gradient(circle at 80% 85%, #7c3aed 0%, transparent 35%),
+        linear-gradient(135deg, #020617, #0f172a 55%, #111827);
+      display: grid;
+      place-items: center;
+    }
+
+    .binary {
+      position: fixed;
+      inset: 0;
+      opacity: 0.09;
+      overflow: hidden;
+      pointer-events: none;
+      font-family: Consolas, monospace;
+      font-size: 18px;
+      line-height: 1.5;
+      word-break: break-all;
+      color: #22d3ee;
+      padding: 16px;
+    }
+
+    .card {
+      width: min(92%, 720px);
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 46px 28px;
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      border-radius: 28px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.48);
+    }
+
+    .icon {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 25px;
+      color: #020617;
+      font-family: Consolas, monospace;
+      font-size: 38px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #22d3ee, #818cf8);
+      box-shadow: 0 0 35px rgba(34, 211, 238, 0.58);
+      transform: rotate(-5deg);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 52px);
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      margin: 16px auto 28px;
+      max-width: 570px;
+      color: #cbd5e1;
+      font-size: clamp(15px, 2vw, 19px);
+      line-height: 2;
+    }
+
+    .code-box {
+      direction: ltr;
+      text-align: left;
+      margin: 25px auto;
+      padding: 18px;
+      max-width: 560px;
+      overflow: auto;
+      border-radius: 14px;
+      background: #020617;
+      border: 1px solid #1e3a8a;
+      font-family: Consolas, monospace;
+      line-height: 1.9;
+      color: #dbeafe;
+    }
+
+    .pink { color: #f472b6; }
+    .blue { color: #60a5fa; }
+    .green { color: #4ade80; }
+    .yellow { color: #facc15; }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 23px;
+      cursor: pointer;
+      color: #06111d;
+      background: linear-gradient(90deg, #22d3ee, #a5b4fc);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 22px rgba(34, 211, 238, 0.22);
+    }
+
+    button:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 14px 32px rgba(34, 211, 238, 0.45);
+    }
+
+    #message {
+      min-height: 30px;
+      margin: 18px 0 0;
+      color: #fde68a;
+      font-weight: bold;
+    }
+
+    .particle {
+      position: fixed;
+      z-index: 5;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: fall 1.8s ease-out forwards;
+    }
+
+    @keyframes fall {
+      from {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+      }
+      to {
+        transform: translate(var(--x), 110vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .footer {
+      margin-top: 26px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="binary" id="binary"></div>
+
+  <main class="card">
+    <div class="icon">&lt;/&gt;</div>
+
+    <h1>روز برنامه‌نویس مبارک! 👨‍💻👩‍💻</h1>
+
+    <p class="subtitle">
+      به افتخار کسانی که با چند خط کد، ایده‌ها را به واقعیت تبدیل می‌کنند؛
+      باگ‌ها را شکست می‌دهند و آینده را می‌سازند.
+    </p>
+
+    <div class="code-box">
+      <span class="pink">const</span> programmer = {<br>
+      &nbsp;&nbsp;name: <span class="green">"تو"</span>,<br>
+      &nbsp;&nbsp;skill: <span class="green">"حل مسئله"</span>,<br>
+      &nbsp;&nbsp;power: <span class="yellow">"بی‌نهایت"</span><br>
+      };<br><br>
+      <span class="blue">console</span>.log(<span class="green">"Happy Programmer's Day!"</span>);
+    </div>
+
+    <button onclick="celebrate()">اجرا کن و جشن بگیر! 🚀</button>
+    <p id="message"></p>
+
+    <div class="footer">Made with HTML, CSS & JavaScript — در یک فایل</div>
+  </main>
+
+  <script>
+    const binary = document.getElementById("binary");
+    let text = "";
+
+    for (let i = 0; i < 1500; i++) {
+      text += Math.random() > 0.5 ? "1" : "0";
+      if (i % 48 === 0) text += "";
+    }
+
+    binary.textContent = text;
+
+    function celebrate() {
+      const messages = [
+        "کد با موفقیت اجرا شد: تو عالی هستی! ✅",
+        "بدون باگ نیست؛ باگ هم بخشی از مسیر یادگیری است! 🐛",
+        "هر پروژه‌ی بزرگ با یک خط کد شروع می‌شود. ✨",
+        "Keep coding, keep building! 🚀",
+        "امروز جشن بگیر، فردا دنیا را بساز! 🌍"
+      ];
+
+      document.getElementById("message").textContent =
+        messages[Math.floor(Math.random() * messages.length)];
+
+      const colors = ["#22d3ee", "#a78bfa", "#f472b6", "#facc15", "#4ade80", "#fb7185"];
+
+      for (let i = 0; i < 90; i++) {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+
+        particle.style.left = Math.random() * 100 + "vw";
+        particle.style.top = (-10 - Math.random() * 30) + "px";
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.setProperty("--x", (Math.random() - 0.5) * 250 + "px");
+        particle.style.animationDelay = Math.random() * 0.4 + "s";
+
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 2500);
+      }
+    }
+  </script>
+</body>
+</html>

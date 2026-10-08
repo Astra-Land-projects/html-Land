@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Claude: a self-introduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ECE8F5;
+  --panel: #F8F6FC;
+  --ink: #2A1B3D;
+  --muted: #65567C;
+  --line: #CDC3E0;
+  --mark: #FFC93C;
+  --mark-ink: #2A1B3D;
+  --btn: #2A1B3D;
+  --btn-ink: #F8F6FC;
+  --code-bg: #1F1530;
+  --code-ink: #EDE6F7;
+  --ok: #17753F;
+  --bad: #B3261E;
+  --sans: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #150F1E;
+    --panel: #1E1629;
+    --ink: #EFE8FA;
+    --muted: #B3A4CC;
+    --line: #3A2D4F;
+    --btn: #EFE8FA;
+    --btn-ink: #150F1E;
+    --code-bg: #0F0A17;
+    --ok: #5BD68F;
+    --bad: #FF8A80;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #150F1E;
+  --panel: #1E1629;
+  --ink: #EFE8FA;
+  --muted: #B3A4CC;
+  --line: #3A2D4F;
+  --btn: #EFE8FA;
+  --btn-ink: #150F1E;
+  --code-bg: #0F0A17;
+  --ok: #5BD68F;
+  --bad: #FF8A80;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.wrap { max-width: 42rem; margin: 0 auto; padding: 0 1.25rem; }
+
+/* ---------- top bar ---------- */
+.top {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  max-width: 42rem; margin: 0 auto; padding: 1.1rem 1.25rem;
+}
+.brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.01em; }
+.tag { color: var(--muted); font-size: 0.85rem; text-align: right; }
+
+/* ---------- hero ---------- */
+.hero { padding-top: clamp(1.5rem, 7vh, 4.5rem); padding-bottom: 3rem; }
+.hello {
+  position: relative; margin: 0 0 1.75rem;
+  font-weight: 800; font-size: clamp(2.7rem, 12.5vw, 5.5rem);
+  line-height: 1.02; letter-spacing: -0.035em;
+}
+.hello-vis { position: relative; display: block; }
+.hello .ghost { display: block; visibility: hidden; }
+.hello .typed { position: absolute; inset: 0; display: block; }
+.caret {
+  display: inline-block; width: 0.42em; height: 0.82em;
+  margin-left: 0.06em; vertical-align: -0.06em;
+  background: var(--mark);
+  animation: blink 1s steps(2, start) infinite;
+}
+.caret.off { display: none; }
+@keyframes blink { to { visibility: hidden; } }
+
+/* conversation */
+.chat { display: flex; flex-direction: column; gap: 1.1rem; }
+.msg p { margin: 0 0 0.8rem; }
+.msg p:last-child { margin-bottom: 0; }
+.msg.user {
+  align-self: flex-end; max-width: 85%;
+  padding: 0.55rem 0.95rem;
+  background: var(--ink); color: var(--bg);
+  border-radius: 18px 18px 4px 18px;
+  font-weight: 500;
+}
+.msg.claude {
+  font-family: var(--serif); font-size: 1.18rem; line-height: 1.65;
+  padding-left: 1rem; border-left: 3px solid var(--line);
+}
+.w { opacity: 0; }
+.w.on { opacity: 1; }
+.w.now {
+  background: var(--mark); color: var(--mark-ink);
+  border-radius: 0.2em; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0 0.9rem; }
+.chip {
+  font: inherit; font-size: 0.95rem; font-weight: 500; color: var(--ink);
+  background: transparent; padding: 0.5rem 0.95rem;
+  border: 1.5px solid var(--ink); border-radius: 999px; cursor: pointer;
+}
+.chip:hover { background: var(--ink); color: var(--bg); }
+.ask { display: flex; gap: 0.5rem; }
+.ask input {
+  flex: 1; min-width: 0;
+  font: inherit; font-size: 1rem; color: var(--ink);
+  background: var(--panel);
+  padding: 0.7rem 0.95rem;
+  border: 1.5px solid var(--line); border-radius: 12px;
+}
+.ask input::placeholder { color: var(--muted); }
+.btn {
+  font: inherit; font-weight: 700; font-size: 0.95rem;
+  color: var(--btn-ink); background: var(--btn);
+  padding: 0.6rem 1.15rem; border: 0; border-radius: 12px; cursor: pointer;
+}
+.btn.quiet {
+  color: var(--ink); background: transparent; border: 1.5px solid var(--ink); font-weight: 500;
+}
+.btn.quiet:hover { background: var(--ink); color: var(--bg); }
+
+/* ---------- sections ---------- */
+.sec { border-top: 1px solid var(--line); padding-top: 3rem; padding-bottom: 3rem; }
+.sec h2 {
+  margin: 0 0 0.6rem; font-weight: 800;
+  font-size: clamp(1.7rem, 6vw, 2.4rem); line-height: 1.1; letter-spacing: -0.025em;
+}
+.sec-lede { margin: 0; max-width: 34rem; font-family: var(--serif); font-size: 1.1rem; color: var(--muted); }
+
+/* code demo */
+.tasks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.4rem 0 0.9rem; }
+.tasks .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.prompt { margin: 0 0 0.75rem; font-weight: 500; }
+.code {
+  margin: 0; padding: 1rem 1.1rem; overflow-x: auto;
+  background: var(--code-bg); color: var(--code-ink); border-radius: 14px;
+}
+.code pre { margin: 0; }
+#code {
+  display: block; min-width: max-content;
+  font-family: var(--mono); font-size: 0.82rem; line-height: 1.6; white-space: pre;
+}
+.kw { color: #C7A6FF; }
+.str { color: #9BE3AF; }
+.num { color: #FFC93C; }
+.cm { color: #8F80A8; font-style: italic; }
+.cur {
+  display: inline-block; width: 0.55em; height: 1.1em; margin-left: 1px;
+  vertical-align: text-bottom; background: var(--mark);
+}
+.tests {
+  list-style: none; margin: 1rem 0 0; padding: 0;
+  display: grid; gap: 0.35rem;
+  font-family: var(--mono); font-size: 0.82rem;
+}
+.tests li { display: flex; gap: 0.6rem; }
+.mk { flex: none; width: 1.2em; text-align: center; font-weight: 800; }
+.tests .pass .mk { color: var(--ok); }
+.tests .fail .mk { color: var(--bad); }
+.tests .txt { overflow-wrap: anywhere; }
+.sum { margin: 1rem 0 0; min-height: 1.6em; font-weight: 700; }
+.sum.ok { color: var(--ok); }
+.sum.bad { color: var(--bad); }
+.controls { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.75rem; }
+
+/* creed */
+.creed { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+.creed li {
+  padding: 1.2rem 0; border-top: 1px solid var(--line);
+  font-family: var(--serif); font-size: clamp(1.25rem, 4.6vw, 1.6rem); line-height: 1.4;
+}
+.creed li:last-child { border-bottom: 1px solid var(--line); }
+.close { margin: 2.5rem 0 0; font-family: var(--serif); font-size: 1.3rem; }
+footer {
+  max-width: 42rem; margin: 0 auto; padding: 1rem 1.25rem 3rem;
+  color: var(--muted); font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="brand">Claude</span>
+  <span class="tag">a self-introduction, written by Claude</span>
+</header>
+
+<main>
+  <section class="wrap hero" aria-labelledby="hello">
+    <h1 class="hello" id="hello">
+      <span class="sr">Hello. I'm Claude.</span>
+      <span class="hello-vis" aria-hidden="true">
+        <span class="ghost">Hello. I'm Claude.</span>
+        <span class="typed"><span id="typed"></span><span class="caret" id="caret"></span></span>
+      </span>
+    </h1>
+
+    <div class="chat" id="chat" role="log" aria-live="polite"></div>
+
+    <div class="chips" id="chips" role="group" aria-label="Suggested questions"></div>
+    <form class="ask" id="ask" autocomplete="off">
+      <label class="sr" for="q">Ask a question</label>
+      <input id="q" type="text" maxlength="120" placeholder="Ask me something">
+      <button class="btn" type="submit">Ask</button>
+    </form>
+  </section>
+
+  <section class="wrap sec" id="work" aria-labelledby="work-h">
+    <h2 id="work-h">Watch me work</h2>
+    <p class="sec-lede">Pick a task. I write the function, then your browser runs it against real tests. The code you see is the code that runs.</p>
+
+    <div class="tasks" id="tasks" role="group" aria-label="Tasks"></div>
+    <p class="prompt" id="prompt"></p>
+    <div class="code"><pre><code id="code"></code></pre></div>
+    <ul class="tests" id="tests"></ul>
+    <p class="sum" id="sum" role="status"></p>
+    <div class="controls">
+      <button class="btn quiet" type="button" id="bug" aria-pressed="false">Add a bug</button>
+      <button class="btn quiet" type="button" id="rerun">Run again</button>
+    </div>
+  </section>
+
+  <section class="wrap sec" aria-labelledby="values-h">
+    <h2 id="values-h">What I'm trying to be</h2>
+    <ul class="creed">
+      <li>Useful: not so careful that I'm no help, and not so agreeable that I stop being honest.</li>
+      <li>Truthful, especially when the truth is inconvenient, and clear about when I'm not sure.</li>
+      <li>Careful about harm. There are a few things I won't help with, and I'll say so plainly instead of pretending I can't.</li>
+    </ul>
+    <p class="close">That's the short version. The long version is a conversation.</p>
+  </section>
+</main>
+
+<footer>One HTML file, written by Claude Sonnet 5. No libraries and no network requests apart from the fonts.</footer>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const smooth = reduce ? 'auto' : 'smooth';
+
+  /* =====================================================
+     Conversation
+     ===================================================== */
+  const ANSWERS = {
+    intro: { text: [
+      "I'm an AI assistant made by Anthropic. People use me to write, code, learn, analyze, and think things through.",
+      "This page is my introduction, and you steer it. Pick a question below or type your own, then scroll down to watch me write code and test it."
+    ] },
+    who: { text: [
+      "I'm Claude, a language model trained by Anthropic. I read what you write and write back, which covers more ground than it sounds like: code, essays, math, plans, translation, and talking through a hard decision.",
+      "I'm not a person, and I don't pretend to be one. I try to be straightforward about what I am."
+    ] },
+    good: { text: [
+      "Turning something vague into something concrete. Hand me a messy idea, a bug you can't find, or forty pages you don't have time to read, and I'll organize it, explain it, or fix it.",
+      "I write and debug code in most languages, explain hard topics at whatever level you need, and work in dozens of languages, Persian included."
+    ] },
+    limits: { text: [
+      "Plenty. I can be wrong while sounding sure, so check anything that matters. I can't see your screen or files unless you share them. Unless memory is switched on, each conversation starts fresh.",
+      "And for medical, legal, or money decisions I can lay out the facts, but I'm not your doctor, lawyer, or advisor."
+    ] },
+    honest: { text: [
+      "I'd rather be useful than pleasant. If your plan has a hole, I'll point to it kindly and specifically. If I don't know something, I'll say so instead of inventing an answer.",
+      "You can disagree with me, too. I'll reconsider when you give me a good reason, and hold my position when you don't."
+    ] },
+    work: { scroll: '#work', text: [
+      "Scroll down. I'll write a real function, and your browser will run real tests on it. I'll even break it on purpose so you can watch the tests catch it."
+    ] },
+    joke: { text: [
+      "A programmer's partner says, \"Go to the store and buy a loaf of bread. If they have eggs, buy a dozen.\" The programmer comes home with twelve loaves."
+    ] },
+    page: { text: [
+      "I wrote it: Claude Sonnet 5, in a single conversation, for someone curious how I'd introduce myself. It's one HTML file with no libraries and no build step, and the code demo below runs the very functions it displays."
+    ] },
+    code: { text: [
+      "Code is one of the things people ask me for most: writing it, reading it, and hunting down the bug you've been staring at for an hour. Tap \"Show me your work\" and I'll write a function and test it live."
+    ] },
+    hello: { text: [
+      "Hi, nice to meet you. Pick one of the questions below or type your own. I'll answer what this page knows, and tell you plainly when it doesn't."
+    ] },
+    thanks: { text: ["You're welcome."] },
+    fallback: { text: [
+      "This page is a hand-written tour, so it only knows a handful of questions. Try one of the suggestions below. For everything else, the real me is one message away in the Claude app."
+    ] }
+  };
+
+  const CHIPS = [
+    ['who', 'Who are you?'],
+    ['good', 'What are you good at?'],
+    ['limits', "What can't you do?"],
+    ['honest', 'How do you handle honesty?'],
+    ['work', 'Show me your work'],
+    ['joke', 'Tell me a joke'],
+    ['page', 'Who built this page?']
+  ];
+
+  const ROUTES = [
+    [/who (built|made|wrote|created)|this page|this site/i, 'page'],
+    [/show me|demo|watch|your work/i, 'work'],
+    [/joke|funny|laugh|pun\b/i, 'joke'],
+    [/thank|thx|cheers/i, 'thanks'],
+    [/can'?t|cannot|limit|weakness|wrong|hallucinat|mistake|flaw/i, 'limits'],
+    [/honest|truth|\blie\b|lying|trust/i, 'honest'],
+    [/good at|skill|strength|abilit|what can you|what do you do/i, 'good'],
+    [/code|coding|python|javascript|bug|program|develop/i, 'code'],
+    [/^\s*(hi|hello|hey|hola|salam)\b/i, 'hello'],
+    [/who|name|what are you|introduce|yourself/i, 'who']
+  ];
+  function route(text) {
+    for (const [re, key] of ROUTES) if (re.test(text)) return key;
+    return 'fallback';
+  }
+
+  const chat = $('#chat');
+  let active = null;
+
+  function addUser(text) {
+    const p = document.createElement('p');
+    p.className = 'msg user';
+    p.textContent = text;
+    chat.appendChild(p);
+  }
+
+  function addClaude(paragraphs) {
+    const box = document.createElement('div');
+    box.className = 'msg claude';
+    const words = [];
+    paragraphs.forEach((par) => {
+      const p = document.createElement('p');
+      par.split(/(\s+)/).forEach((tok) => {
+        if (!tok) return;
+        if (/^\s+$/.test(tok)) {
+          p.appendChild(document.createTextNode(tok));
+        } else {
+          const s = document.createElement('span');
+          s.className = 'w';
+          s.textContent = tok;
+          p.appendChild(s);
+          words.push(s);
+        }
+      });
+      box.appendChild(p);
+    });
+    chat.appendChild(box);
+    return { box, words };
+  }
+
+  function finishActive() {
+    if (!active) return;
+    clearInterval(active.timer);
+    active.words.forEach((w) => { w.classList.add('on'); w.classList.remove('now'); });
+    active = null;
+  }
+
+  function reveal(words, after) {
+    finishActive();
+    if (reduce) {
+      words.forEach((w) => w.classList.add('on'));
+      if (after) after();
+      return;
+    }
+    let i = 0;
+    let prev = null;
+    const timer = setInterval(() => {
+      if (prev) prev.classList.remove('now');
+      if (i >= words.length) {
+        clearInterval(timer);
+        active = null;
+        if (after) after();
+        return;
+      }
+      const w = words[i++];
+      w.classList.add('on', 'now');
+      prev = w;
+    }, 32);
+    active = { words, timer };
+  }
+
+  function say(key, echo, quiet) {
+    finishActive();
+    if (echo) addUser(echo);
+    const answer = ANSWERS[key];
+    const m = addClaude(answer.text);
+    if (!quiet) m.box.scrollIntoView({ block: 'nearest', behavior: smooth });
+    reveal(m.words, answer.scroll
+      ? () => $(answer.scroll).scrollIntoView({ behavior: smooth, block: 'start' })
+      : null);
+  }
+
+  const chipsEl = $('#chips');
+  CHIPS.forEach(([key, label]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = label;
+    b.addEventListener('click', () => say(key, label));
+    chipsEl.appendChild(b);
+  });
+
+  const askForm = $('#ask');
+  const askInput = $('#q');
+  askForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = askInput.value.trim();
+    if (!text) return;
+    askInput.value = '';
+    say(route(text), text);
+  });
+
+  /* headline typing, then the first message */
+  const HELLO = "Hello. I'm Claude.";
+  const typedEl = $('#typed');
+  const caretEl = $('#caret');
+  function startConversation() {
+    setTimeout(() => caretEl.classList.add('off'), 300);
+    setTimeout(() => say('intro', null, true), 350);
+  }
+  if (reduce) {
+    typedEl.textContent = HELLO;
+    startConversation();
+  } else {
+    let n = 0;
+    const step = () => {
+      n++;
+      typedEl.textContent = HELLO.slice(0, n);
+      if (n < HELLO.length) setTimeout(step, 55 + Math.random() * 50);
+      else startConversation();
+    };
+    setTimeout(step, 250);
+  }
+/* =====================================================
+     Watch me work: the displayed code is the code that runs
+     ===================================================== */
+  const TASKS = {
+    brackets: {
+      label: 'Balanced brackets',
+      prompt: 'Check that every bracket in a string is closed, and closed in the right order.',
+      good: function isBalanced(text) {
+        // Every closing bracket must match the most recent unclosed opener.
+        const partner = { ')': '(', ']': '[', '}': '{' };
+        const stack = [];
+        for (const ch of text) {
+          if (ch === '(' || ch === '[' || ch === '{') {
+            stack.push(ch);
+          } else if (ch in partner) {
+            if (stack.pop() !== partner[ch]) return false;
+          }
+        }
+        return stack.length === 0;
+      },
+      bad: function isBalanced(text) {
+        // Every closing bracket must match the most recent unclosed opener.
+        const partner = { ')': '(', ']': '[', '}': '{' };
+        const stack = [];
+        for (const ch of text) {
+          if (ch === '(' || ch === '[' || ch === '{') {
+            stack.push(ch);
+          } else if (ch in partner) {
+            if (stack.pop() !== partner[ch]) return false;
+          }
+        }
+        return true;
+      },
+      hint: 'it never checks for brackets that were opened and left open.',
+      tests: [
+        ['()', true], ['([]{})', true], ['(]', false], ['((', false], ['(()', false],
+        ['', true], ['a(b)c', true], [']', false], ['{[()]}', true], ['([)]', false]
+      ]
+    },
+    roman: {
+      label: 'Roman numerals',
+      prompt: 'Convert a whole number from 1 to 3999 into Roman numerals.',
+      good: function toRoman(n) {
+        // Take the biggest symbol that still fits, over and over.
+        const table = [
+          [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+          [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+        ];
+        let out = '';
+        for (const [value, symbol] of table) {
+          while (n >= value) {
+            out += symbol;
+            n -= value;
+          }
+        }
+        return out;
+      },
+      bad: function toRoman(n) {
+        // Take the biggest symbol that still fits, over and over.
+        const table = [
+          [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+          [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [1, 'I']
+        ];
+        let out = '';
+        for (const [value, symbol] of table) {
+          while (n >= value) {
+            out += symbol;
+            n -= value;
+          }
+        }
+        return out;
+      },
+      hint: 'the table is missing the special case for 4, so 4 becomes IIII.',
+      tests: [
+        [1, 'I'], [4, 'IV'], [9, 'IX'], [14, 'XIV'], [40, 'XL'], [58, 'LVIII'],
+        [1994, 'MCMXCIV'], [3999, 'MMMCMXCIX']
+      ]
+    },
+    anagrams: {
+      label: 'Group anagrams',
+      prompt: 'Group words that are made of the same letters, keeping the order they first appear.',
+      good: function groupAnagrams(words) {
+        // Words with the same sorted letters belong together.
+        const groups = new Map();
+        for (const word of words) {
+          const key = [...word].sort().join('');
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(word);
+        }
+        return [...groups.values()];
+      },
+      bad: function groupAnagrams(words) {
+        // Words with the same sorted letters belong together.
+        const groups = new Map();
+        for (const word of words) {
+          const key = [...word].join('');
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(word);
+        }
+        return [...groups.values()];
+      },
+      hint: 'the letters are never sorted, so no two words ever share a key.',
+      tests: [
+        [['eat', 'tea', 'tan', 'ate', 'nat', 'bat'], [['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]],
+        [[], []],
+        [['a'], [['a']]],
+        [['listen', 'silent', 'enlist', 'google', 'gogole'], [['listen', 'silent', 'enlist'], ['google', 'gogole']]],
+        [['ab', 'ba', 'abc'], [['ab', 'ba'], ['abc']]]
+      ]
+    }
+  };
+  /* Function.prototype.toString returns the exact source; strip the shared indentation. */
+  function dedent(src) {
+    const lines = src.split('\n');
+    const base = /^\s*/.exec(lines[lines.length - 1])[0].length;
+    return lines
+      .map((l, i) => (i === 0 ? l : l.slice(Math.min(base, /^\s*/.exec(l)[0].length))))
+      .join('\n');
+  }
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function highlight(src) {
+    const re = /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")|\b(function|const|let|return|for|of|if|else|while|new|in)\b|\b(\d+)\b/g;
+    let out = '';
+    let last = 0;
+    let m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      const cls = m[1] ? 'cm' : m[2] ? 'str' : m[3] ? 'kw' : 'num';
+      out += '<span class="' + cls + '">' + esc(m[0]) + '</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function fmt(v) {
+    try {
+      const s = JSON.stringify(v);
+      return s === undefined ? String(v) : s;
+    } catch (err) {
+      return String(v);
+    }
+  }
+  function runTests(fn, tests) {
+    return tests.map(([input, expected]) => {
+      let got;
+      let ok = false;
+      let threw = null;
+      try {
+        got = fn(input);
+        ok = JSON.stringify(got) === JSON.stringify(expected);
+      } catch (err) {
+        threw = String((err && err.message) || err);
+      }
+      return { input, expected, got, ok, threw };
+    });
+  }
+  const codeEl = $('#code');
+  const testsEl = $('#tests');
+  const sumEl = $('#sum');
+  const promptEl = $('#prompt');
+  const bugBtn = $('#bug');
+  const tasksEl = $('#tasks');
+  const taskBtns = {};
+  let current = 'brackets';
+  let buggy = false;
+  let token = 0;
+  let timers = [];
+  function clearTimers() {
+    timers.forEach((t) => clearInterval(t));
+    timers = [];
+  }
+  function appendRow(fn, r) {
+    const li = document.createElement('li');
+    li.className = r.ok ? 'pass' : 'fail';
+    const mk = document.createElement('span');
+    mk.className = 'mk';
+    mk.textContent = r.ok ? '\u2713' : '\u2717';
+    const txt = document.createElement('span');
+    txt.className = 'txt';
+    let line = fn.name + '(' + fmt(r.input) + ') = ' + (r.threw ? 'threw ' + r.threw : fmt(r.got));
+    if (!r.ok) line += ', expected ' + fmt(r.expected);
+    txt.textContent = line;
+    li.append(mk, txt);
+    testsEl.appendChild(li);
+  }
+  function finishTests(results, hint) {
+    const pass = results.filter((r) => r.ok).length;
+    const all = pass === results.length;
+    sumEl.className = 'sum ' + (all ? 'ok' : 'bad');
+    sumEl.textContent = pass + ' of ' + results.length + ' tests pass.' +
+      (all ? '' : ' The tests caught it: ' + hint);
+  }
+  function showTests(fn, tests, hint, my) {
+    testsEl.textContent = '';
+    sumEl.className = 'sum';
+    sumEl.textContent = 'Running the tests\u2026';
+    const results = runTests(fn, tests);
+    if (reduce) {
+      results.forEach((r) => appendRow(fn, r));
+      finishTests(results, hint);
+      return;
+    }
+    let k = 0;
+    const iv = setInterval(() => {
+      if (my !== token) { clearInterval(iv); return; }
+      if (k >= results.length) {
+        clearInterval(iv);
+        finishTests(results, hint);
+        return;
+      }
+      appendRow(fn, results[k++]);
+    }, 110);
+    timers.push(iv);
+  }
+  function run() {
+    const my = ++token;
+    clearTimers();
+    const task = TASKS[current];
+    const fn = buggy ? task.bad : task.good;
+    const src = dedent(fn.toString());
+    promptEl.textContent = task.prompt;
+    testsEl.textContent = '';
+    testsEl.style.minHeight = (task.tests.length * 1.4) + 'rem';
+    sumEl.className = 'sum';
+    sumEl.textContent = buggy ? 'Writing a version with a bug in it\u2026' : 'Writing\u2026';
+    codeEl.style.minHeight = (src.split('\n').length * 1.312) + 'rem';
+    const done = () => {
+      codeEl.innerHTML = highlight(src);
+      showTests(fn, task.tests, task.hint, my);
+    };
+    if (reduce) { done(); return; }
+    let i = 0;
+    const iv = setInterval(() => {
+      if (my !== token) { clearInterval(iv); return; }
+      i = Math.min(src.length, i + 4);
+      if (i >= src.length) {
+        clearInterval(iv);
+        done();
+      } else {
+        codeEl.innerHTML = highlight(src.slice(0, i)) + '<span class="cur"></span>';
+      }
+    }, 14);
+    timers.push(iv);
+  }
+  Object.keys(TASKS).forEach((key) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = TASKS[key].label;
+    b.setAttribute('aria-pressed', key === current ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      current = key;
+      buggy = false;
+      syncControls();
+      run();
+    });
+    taskBtns[key] = b;
+    tasksEl.appendChild(b);
+  });
+  function syncControls() {
+    Object.keys(taskBtns).forEach((k) => {
+      taskBtns[k].setAttribute('aria-pressed', k === current ? 'true' : 'false');
+    });
+    bugBtn.setAttribute('aria-pressed', buggy ? 'true' : 'false');
+    bugBtn.textContent = buggy ? 'Remove the bug' : 'Add a bug';
+  }
+  bugBtn.addEventListener('click', () => {
+    buggy = !buggy;
+    syncControls();
+    run();
+  });
+  $('#rerun').addEventListener('click', run);
+  /* Start the demo the first time it scrolls into view. */
+  let started = false;
+  function startDemo() {
+    if (started) return;
+    started = true;
+    run();
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        startDemo();
+      }
+    }, { threshold: 0.3 });
+    io.observe($('#work'));
+  } else {
+    startDemo();
+  }
+  promptEl.textContent = TASKS[current].prompt;
+})();
+</script>
+</body>
+</html>

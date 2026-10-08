@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>guess number</title>
+</head>
+
+<body>
+    <script>
+        function guessNumber() {
+            const target = Math.floor(Math.random() * 100) + 1; // عدد بین 1 تا 100
+            let attempts = 0;
+            let guess;
+
+            while (true) {
+                guess = Number(prompt('یک عدد بین 1 تا 100 حدس بزن:'));
+                attempts++;
+
+                if (guess === target) {
+                    alert(`آفرین! درست حدس زدی. تعداد تلاش‌ها: ${attempts}`);
+                    break;
+                } else if (guess < target) {
+                    alert('عدد بزرگتره');
+                } else if (guess > target) {
+                    alert('عدد کوچکتره');
+                } else {
+                    alert('ورودی نامعتبره');
+                }
+            }
+        }
+
+        // اجرا
+        guessNumber();
+    </script>
+</body>
+
+</html>

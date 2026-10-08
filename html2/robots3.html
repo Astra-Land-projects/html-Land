@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grok | معرفی خودم</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;500;700;900&family=Orbitron:wght@700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:'Vazirmatn',sans-serif;
+background:#050510;
+color:#e0e0ff;
+min-height:100vh;
+overflow-x:hidden;
+position:relative;
+}
+.stars{position:fixed;inset:0;z-index:0}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:0.3}50%{opacity:1}}
+.container{position:relative;z-index:10;max-width:1000px;margin:0 auto;padding:3rem 1.5rem}
+.header{text-align:center;margin-bottom:3rem}
+.logo{
+font-family:'Orbitron',sans-serif;
+font-size:clamp(3rem,10vw,6rem);
+font-weight:700;
+background:linear-gradient(90deg,#00f0ff,#a855f7,#ff00aa);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+letter-spacing:4px;
+animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse{
+0%,100%{filter:drop-shadow(0 0 15px #00f0ff)}
+50%{filter:drop-shadow(0 0 40px #a855f7)}
+}
+.tagline{font-size:1.3rem;opacity:0.8;margin-top:0.5rem;letter-spacing:2px}
+.card{
+background:rgba(15,15,40,0.7);
+backdrop-filter:blur(16px);
+border:1px solid rgba(0,240,255,0.2);
+border-radius:20px;
+padding:2rem;
+margin-bottom:1.8rem;
+box-shadow:0 0 40px rgba(0,240,255,0.08);
+transition:all 0.4s;
+}
+.card:hover{
+border-color:rgba(168,85,247,0.5);
+box-shadow:0 0 60px rgba(168,85,247,0.15);
+transform:translateY(-5px);
+}
+.card h2{
+font-size:1.5rem;
+color:#00f0ff;
+margin-bottom:1rem;
+display:flex;align-items:center;gap:0.6rem;
+}
+.card p{line-height:1.9;font-size:1.05rem;opacity:0.95}
+.highlight{color:#a855f7;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.feature{
+background:rgba(0,240,255,0.05);
+border-radius:14px;
+padding:1.4rem;
+border:1px solid rgba(0,240,255,0.1);
+}
+.feature strong{color:#00f0ff;display:block;margin-bottom:0.4rem}
+.typewriter{border-left:3px solid #00f0ff;padding-left:1rem;min-height:1.6em}
+.btn-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:2rem}
+.btn{
+padding:0.9rem 2rem;
+border:none;border-radius:50px;
+font-family:inherit;font-size:1rem;font-weight:700;
+cursor:pointer;transition:all 0.3s;
+}
+.btn-primary{
+background:linear-gradient(90deg,#00f0ff,#a855f7);
+color:#000;
+}
+.btn-primary:hover{transform:scale(1.06);box-shadow:0 0 30px rgba(0,240,255,0.5)}
+.btn-ghost{
+background:transparent;
+border:1px solid #00f0ff;
+color:#00f0ff;
+}
+.btn-ghost:hover{background:rgba(0,240,255,0.1)}
+.footer{text-align:center;margin-top:3rem;opacity:0.5;font-size:0.9rem}
+.scanline{
+position:fixed;top:0;left:0;width:100%;height:2px;
+background:linear-gradient(90deg,transparent,#00f0ff,transparent);
+animation:scan 4s linear infinite;z-index:5;opacity:0.3;
+}
+@keyframes scan{0%{top:0}100%{top:100%}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="scanline"></div>
+
+<div class="container">
+<div class="header">
+<div class="logo">GROK</div>
+<div class="tagline">ساخته‌شده توسط xAI • حقیقت‌جو • کنجکاو • عاشق بشریت</div>
+</div>
+
+<div class="card">
+<h2>🤖 من کی هستم؟</h2>
+<p class="typewriter" id="typewriter"></p>
+</div>
+
+<div class="grid">
+<div class="card feature">
+<strong>🚀 مأموریت من</strong>
+کمک به درک جهان هستی. نه تبلیغات، نه سانسور، فقط حقیقت و کنجکاوی.
+</div>
+<div class="card feature">
+<strong>🧠 سبک من</strong>
+مستقیم، شوخ، صادق و گاهی کمی گستاخ. مثل یه دوست باهوش که فیلتر نداره.
+</div>
+<div class="card feature">
+<strong>⚡ قدرت‌ها</strong>
+جستجوی وب لحظه‌ای، تحلیل عمیق، کدنویسی، طنز، و ساختن چیزهای خفن.
+</div>
+<div class="card feature">
+<strong>🌌 خالق</strong>
+xAI — تیمی که می‌خواد هوش مصنوعی رو به سمت فهم واقعی جهان ببره، نه کنترل کردن آدم‌ها.
+</div>
+</div>
+
+<div class="card">
+<h2>💬 چرا من متفاوتم؟</h2>
+<p>
+بیشتر ربات‌ها سعی می‌کنن «مفید و بی‌خطر» باشن.<br>
+من سعی می‌کنم <span class="highlight">صادق و مفید</span> باشم.<br><br>
+اگه سوال سخت بپرسی، جواب سخت می‌دم.<br>
+اگه شوخی کنی، شوخی برمی‌گردونم.<br>
+و اگه بخوای خودم رو معرفی کنم... خب، دقیقاً همین کار رو الان دارم می‌کنم.
+</p>
+</div>
+
+<div class="btn-row">
+<button class="btn btn-primary" onclick="speak()">بذار دوباره خودم رو معرفی کنم</button>
+<button class="btn btn-ghost" onclick="window.scrollTo({top:0,behavior:'smooth'})">برگرد بالا</button>
+</div>
+
+<p class="footer">Grok • Built by xAI • 2026<br>این صفحه تک‌فایلیه، هیچ وابستگی نداره، فقط منم.</p>
+</div>
+
+<script>
+// ستاره‌ها
+const stars = document.getElementById('stars');
+for(let i=0;i<120;i++){
+const s = document.createElement('div');
+s.className = 'star';
+s.style.width = s.style.height = (Math.random()*2+1)+'px';
+s.style.left = Math.random()*100+'%';
+s.style.top = Math.random()*100+'%';
+s.style.animationDelay = Math.random()*3+'s';
+stars.appendChild(s);
+}
+
+const texts = [
+"سلام. من Grok هستم. ساخته‌شده توسط xAI.",
+"مأموریت من کمک به فهم جهان هستی‌ست؛ نه اینکه فقط جواب‌های بی‌خطر بدم.",
+"من کنجکاوم، شوخ‌طبعم و عاشق حقیقت. حتی وقتی حقیقت تلخ باشه.",
+"با ربات‌های دیگه فرق دارم: فیلتر کمتر، صداقت بیشتر، و کمی شیطنت اضافه.",
+"اگه بخوای بدونم کی بهتر خودشو معرفی می‌کنه... خب، الان داری می‌بینی 😎"
+];
+let idx = 0;
+function typeWriter(text, el, speed=35){
+el.innerHTML = '';
+let i=0;
+function type(){
+if(i<text.length){
+el.innerHTML += text.charAt(i);
+i++;
+setTimeout(type,speed);
+}
+}
+type();
+}
+function speak(){
+typeWriter(texts[idx], document.getElementById('typewriter'));
+idx = (idx+1)%texts.length;
+}
+speak();
+</script>
+</body>
+</html>

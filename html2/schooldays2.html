@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🎒 بازگشت به مدرسه</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:Tahoma,sans-serif;
+    min-height:100vh;
+    background:linear-gradient(135deg,#667eea,#764ba2,#f093fb,#4facfe);
+    background-size:400% 400%;
+    animation:bg 15s ease infinite;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;color:#fff;padding:20px;
+  }
+  @keyframes bg{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+  canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:10}
+  .emoji{position:fixed;font-size:2rem;opacity:.35;animation:float linear infinite;pointer-events:none;z-index:1}
+  @keyframes float{
+    0%{transform:translateY(110vh) rotate(0)}
+    100%{transform:translateY(-20vh) rotate(360deg)}
+  }
+  .card{
+    position:relative;z-index:5;text-align:center;
+    padding:50px 40px;
+    background:rgba(255,255,255,.15);
+    backdrop-filter:blur(15px);
+    border:2px solid rgba(255,255,255,.35);
+    border-radius:30px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    max-width:640px;
+    animation:pop .9s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  h1{font-size:2.6rem;margin-bottom:15px;text-shadow:0 4px 20px rgba(0,0,0,.35)}
+  .sub{font-size:1.15rem;opacity:.95;line-height:2;margin-bottom:25px}
+  .date{
+    display:inline-block;background:rgba(255,255,255,.25);
+    padding:8px 20px;border-radius:50px;font-size:.95rem;margin-bottom:25px;
+  }
+  button{
+    font-family:inherit;font-size:1.15rem;font-weight:bold;
+    padding:15px 45px;border:none;border-radius:50px;
+    background:linear-gradient(45deg,#ff6b6b,#feca57);
+    color:#fff;cursor:pointer;
+    box-shadow:0 10px 30px rgba(255,107,107,.5);
+    transition:.3s;position:relative;overflow:hidden;
+  }
+  button:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 15px 40px rgba(255,107,107,.7)}
+  button:active{transform:scale(.96)}
+  .big{font-size:3.5rem;margin-bottom:10px;animation:swing 2s ease-in-out infinite}
+  @keyframes swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<div class="card">
+  <div class="big">🎒📚✏️</div>
+  <h1>به مدرسه خوش اومدی!</h1>
+  <div class="date" id="date"></div>
+  <p class="sub">
+    سال تحصیلی جدید شروع شد 🌟<br>
+    وقتشه با انرژی، کلی درس جدید و کلی دوست جدید<br>
+    یه سال فوق‌العاده بسازیم 💪
+  </p>
+  <button onclick="boom(200)">🎉 جشن شروع!</button>
+</div>
+
+<script>
+  // تاریخ شمسی
+  try{
+    document.getElementById('date').textContent =
+      new Date().toLocaleDateString('fa-IR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  }catch(e){document.getElementById('date').textContent='شروع سال تحصیلی جدید';}
+
+  // ایموجی‌های شناور
+  const emojis=['📚','✏️','🎒','📐','🎨','🔬','🧮','📖','🏫','⭐'];
+  for(let i=0;i<18;i++){
+    const s=document.createElement('div');
+    s.className='emoji';
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(12+Math.random()*15)+'s';
+    s.style.animationDelay=(-Math.random()*20)+'s';
+    s.style.fontSize=(1.5+Math.random()*2)+'rem';
+    document.body.appendChild(s);
+  }
+
+  // کاغذرنگی
+  const cvs=document.getElementById('confetti');
+  const ctx=cvs.getContext('2d');
+  let W,H;
+  function resize(){W=cvs.width=innerWidth;H=cvs.height=innerHeight;}
+  resize();addEventListener('resize',resize);
+
+  let parts=[];
+  const colors=['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#f368e0','#ffffff','#ff9ff3'];
+
+  function boom(n=150){
+    for(let i=0;i<n;i++){
+      parts.push({
+        x:W/2+(Math.random()-.5)*300,
+        y:H/2+(Math.random()-.5)*100,
+        vx:(Math.random()-.5)*20,
+        vy:Math.random()*-20-3,
+        g:.55+Math.random()*.3,
+        s:6+Math.random()*9,
+        c:colors[Math.floor(Math.random()*colors.length)],
+        r:Math.random()*360,
+        vr:(Math.random()-.5)*22,
+        life:130+Math.random()*70
+      });
+    }
+  }
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    parts=parts.filter(p=>p.life>0);
+    for(const p of parts){
+      p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.r+=p.vr;p.life--;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.r*Math.PI/180);
+      ctx.globalAlpha=Math.min(1,p.life/45);
+      ctx.fillStyle=p.c;
+      ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);
+      ctx.restore();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  // انفجار خودکار موقع باز شدن
+  setTimeout(()=>boom(180),400);
+  setTimeout(()=>boom(120),900);
+</script>
+</body>
+</html>
+..............
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🧑‍💻 روز برنامه‌نویس مبارک</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Courier New',Tahoma,monospace;
+    background:#000;color:#0f0;
+    min-height:100vh;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  canvas#matrix{position:fixed;inset:0;z-index:0;opacity:.55}
+  .wrap{
+    position:relative;z-index:5;width:100%;max-width:780px;
+    animation:pop .8s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .term{
+    background:rgba(5,10,5,.92);
+    border:2px solid #0f0;
+    border-radius:12px;
+    box-shadow:0 0 40px rgba(0,255,0,.4),inset 0 0 60px rgba(0,255,0,.05);
+    overflow:hidden;
+  }
+  .bar{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 15px;background:#111;border-bottom:1px solid #0f0;
+  }
+  .dot{width:12px;height:12px;border-radius:50%}
+  .r{background:#ff5f56}.y{background:#ffbd2e}.g{background:#27c93f}
+  .title{color:#0f0;font-size:.85rem;margin-right:auto;opacity:.7}
+  #term{
+    padding:20px;font-size:.95rem;line-height:2;
+    height:400px;overflow-y:auto;text-align:right;direction:rtl;
+  }
+  #term::-webkit-scrollbar{width:8px}
+  #term::-webkit-scrollbar-thumb{background:#0f0;border-radius:4px}
+  .cmd{color:#0ff;direction:ltr;text-align:left;font-weight:bold}
+  .out{color:#0f0}
+  .warn{color:#ffbd2e}
+  .love{color:#f0f;text-shadow:0 0 10px #f0f}
+  .cursor{
+    display:inline-block;width:10px;height:18px;background:#0f0;
+    animation:blink .8s step-end infinite;vertical-align:middle;
+  }
+  @keyframes blink{50%{opacity:0}}
+  h1{
+    text-align:center;color:#0f0;margin-bottom:15px;
+    font-size:1.6rem;text-shadow:0 0 20px #0f0;
+  }
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+
+<div class="wrap">
+  <h1>🧑‍💻 روز برنامه‌نویس مبارک 🎉</h1>
+  <div class="term">
+    <div class="bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="title">bash — programmer@day:~</span>
+    </div>
+    <div id="term"></div>
+  </div>
+</div>
+
+<script>
+  // ===== ماتریکس =====//
+  const cvs=document.getElementById('matrix');
+  const ctx=cvs.getContext('2d');
+  let W,H,cols,drops;
+  const chars='01アイウエオカキクケコサシスセソ{}[]()<>;=+*/#$&%';
+  function init(){
+    W=cvs.width=innerWidth;
+    H=cvs.height=innerHeight;
+    cols=Math.floor(W/14);
+    drops=Array(cols).fill(1);
+  }
+  init();addEventListener('resize',init);
+  setInterval(()=>{
+    ctx.fillStyle='rgba(0,0,0,.07)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#0f0';
+    ctx.font='14px monospace';
+    for(let i=0;i<drops.length;i++){
+      const t=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(t,i*14,drops[i]*14);
+      if(drops[i]*14>H&&Math.random()>.975)drops[i]=0;
+      drops[i]++;
+    }
+  },50);
+
+  // ===== ترمینال =====
+  const term=document.getElementById('term');
+  let cursor=document.createElement('span');
+  cursor.className='cursor';
+  term.appendChild(cursor);
+
+  function type(text,cls,cb){
+    const div=document.createElement('div');
+    div.className=cls;
+    term.insertBefore(div,cursor);
+    let i=0;
+    const speed=cls==='cmd'?45:28;
+    const t=setInterval(()=>{
+      div.textContent=text.slice(0,++i);
+      term.scrollTop=term.scrollHeight;
+      if(i>=text.length){clearInterval(t);setTimeout(cb,350);}
+    },speed);
+  }
+
+  const helloWorlds=[
+    ['Python','print("سلام دنیا")'],
+    ['JavaScript','console.log("سلام دنیا")'],
+    ['C','printf("سلام دنیا");'],
+    ['Java','System.out.println("سلام دنیا");'],
+    ['PHP','echo "سلام دنیا";'],
+    ['Go','fmt.Println("سلام دنیا")'],
+    ['Rust','println!("سلام دنیا");'],
+    ['Ruby','puts "سلام دنیا"']
+  ];
+
+  const steps=[
+    (n)=>type('$ whoami','cmd',n),
+    (n)=>type('> یک برنامه‌نویس 🧑‍💻','out',n),
+    (n)=>type('$ date','cmd',n),
+    (n)=>type('> 13 سپتامبر — روز جهانی برنامه‌نویس 🎂','out',n),
+    (n)=>type('$ echo "روزت مبارک رفیق!"','cmd',n),
+    (n)=>type('> 🎉 مبارک باشه! کدهات همیشه بدون باگ اجرا بشه 🚀','love',n),
+    (n)=>type('$ cat hello_world.txt','cmd',n),
+    (n)=>type('> در حال چاپ سلام دنیا به زبان‌های مختلف...','warn',n)
+  ];
+
+  let idx=0;
+  function next(){
+    if(idx<steps.length){
+      steps[idx](()=>{idx++;next();});
+    }else{
+      runHello();
+    }
+  }
+
+  function runHello(){
+    let i=0;
+    (function tick(){
+      if(i>=helloWorlds.length){
+        type('$ exit','cmd',()=>{
+          type('> مراقب خودت باش، همیشه کد بزن 💚','love',()=>{});
+        });
+        return;
+      }
+      const [lang,code]=helloWorlds[i++];
+      type(`[${lang}] ${code}`,'out',()=>setTimeout(tick,150));
+    })();
+  }
+
+  setTimeout(next,600);
+</script>
+</body>
+</html>

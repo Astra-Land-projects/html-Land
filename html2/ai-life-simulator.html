@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Life Simulator</title>
+
+<style>
+
+*{
+    box-sizing:border-box
+}
+
+body{
+    margin:0;
+    background:#070b13;
+    color:#eef5ff;
+    font-family:Arial,sans-serif;
+    overflow:hidden
+}
+
+header{
+    height:64px;
+    background:#0d1523;
+    border-bottom:1px solid #26364d;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px
+}
+
+h1{
+    margin:0;
+    font-size:20px
+}
+
+button{
+    background:#17253a;
+    color:white;
+    border:1px solid #38506c;
+    border-radius:7px;
+    padding:8px 12px;
+    cursor:pointer
+}
+
+button:hover{
+    background:#233c5b
+}
+
+.main{
+    height:calc(100vh - 64px);
+    display:grid;
+    grid-template-columns:1fr 340px
+}
+
+.world{
+    position:relative;
+    background:#111d29
+}
+
+canvas{
+    width:100%;
+    height:100%
+}
+
+.panel{
+    background:#0d1522;
+    border-left:1px solid #26364d;
+    padding:15px;
+    overflow:auto
+}
+
+.agent{
+    background:#121e2d;
+    padding:11px;
+    margin-bottom:9px;
+    border-radius:8px
+}
+
+.agent.selected{
+    border:1px solid #5d8fbd
+}
+
+.name{
+    font-weight:bold;
+    margin-bottom:7px
+}
+
+.bar{
+    height:6px;
+    background:#263448;
+    border-radius:5px;
+    overflow:hidden;
+    margin:3px 0 6px
+}
+
+.fill{
+    height:100%;
+    background:#4ca6ff
+}
+
+.stat{
+    font-size:11px;
+    color:#a8b7c9
+}
+
+.action{
+    color:#dce8f5;
+    font-size:12px;
+    margin-top:6px
+}
+
+.info{
+    background:#111e2d;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:12px
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>🤖 AI LIFE SIMULATOR</h1>
+
+<div>
+<button onclick="toggle()">▶ / ⏸</button>
+<button onclick="reset()">↻ Reset</button>
+<button onclick="addAgent()">+ AI</button>
+</div>
+
+</header>
+
+<div class="main">
+
+<div class="world">
+<canvas id="world"></canvas>
+</div>
+
+<div class="panel">
+
+<div class="info">
+<b>AI SOCIETY</b>
+<div class="stat">
+Agents are autonomous simulated minds.
+</div>
+</div>
+
+<div id="agents"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas=document.getElementById("world");
+const ctx=canvas.getContext("2d");
+
+let W,H;
+
+function resize(){
+
+    W=canvas.width=canvas.clientWidth;
+    H=canvas.height=canvas.clientHeight;
+
+}
+
+window.addEventListener("resize",resize);
+resize();
+
+let running=true;
+let time=0;
+let agents=[];
+
+const personalities=[
+    "Explorer",
+    "Worker",
+    "Social",
+    "Thinker",
+    "Survivor"
+];
+
+const actions=[
+    "Eating",
+    "Working",
+    "Sleeping",
+    "Exploring",
+    "Socializing",
+    "Resting"
+];
+
+class AI{
+
+    constructor(id){
+
+        this.id=id;
+
+        this.name=
+            "AI-"+String(id).padStart(2,"0");
+
+        this.x=100+Math.random()*(W-200);
+        this.y=100+Math.random()*(H-200);
+
+        this.health=100;
+        this.energy=60+Math.random()*40;
+        this.hunger=Math.random()*40;
+        this.happiness=50+Math.random()*50;
+
+        this.intelligence=40+Math.random()*60;
+        this.social=20+Math.random()*80;
+
+        this.money=50+Math.random()*100;
+
+        this.memory=[];
+
+        this.personality=
+            personalities[
+                Math.floor(Math.random()*personalities.length)
+            ];
+
+        this.action="Resting";
+
+        this.age=0;
+
+    }
+
+    remember(event){
+
+        this.memory.push({
+            time:time,
+            event:event
+        });
+
+        if(this.memory.length>20)
+            this.memory.shift();
+
+    }
+
+    think(){
+
+        if(this.hunger>80){
+
+            this.action="Eating";
+            return;
+
+        }
+
+        if(this.energy<20){
+
+            this.action="Sleeping";
+            return;
+
+        }
+
+        if(this.happiness<20){
+
+            this.action=
+                this.social>50
+                ?"Socializing"
+                :"Exploring";
+
+            return;
+
+        }
+
+        if(this.money<20){
+
+            this.action="Working";
+            return;
+
+        }
+
+        // personality-based decision
+
+        if(this.personality==="Explorer"){
+
+            if(Math.random()<.6)
+                this.action="Exploring";
+            else
+                this.action="Working";
+
+        }
+
+        else if(this.personality==="Worker"){
+
+            if(Math.random()<.7)
+                this.action="Working";
+            else
+                this.action="Resting";
+
+        }
+
+        else if(this.personality==="Social"){
+
+            if(Math.random()<.7)
+                this.action="Socializing";
+            else
+                this.action="Working";
+
+        }
+
+        else if(this.personality==="Thinker"){
+
+            if(Math.random()<.6)
+                this.action="Exploring";
+            else
+                this.action="Working";
+
+        }
+
+        else{
+
+            this.action=
+                actions[Math.floor(Math.random()*actions.length)];
+
+        }
+
+    }
+
+    update(){
+
+        this.age++;
+
+        this.hunger+=.05;
+        this.energy-=.025;
+
+        this.think();
+
+        switch(this.action){
+
+            case "Eating":
+
+                this.hunger-=.7;
+                this.energy+=.1;
+
+                if(Math.random()<.01)
+                    this.remember("Found food");
+
+                break;
+
+            case "Working":
+
+                this.energy-=.08;
+                this.hunger+=.04;
+                this.money+=.12;
+
+                if(Math.random()<.01)
+                    this.remember("Worked for money");
+
+                break;
+
+            case "Sleeping":
+
+                this.energy+=.4;
+                this.hunger+=.03;
+
+                break;
+
+            case "Exploring":
+
+                this.energy-=.06;
+
+                this.x+=(Math.random()-.5)*2;
+                this.y+=(Math.random()-.5)*2;
+
+                if(Math.random()<.01)
+                    this.remember("Discovered something");
+
+                break;
+
+            case "Socializing":
+
+                this.energy-=.04;
+                this.happiness+=.12;
+
+                if(Math.random()<.01)
+                    this.remember("Talked to another AI");
+
+                break;
+
+            case "Resting":
+
+                this.energy+=.1;
+                this.happiness+=.03;
+
+                break;
+
+        }
+
+        this.happiness-=.015;
+
+        this.health-=
+            this.hunger>95
+            ?0.04
+            :0;
+
+        this.energy=Math.max(0,Math.min(100,this.energy));
+        this.hunger=Math.max(0,Math.min(100,this.hunger));
+        this.happiness=Math.max(0,Math.min(100,this.happiness));
+        this.health=Math.max(0,Math.min(100,this.health));
+
+        if(this.x<10)this.x=10;
+        if(this.y<10)this.y=10;
+        if(this.x>W-10)this.x=W-10;
+        if(this.y>H-10)this.y=H-10;
+
+    }
+
+}
+
+function addAgent(){
+
+    agents.push(new AI(agents.length+1));
+
+}
+
+function reset(){
+
+    agents=[];
+
+    for(let i=0;i<12;i++)
+        addAgent();
+
+    time=0;
+
+}
+
+function toggle(){
+
+    running=!running;
+
+}
+
+function update(){
+
+    if(!running)return;
+
+    time++;
+
+    for(const a of agents)
+        a.update();
+
+    socialInteractions();
+
+}
+
+function socialInteractions(){
+
+    for(let i=0;i<agents.length;i++){
+
+        for(let j=i+1;j<agents.length;j++){
+
+            const a=agents[i];
+            const b=agents[j];
+
+            const d=Math.hypot(
+                a.x-b.x,
+                a.y-b.y
+            );
+
+            if(d<35){
+
+                if(
+                    a.action==="Socializing" ||
+                    b.action==="Socializing"
+                ){
+
+                    a.happiness+=.08;
+                    b.happiness+=.08;
+
+                    if(Math.random()<.005){
+
+                        a.remember("Met "+b.name);
+                        b.remember("Met "+a.name);
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
+function bar(label,value){
+
+    return `
+    <div class="stat">
+    ${label}: ${value.toFixed(0)}
+    <div class="bar">
+    <div class="fill"
+    style="width:${Math.max(0,Math.min(100,value))}%">
+    </div>
+    </div>
+    </div>
+    `;
+
+}
+
+function updateUI(){
+
+    const container=document.getElementById("agents");
+
+    container.innerHTML="";
+
+    agents.forEach(a=>{
+
+        const div=document.createElement("div");
+
+        div.className="agent";
+
+        div.innerHTML=`
+
+        <div class="name">
+        🤖 ${a.name}
+        </div>
+
+        <div class="stat">
+        Personality: ${a.personality}
+        </div>
+
+        <div class="action">
+        Current decision: <b>${a.action}</b>
+        </div>
+
+        ${bar("❤️ Health",a.health)}
+        ${bar("⚡ Energy",a.energy)}
+        ${bar("🍖 Hunger",a.hunger)}
+        ${bar("😊 Happiness",a.happiness)}
+
+        <div class="stat">
+        🧠 Intelligence: ${a.intelligence.toFixed(0)}
+        </div>
+
+        <div class="stat">
+        💰 Money: $${a.money.toFixed(0)}
+        </div>
+
+        <div class="stat">
+        🧠 Memories: ${a.memory.length}
+        </div>
+
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,W,H);
+
+    ctx.fillStyle="#111d29";
+    ctx.fillRect(0,0,W,H);
+
+    // city grid
+
+    ctx.strokeStyle="rgba(100,140,170,.08)";
+    ctx.lineWidth=1;
+
+    for(let x=0;x<W;x+=50){
+
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,H);
+        ctx.stroke();
+
+    }
+
+    for(let y=0;y<H;y+=50){
+
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(W,y);
+        ctx.stroke();
+
+    }
+
+    for(const a of agents){
+
+        let radius=7;
+
+        if(a.action==="Socializing")
+            radius=10;
+
+        ctx.fillStyle="#4ca6ff";
+
+        ctx.beginPath();
+        ctx.arc(a.x,a.y,radius,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle="#fff";
+        ctx.font="11px Arial";
+        ctx.textAlign="center";
+
+        ctx.fillText(
+            a.name,
+            a.x,
+            a.y-14
+        );
+
+        ctx.fillStyle="#8ba7c4";
+        ctx.font="9px Arial";
+
+        ctx.fillText(
+            a.action,
+            a.x,
+            a.y+20
+        );
+
+    }
+
+    updateUI();
+
+}
+
+function loop(){
+
+    if(running)
+        update();
+
+    draw();
+
+    requestAnimationFrame(loop);
+
+}
+
+reset();
+loop();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>روز پسر مبارک 💙</title>
+  <style>
+    :root {
+      --bg: #070b1c;
+      --card: rgba(14, 24, 57, .72);
+      --blue: #4cc9ff;
+      --purple: #8b5cf6;
+      --gold: #ffd166;
+      --text: #f7fbff;
+      --muted: #aeb9d6;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(76, 201, 255, .18), transparent 30%),
+        radial-gradient(circle at 90% 85%, rgba(139, 92, 246, .2), transparent 32%),
+        linear-gradient(135deg, #050817, #0a1230 55%, #09051a);
+    }
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .75;
+      background-image:
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(#8be9fd 1px, transparent 1px);
+      background-size: 46px 46px, 91px 91px;
+      background-position: 0 0, 20px 32px;
+      mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .container {
+      width: min(940px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 46px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .badge {
+      display: table;
+      margin: 0 auto 18px;
+      padding: 9px 16px;
+      border: 1px solid rgba(76, 201, 255, .45);
+      border-radius: 999px;
+      background: rgba(76, 201, 255, .08);
+      color: #bcefff;
+      font-size: .9rem;
+      box-shadow: 0 0 30px rgba(76, 201, 255, .12);
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0;
+      font-size: clamp(2.3rem, 7vw, 5.6rem);
+      line-height: 1.2;
+      letter-spacing: -2px;
+      text-shadow: 0 0 30px rgba(76, 201, 255, .35);
+    }
+
+    h1 span {
+      color: var(--blue);
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .subtitle {
+      max-width: 670px;
+      margin: 18px auto 30px;
+      text-align: center;
+      line-height: 2;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .card {
+      padding: clamp(22px, 5vw, 46px);
+      border: 1px solid rgba(160, 190, 255, .18);
+      border-radius: 28px;
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, .32);
+    }
+
+    .name-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    input {
+      flex: 1;
+      min-width: min(100%, 230px);
+      padding: 15px 18px;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      border: 1px solid rgba(76, 201, 255, .3);
+      border-radius: 14px;
+      background: rgba(4, 10, 30, .6);
+    }
+
+    input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(76, 201, 255, .1);
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 20px;
+      cursor: pointer;
+      color: #06111e;
+      font-weight: bold;
+      font-size: .96rem;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--blue), #7be1ff);
+      box-shadow: 0 10px 30px rgba(76, 201, 255, .24);
+    }
+
+    .message-box {
+      position: relative;
+      min-height: 190px;
+      padding: 30px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(76, 201, 255, .12), rgba(139, 92, 246, .14)),
+        rgba(6, 10, 29, .58);
+      border: 1px solid rgba(255, 255, 255, .1);
+    }
+
+    .message-box::before {
+      content: "✦";
+      position: absolute;
+      left: 24px;
+      top: 13px;
+      color: var(--gold);
+      font-size: 3rem;
+      opacity: .75;
+    }
+
+    #message {
+      margin: 0;
+      padding-left: 45px;
+      min-height: 105px;
+      white-space: pre-line;
+      font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+      line-height: 2.25;
+      color: #f3f8ff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .14);
+    }
+
+    .mini-note {
+      margin: 25px 0 0;
+      text-align: center;
+      color: #91a4c9;
+      font-size: .86rem;
+    }
+
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 16px;
+      top: -20px;
+      z-index: 99;
+      border-radius: 3px;
+      pointer-events: none;
+      animation: fall linear forwards;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 12px 18px;
+      color: #062113;
+      background: #8cf7b2;
+      border-radius: 999px;
+      font-weight: bold;
+      transition: .35s;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes float {
+      50% { transform: translateY(-9px) rotate(-4deg); }
+    }
+
+    @media (max-width: 520px) {
+      .container { padding-top: 30px; }
+      .card { border-radius: 20px; }
+      .message-box { padding: 22px; }
+      #message { padding-left: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <main class="container">
+    <div class="badge">یک پروژه اختصاصی برای آدم‌های باحال 💙</div>
+
+    <h1>روز پسر <span>مبارک!</span></h1>
+
+    <p class="subtitle">
+      امروز بهانه‌ای است برای گفتن یک جمله‌ی ساده اما مهم:
+      حضورت، تلاش‌هایت و خودِ واقعی‌ات ارزشمند است.
+    </p>
+
+    <section class="card">
+      <div class="name-row">
+        <input id="nameInput" type="text" placeholder="اسم پسر قهرمان را بنویس..." />
+        <button class="primary" onclick="createMessage()">ساخت تبریک اختصاصی ✨</button>
+      </div>
+
+      <div class="message-box">
+        <p id="message">به افتخار همه‌ی پسرهایی که با رویاهای بزرگ، قلب مهربان و انرژی بی‌نهایت‌شان دنیا را جذاب‌تر می‌کنند...
+
+روزت مبارک قهرمان! 💙</p>
+      </div>
+
+      <div class="actions">
+        <button class="primary" onclick="celebrate()">جشن بگیریم 🎉</button>
+        <button class="secondary" onclick="copyMessage()">کپی متن تبریک 📋</button>
+        <button class="secondary" onclick="randomMessage()">متن جدید 🎲</button>
+      </div>
+
+      <p class="mini-note">ساخته شده با HTML، CSS و JavaScript — بدون نصب هیچ چیز.</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">متن با موفقیت کپی شد ✅</div>
+
+  <script>
+    const messages = [
+      (name) => `رفیق عزیز${name ? "، " + name : ""}!
+
+روز پسر مبارک 💙
+امیدوارم همیشه با قدرت جلو بروی، با مهربانی بدرخشی و برای رویاهایت بجنگی.
+تو قرار نیست شبیه هیچ‌کس باشی؛ نسخه‌ی واقعی خودت، خودش یک قهرمان است.`,
+
+      (name) => `${name ? name + " جان،" : "قهرمان!"}
+
+امروز فقط یک تبریک ساده نیست؛
+یادآوری این است که حضور تو، خنده‌هایت، تلاش‌هایت و حتی زمین خوردن و دوباره بلند شدنت ارزش دارد.
+
+روز پسر مبارک؛ بدرخش! ✨`,
+
+      (name) => `برای ${name || "بهترین پسر دنیا"}:
+
+آرزو می‌کنم راهت روشن،
+قلبت آرام،
+تصمیم‌هایت شجاعانه
+و آینده‌ات پر از اتفاق‌های بزرگ باشد.
+
+روزت مبارک رفیق آبی‌پوش! 💙`
+    ];
+
+    let currentIndex = 0;
+
+    function typeText(text) {
+      const box = document.getElementById("message");
+      box.textContent = "";
+      let i = 0;
+
+      const timer = setInterval(() => {
+        box.textContent += text[i];
+        i++;
+        if (i >= text.length) clearInterval(timer);
+      }, 13);
+    }
+
+    function createMessage() {
+      const name = document.getElementById("nameInput").value.trim();
+      currentIndex = 0;
+      typeText(messages[currentIndex](name));
+      celebrate();
+    }
+
+    function randomMessage() {
+      const name = document.getElementById("nameInput").value.trim();
+      currentIndex = (currentIndex + 1) % messages.length;
+      typeText(messages[currentIndex](name));
+    }
+
+    function celebrate() {
+      const colors = ["#4cc9ff", "#8b5cf6", "#ffd166", "#ff5da2", "#8cf7b2", "#ffffff"];
+
+      for (let i = 0; i < 140; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti";
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+        piece.style.animationDelay = Math.random() * .5 + "s";
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(piece);
+
+        setTimeout(() => piece.remove(), 5000);
+      }
+    }
+
+    async function copyMessage() {
+      const text = document.getElementById("message").innerText;
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+
+      const toast = document.getElementById("toast");
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+  </script>
+</body>
+</html>

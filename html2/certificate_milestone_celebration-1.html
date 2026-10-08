@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Certificate Milestone Celebration</title>
+<style>
+  :root {
+    --accent: #8b5cf6;
+    --accent-2: #c084fc;
+    --accent-3: #ede9fe;
+    --bg-1: #10051f;
+    --bg-2: #241047;
+    --text: #ffffff;
+    --muted: #d9d2ea;
+    --card: rgba(255,255,255,.10);
+    --border: rgba(255,255,255,.18);
+    --shadow: rgba(139,92,246,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: Tahoma, Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 35%),
+      radial-gradient(circle at 80% 80%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 35%),
+      linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    overflow-x: hidden;
+    transition: background .45s ease;
+  }
+
+  .container {
+    width: min(1100px, 92%);
+    margin: 0 auto;
+    padding: 34px 0 60px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .brand {
+    font-weight: 900;
+    letter-spacing: .5px;
+    font-size: 1.05rem;
+    opacity: .92;
+  }
+
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .82rem;
+    color: var(--accent-3);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.06);
+    backdrop-filter: blur(10px);
+  }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 50% { transform: scale(1.55); opacity: .55; } }
+
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 56px 26px 46px;
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.05));
+    box-shadow: 0 25px 75px rgba(0,0,0,.28), 0 0 80px var(--shadow);
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+  }
+
+  .glow {
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: var(--accent);
+    filter: blur(80px);
+    opacity: .20;
+    pointer-events: none;
+  }
+  .g1 { top: -140px; right: -90px; }
+  .g2 { bottom: -160px; left: -100px; background: var(--accent-2); }
+
+  .badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 999px;
+    color: var(--accent-3);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.07);
+    font-weight: 800;
+    font-size: .85rem;
+  }
+
+  h1 {
+    margin: 20px 0 4px;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    line-height: 1.05;
+    font-weight: 1000;
+    text-shadow: 0 0 35px var(--shadow);
+  }
+
+  .number {
+    font-size: clamp(5rem, 18vw, 12rem);
+    line-height: .85;
+    font-weight: 1000;
+    color: var(--accent-3);
+    text-shadow: 0 0 12px var(--accent), 0 0 45px var(--accent), 0 0 100px var(--shadow);
+    margin: 24px 0 18px;
+    transition: color .35s ease, text-shadow .35s ease, transform .25s ease;
+  }
+
+  .number.bump { animation: bump .45s ease; }
+  @keyframes bump {
+    50% { transform: scale(1.06); }
+  }
+
+  .subtitle {
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 auto;
+    line-height: 2;
+  }
+
+  .stats {
+    width: min(800px, 100%);
+    margin: 30px auto 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .stat {
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.14);
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .stat strong { display: block; font-size: 1.25rem; color: var(--accent-3); }
+  .stat span { color: var(--muted); font-size: .82rem; }
+
+  .controls {
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 18px;
+  }
+
+  .panel {
+    background: rgba(255,255,255,.07);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 20px;
+    backdrop-filter: blur(12px);
+  }
+
+  .panel h2 {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+  }
+
+  label {
+    display: block;
+    color: var(--muted);
+    font-size: .86rem;
+    margin-bottom: 8px;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.22);
+    color: white;
+    outline: none;
+    font-size: 1rem;
+  }
+
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+
+  .field { margin-bottom: 15px; }
+
+  .colors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+  }
+
+  .color-btn {
+    border: 2px solid transparent;
+    border-radius: 13px;
+    padding: 10px 7px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 800;
+    font-size: .78rem;
+    min-height: 44px;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .color-btn:hover { transform: translateY(-2px); }
+  .color-btn.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+
+  .purple { background: #7c3aed; }
+  .green  { background: #16a34a; }
+  .blue   { background: #2563eb; }
+  .gold   { background: #ca8a04; }
+  .red    { background: #dc2626; }
+  .pink   { background: #db2777; }
+  .cyan   { background: #0891b2; }
+  .orange { background: #ea580c; }
+
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .82rem;
+    margin-top: 22px;
+  }
+
+  .confetti {
+    position: fixed;
+    width: 9px; height: 16px;
+    top: -20px;
+    pointer-events: none;
+    z-index: 50;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translate3d(var(--x), 110vh, 0) rotate(760deg); opacity: .05; }
+  }
+
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: 1fr; }
+    .controls { grid-template-columns: 1fr; }
+    .colors { grid-template-columns: repeat(2, 1fr); }
+    .topbar { align-items: flex-start; flex-direction: column; }
+    .hero { padding: 42px 17px 30px; }
+  }
+
+  .firework-rocket {
+    position: fixed; width: 5px; height: 15px; border-radius: 50%;
+    pointer-events: none; z-index: 55;
+    box-shadow: 0 0 10px var(--accent), 0 0 18px var(--accent-2);
+    background: var(--accent-2);
+    animation: rocketFly 650ms cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes rocketFly {
+    to { transform: translate(var(--tx), var(--ty)); opacity: .9; }
+  }
+  .spark {
+    position: fixed; width: 6px; height: 6px; border-radius: 50%;
+    pointer-events: none; z-index: 56;
+    background: var(--spark);
+    box-shadow: 0 0 7px var(--spark), 0 0 14px var(--spark);
+    animation: sparkBurst 1.35s ease-out forwards;
+  }
+  @keyframes sparkBurst {
+    0% { transform: translate(0,0) scale(1.2); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(.05); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">🏆 Certificate Milestone</div>
+    <div class="live"><span class="dot"></span> Live celebration mode</div>
+  </div>
+
+  <main class="hero">
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="badge" id="badgeText">🎓 A NEW MILESTONE</div>
+    <h1 id="title">Certificate Achievement Unlocked</h1>
+    <div class="number" id="bigNumber">216</div>
+    <p class="subtitle" id="subtitle">
+      گواهی و مدرک شماره <strong id="inlineNumber">216</strong> هم ثبت شد! 🔥<br>
+      یک قدم دیگر جلوتر، یک دستاورد دیگر برای افتخار.
+    </p>
+
+    <div class="stats">
+      <div class="stat"><strong id="statNumber">216</strong><span>Certificates / Credentials</span></div>
+      <div class="stat"><strong>🚀</strong><span>Learning Progress</span></div>
+      <div class="stat"><strong>∞</strong><span>Next Goal: Keep Growing</span></div>
+    </div>
+  </main>
+
+  <section class="controls">
+    <div class="panel">
+      <h2>⚙️ تنظیمات جشن</h2>
+      <div class="field">
+        <label for="numberInput">تعداد مدرک / عدد جشن</label>
+        <input id="numberInput" type="number" min="0" value="216" />
+      </div>
+      <div class="field">
+        <label for="nameInput">اسم یا متن اصلی (اختیاری)</label>
+        <input id="nameInput" type="text" value="Certificate Achievement Unlocked" />
+      </div>
+      <button id="celebrateBtn" style="width:100%;border:0;border-radius:13px;padding:13px;font-weight:900;cursor:pointer;background:var(--accent);color:#fff;box-shadow:0 10px 30px var(--shadow);">
+        🎉 Celebrate Now
+      </button>
+    </div>
+
+    <div class="panel">
+      <h2>🎨 تم رنگی</h2>
+      <div class="colors">
+        <button class="color-btn purple active" data-theme="purple">بنفش</button>
+        <button class="color-btn green" data-theme="green">سبز</button>
+        <button class="color-btn blue" data-theme="blue">آبی</button>
+        <button class="color-btn gold" data-theme="gold">طلایی</button>
+        <button class="color-btn red" data-theme="red">قرمز</button>
+        <button class="color-btn pink" data-theme="pink">صورتی</button>
+        <button class="color-btn cyan" data-theme="cyan">فیروزه‌ای</button>
+        <button class="color-btn orange" data-theme="orange">نارنجی</button>
+      </div>
+      <div class="footer" style="margin-top:16px;">با انتخاب رنگ، کل تم پروژه زنده تغییر می‌کند.</div>
+    </div>
+  </section>
+
+  <div class="footer">Made for the next milestone — 217, 218, 219… 🚀</div>
+</div>
+
+<script>
+const root = document.documentElement;
+const numberInput = document.getElementById('numberInput');
+const nameInput = document.getElementById('nameInput');
+const bigNumber = document.getElementById('bigNumber');
+const inlineNumber = document.getElementById('inlineNumber');
+const statNumber = document.getElementById('statNumber');
+const title = document.getElementById('title');
+const subtitle = document.getElementById('subtitle');
+const celebrateBtn = document.getElementById('celebrateBtn');
+
+const themes = {
+  purple: { accent:'#8b5cf6', accent2:'#c084fc', accent3:'#ede9fe', bg1:'#10051f', bg2:'#241047', shadow:'rgba(139,92,246,.35)' },
+  green:  { accent:'#22c55e', accent2:'#86efac', accent3:'#dcfce7', bg1:'#03170b', bg2:'#08351a', shadow:'rgba(34,197,94,.35)' },
+  blue:   { accent:'#3b82f6', accent2:'#93c5fd', accent3:'#dbeafe', bg1:'#03101f', bg2:'#0b2b50', shadow:'rgba(59,130,246,.35)' },
+  gold:   { accent:'#eab308', accent2:'#fde047', accent3:'#fef9c3', bg1:'#171003', bg2:'#4a3504', shadow:'rgba(234,179,8,.35)' },
+  red:    { accent:'#ef4444', accent2:'#fca5a5', accent3:'#fee2e2', bg1:'#1d0303', bg2:'#4a0b0b', shadow:'rgba(239,68,68,.35)' },
+  pink:   { accent:'#ec4899', accent2:'#f9a8d4', accent3:'#fce7f3', bg1:'#1c0413', bg2:'#4a092e', shadow:'rgba(236,72,153,.35)' },
+  cyan:   { accent:'#06b6d4', accent2:'#67e8f9', accent3:'#cffafe', bg1:'#02171b', bg2:'#073844', shadow:'rgba(6,182,212,.35)' },
+  orange: { accent:'#f97316', accent2:'#fdba74', accent3:'#ffedd5', bg1:'#1b0902', bg2:'#4a1b04', shadow:'rgba(249,115,22,.35)' }
+};
+
+function updateNumber(value, celebrate=true) {
+  const n = Math.max(0, parseInt(value || 0, 10));
+  numberInput.value = n;
+  bigNumber.textContent = n.toLocaleString('en-US');
+  inlineNumber.textContent = n.toLocaleString('en-US');
+  statNumber.textContent = n.toLocaleString('en-US');
+  subtitle.innerHTML = `گواهی و مدرک شماره <strong id="inlineNumber">${n.toLocaleString('en-US')}</strong> هم ثبت شد! 🔥<br>یک قدم دیگر جلوتر، یک دستاورد دیگر برای افتخار.`;
+  if (celebrate) {
+    bigNumber.classList.remove('bump');
+    void bigNumber.offsetWidth;
+    bigNumber.classList.add('bump');
+    launchConfetti(36);
+  }
+}
+
+function setTheme(key, celebrate=false) {
+  const t = themes[key] || themes.purple;
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--accent-2', t.accent2);
+  root.style.setProperty('--accent-3', t.accent3);
+  root.style.setProperty('--bg-1', t.bg1);
+  root.style.setProperty('--bg-2', t.bg2);
+  root.style.setProperty('--shadow', t.shadow);
+  document.querySelectorAll('.color-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === key));
+  if (celebrate) launchConfetti(24);
+}
+
+function launchConfetti(count=40) {
+  for (let i=0; i<count; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.setProperty('--x', (Math.random() * 180 - 90) + 'px');
+    c.style.animationDuration = (2.4 + Math.random() * 2.4) + 's';
+    c.style.animationDelay = (Math.random() * .35) + 's';
+    c.style.background = i % 3 === 0 ? 'var(--accent)' : (i % 3 === 1 ? 'var(--accent-2)' : 'var(--accent-3)');
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5500);
+  }
+}
+
+numberInput.addEventListener('input', e => updateNumber(e.target.value, false));
+nameInput.addEventListener('input', e => {
+  title.textContent = e.target.value || 'Certificate Achievement Unlocked';
+});
+
+document.querySelectorAll('.color-btn').forEach(btn => {
+  btn.addEventListener('click', () => setTheme(btn.dataset.theme, true));
+});
+
+celebrateBtn.addEventListener('click', () => {
+  updateNumber(numberInput.value, false);
+  launchConfetti(80);
+  celebrateBtn.textContent = '✅ Celebration Launched!';
+  setTimeout(() => celebrateBtn.textContent = '🎉 Celebrate Now', 1500);
+});
+
+
+function launchFirework() {
+  const rocket = document.createElement('div');
+  rocket.className = 'firework-rocket';
+  const startX = 8 + Math.random() * 84;
+  const startY = 100;
+  const endX = (Math.random() * 80 - 40);
+  const endY = -(35 + Math.random() * 38);
+  rocket.style.left = startX + 'vw';
+  rocket.style.top = startY + 'vh';
+  rocket.style.setProperty('--tx', endX + 'vw');
+  rocket.style.setProperty('--ty', endY + 'vh');
+  document.body.appendChild(rocket);
+
+  setTimeout(() => {
+    const rect = rocket.getBoundingClientRect();
+    rocket.remove();
+    const colors = ['var(--accent)', 'var(--accent-2)', 'var(--accent-3)'];
+    const sparks = 34 + Math.floor(Math.random() * 22);
+    for (let i = 0; i < sparks; i++) {
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      spark.style.left = rect.left + 'px';
+      spark.style.top = rect.top + 'px';
+      spark.style.setProperty('--spark', colors[i % colors.length]);
+      const angle = (Math.PI * 2 * i / sparks) + (Math.random() - .5) * .35;
+      const distance = 55 + Math.random() * 125;
+      spark.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+      spark.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
+      spark.style.animationDuration = (0.95 + Math.random() * .65) + 's';
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 1800);
+    }
+  }, 650);
+}
+
+function startAutomaticFireworks() {
+  launchFirework();
+  setTimeout(launchFirework, 900);
+  setTimeout(launchFirework, 1800);
+  setTimeout(launchFirework, 3000);
+}
+
+// Initial theme + celebration.
+setTheme('purple', false);
+updateNumber(216, false);
+startAutomaticFireworks();
+setInterval(() => {
+  launchFirework();
+  if (Math.random() > 0.55) setTimeout(launchFirework, 650);
+}, 5200);
+</script>
+</body>
+</html>

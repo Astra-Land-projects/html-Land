@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fa">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>calculator</title>
+</head>
+
+<body>
+    <script>
+        const projectName = 'calculator';
+
+        function say(message) {
+            console.log('${projectName} says: ${message}');
+        }
+        say('شروع شد');
+        say('محاسبه انجام شد');
+        // ماشین حساب با چهار عمل اصلی
+        function calculator() {
+            const a = Number(prompt('عدد اول را وارد کن:'));
+            const op = prompt('عملگر را وارد کن (+ - * /):');
+            const b = Number(prompt('عدد دوم را وارد کن:'));
+
+            let result;
+            if (op === '+') result = a + b;
+            else if (op === '-') result = a - b;
+            else if (op === '*') result = a * b;
+            else if (op === '/' && b !== 0) result = a / b;
+            else {
+                alert('عملگر یا مقادیر نامعتبره');
+                return;
+            }
+
+            alert(`نتیجه: ${result}`);
+        }
+
+        // اجرا
+        calculator();
+    </script>
+</body>
+
+</html>

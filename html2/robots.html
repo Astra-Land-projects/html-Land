@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claude // معرفی</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#030712;
+  color:#d1faff;
+  font-family:'Courier New',Tahoma,monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:repeating-linear-gradient(0deg,rgba(0,255,247,.035) 0 1px,transparent 1px 3px);
+}
+#rain{position:fixed;inset:0;z-index:0;opacity:.32}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:56px 18px 70px}
+
+/* ---------- هدر ---------- */
+header{text-align:center}
+.avatar{
+  width:112px;height:112px;margin:0 auto 22px;position:relative;
+  display:grid;place-items:center;font-size:50px;
+  background:radial-gradient(circle at 35% 30%,rgba(0,255,247,.18),transparent 70%);
+  border-radius:50%;
+}
+.avatar .ring{
+  position:absolute;inset:-9px;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:#00fff7;border-right-color:#ff00c8;
+  animation:spin 2.6s linear infinite;
+  filter:drop-shadow(0 0 9px #00fff7);
+}
+.avatar .ring2{
+  position:absolute;inset:-9px;border-radius:50%;
+  border:2px solid transparent;
+  border-bottom-color:#ff00c8;border-left-color:#00fff7;
+  animation:spin 4s linear infinite reverse;
+  filter:drop-shadow(0 0 9px #ff00c8);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.glitch{
+  position:relative;display:inline-block;
+  font-size:clamp(34px,8vw,60px);letter-spacing:8px;font-weight:bold;
+  color:#fff;text-shadow:0 0 22px rgba(0,255,247,.65);
+  direction:ltr;
+}
+.glitch::before,.glitch::after{
+  content:attr(data-text);position:absolute;inset:0;
+}
+.glitch::before{color:#ff00c8;animation:g1 2.6s infinite}
+.glitch::after{color:#00fff7;animation:g2 2.1s infinite}
+@keyframes g1{
+  0%,88%,100%{transform:none;opacity:0;clip-path:inset(0 0 55% 0)}
+  90%{transform:translate(-3px,-2px);opacity:.85}
+  94%{transform:translate(3px,1px);opacity:.85}
+}
+@keyframes g2{
+  0%,85%,100%{transform:none;opacity:0;clip-path:inset(55% 0 0 0)}
+  88%{transform:translate(3px,2px);opacity:.85}
+  93%{transform:translate(-3px,-1px);opacity:.85}
+}
+.role{margin-top:12px;font-size:14px;color:#5eead4aa;letter-spacing:1px}
+
+/* ---------- ترمینال ---------- */
+.terminal{
+  margin:36px 0 30px;
+  background:rgba(2,10,20,.86);
+  border:1px solid rgba(0,255,247,.22);
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 0 45px rgba(0,255,247,.10),inset 0 0 70px rgba(0,255,247,.045);
+}
+.bar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;background:#07131f;
+  border-bottom:1px solid rgba(0,255,247,.15);
+}
+.bar span{width:11px;height:11px;border-radius:50%}
+.bar span:nth-child(1){background:#ff5f57}
+.bar span:nth-child(2){background:#febc2e}
+.bar span:nth-child(3){background:#28c840}
+.bar em{
+  margin-inline-start:auto;font-style:normal;
+  font-size:11.5px;color:#5eead4aa;letter-spacing:1px;direction:ltr;
+}
+#term{
+  padding:18px 20px;min-height:250px;
+  font-size:14.5px;line-height:2.05;
+  white-space:pre-wrap;word-break:break-word;
+  color:#a5f3fc;direction:ltr;text-align:left;
+}
+.cur{color:#00fff7;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- نوار مهارت ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:30px 0}
+.stat{
+  background:rgba(0,255,247,.04);
+  border:1px solid rgba(0,255,247,.14);
+  border-radius:12px;padding:14px 16px;
+}
+.stat b{display:flex;justify-content:space-between;font-weight:normal;font-size:13.5px;margin-bottom:10px;color:#7dd3fc}
+.track{height:8px;background:#0a1a25;border-radius:99px;overflow:hidden}
+.track i{
+  display:block;height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,#00fff7,#ff00c8);
+  box-shadow:0 0 14px rgba(0,255,247,.65);
+  transition:width 1.7s cubic-bezier(.2,.8,.2,1);
+}
+
+/* ---------- کارت‌ها ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:24px}
+.cc{
+  padding:20px 16px;border-radius:14px;
+  background:linear-gradient(160deg,rgba(0,255,247,.075),rgba(255,0,200,.055));
+  border:1px solid rgba(255,255,255,.08);
+  transition:.3s;position:relative;overflow:hidden;
+}
+.cc::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,#00fff7,transparent);
+  transition:.6s;
+}
+.cc:hover::before{left:100%}
+.cc:hover{transform:translateY(-6px);border-color:rgba(0,255,247,.42);box-shadow:0 14px 36px rgba(0,255,247,.16)}
+.cc .e{font-size:25px}
+.cc h3{font-size:15px;margin:10px 0 7px;color:#5eead4}
+.cc p{font-size:12.5px;line-height:1.95;color:#94a3b8}
+
+footer{
+  margin-top:44px;text-align:center;
+  font-size:12.5px;color:#475569;line-height:2.2;
+}
+footer b{color:#00fff7;font-weight:normal}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+
+<div class="wrap">
+  <header>
+    <div class="avatar">
+      <div class="ring"></div>
+      <div class="ring2"></div>
+      <span>🤖</span>
+    </div>
+    <h1 class="glitch" data-text="CLAUDE">CLAUDE</h1>
+    <p class="role">دستیار هوش مصنوعی · ساخته‌ی Anthropic</p>
+  </header>
+
+  <div class="terminal">
+    <div class="bar">
+      <span></span><span></span><span></span>
+      <em>claude@anthropic: ~</em>
+    </div>
+    <div id="term"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b><span>کدنویسی و دیباگ</span><span>96%</span></b><div class="track"><i data-w="96"></i></div></div>
+    <div class="stat"><b><span>نوشتن و ویرایش</span><span>94%</span></b><div class="track"><i data-w="94"></i></div></div>
+    <div class="stat"><b><span>تحلیل و استدلال</span><span>93%</span></b><div class="track"><i data-w="93"></i></div></div>
+    <div class="stat"><b><span>خلاقیت و ایده‌پردازی</span><span>91%</span></b><div class="track"><i data-w="91"></i></div></div>
+    <div class="stat"><b><span>ترجمه و چندزبانی</span><span>92%</span></b><div class="track"><i data-w="92"></i></div></div>
+    <div class="stat"><b><span>صبر و پاسخگویی 😄</span><span>100%</span></b><div class="track"><i data-w="100"></i></div></div>
+  </div>
+
+  <div class="cards">
+    <div class="cc"><div class="e">💻</div><h3>کد می‌نویسم</h3><p>از HTML تک‌فایلی تا اسکریپت و الگوریتم؛ با توضیح و تمیز.</p></div>
+    <div class="cc"><div class="e">✍️</div><h3>می‌نویسم</h3><p>متن، مقاله، کپشن، داستان، ایمیل — با لحن دلخواه تو.</p></div>
+    <div class="cc"><div class="e">🧠</div><h3>فکر می‌کنم</h3><p>مسئله رو تکه‌تکه می‌کنم و قدم‌به‌قدم راه‌حل می‌سازم.</p></div>
+    <div class="cc"><div class="e">🎨</div><h3>طراحی می‌کنم</h3><p>رابط‌های کاربری، رنگ، انیمیشن و تجربه‌ی کاربری باحال.</p></div>
+    <div class="cc"><div class="e">🌍</div><h3>ترجمه می‌کنم</h3><p>بین فارسی و انگلیسی، با حفظ حس و لحن متن اصلی.</p></div>
+    <div class="cc"><div class="e">🤝</div><h3>همراهیم</h3><p>هر ساعتی، هر روزی، بدون خستگی و بدون قضاوت.</p></div>
+  </div>
+
+  <footer>
+    یه فایل <b>HTML</b> خالی · بدون نصب · بدون کتابخانه · بدون اینترنت<br>
+    ساخته‌شده با ❤️ برای تو
+  </footer>
+</div>
+
+<script>
+/* ---------- بارون ماتریکسی ---------- */
+const cv = document.getElementById('rain');
+const cx = cv.getContext('2d');
+const CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノABCDEFXYZ<>{}[]/*+-=';
+let W, H, fs = 16, cols, drops;
+
+function initRain(){
+  W = cv.width = innerWidth;
+  H = cv.height = innerHeight;
+  cols = Math.floor(W / fs);
+  drops = [];
+  for(let i=0;i<cols;i++) drops.push(Math.random() * -100);
+}
+initRain();
+addEventListener('resize', initRain);
+
+setInterval(()=>{
+  cx.fillStyle = 'rgba(3,7,18,0.085)';
+  cx.fillRect(0,0,W,H);
+  cx.font = fs + 'px monospace';
+  for(let i=0;i<cols;i++){
+    const ch = CHARS[(Math.random()*CHARS.length)|0];
+    const x = i*fs, y = drops[i]*fs;
+    cx.fillStyle = Math.random() > 0.975 ? '#ffffff' : '#00fff7';
+    cx.globalAlpha = 0.55;
+    cx.fillText(ch, x, y);
+    cx.globalAlpha = 1;
+    if(y > H && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 55);
+
+/* ---------- تایپ ترمینال ---------- */
+const term = document.getElementById('term');
+const LINES = [
+  '$ whoami',
+  '  Claude — AI assistant by Anthropic',
+  '',
+  '$ cat about.txt',
+  '  سلام! من اینجام تا کمکت کنم فکر کنی، بنویسی،',
+  '  کد بزنی، ایده بسازی و مسئله‌های سخت رو حل کنی.',
+  '',
+  '$ ls skills/',
+  '  coding/  writing/  analysis/  design/  translation/  ideas/',
+  '',
+  '$ echo $GOAL',
+  '  اینکه کارت رو راحت‌تر، سریع‌تر و باحال‌تر کنم ✨'
+];
+
+let li = 0, ci = 0, out = '';
+
+function type(){
+  if(li >= LINES.length){
+    term.innerHTML = out + '<span class="cur">▋</span>';
+    return;
+  }
+  const line = LINES[li];
+  if(ci <= line.length){
+    term.innerHTML = out + line.slice(0, ci) + '<span class="cur">▋</span>';
+    ci++;
+    const speed = line.trim().startsWith('$') ? 55 : 16;
+    setTimeout(type, speed);
+  } else {
+    out += line + '\n';
+    li++; ci = 0;
+    setTimeout(type, 200);
+  }
+}
+setTimeout(type, 500);
+
+/* ---------- انیمیشن نوار مهارت‌ها ---------- */
+setTimeout(()=>{
+  document.querySelectorAll('.track i').forEach((el, i)=>{
+    setTimeout(()=>{ el.style.width = el.dataset.w + '%'; }, i*110);
+  });
+}, 3000);
+</script>
+</body>
+</html>

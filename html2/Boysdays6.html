@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Happy Boys' Day: make your hero card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #2440FF;
+  --bg-alt: #1B2FD0;
+  --ink: #FFFFFF;
+  --sub: #DCE1FF;
+  --panel: #FFFFFF;
+  --panel-ink: #10195E;
+  --panel-sub: #4B5599;
+  --sun: #FFD23F;
+  --coral: #FF5A4E;
+  --coral-strong: #D63A2B;
+  --display: 'Unbounded', 'Arial Black', 'Segoe UI', system-ui, sans-serif;
+  --body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1040;
+    --bg-alt: #080C30;
+    --sub: #B4BEF5;
+    --panel: #141C63;
+    --panel-ink: #F0F2FF;
+    --panel-sub: #B4BEF5;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1040;
+  --bg-alt: #080C30;
+  --sub: #B4BEF5;
+  --panel: #141C63;
+  --panel-ink: #F0F2FF;
+  --panel-sub: #B4BEF5;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+:focus-visible { outline: 4px solid var(--sun); outline-offset: 3px; }
+.wrap { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem; }
+
+/* ---------- hero ---------- */
+.hero {
+  padding: 2.75rem 0 3.25rem;
+  background: repeating-conic-gradient(from 0deg at 50% 46%, var(--bg) 0deg 9deg, var(--bg-alt) 9deg 18deg);
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(3rem, 15.5vw, 7.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: var(--sun);
+  text-shadow: 0.045em 0.045em 0 var(--coral);
+}
+.line { display: block; }
+.ch { display: inline-block; animation: drop 0.8s cubic-bezier(0.2, 1.5, 0.4, 1) var(--d, 0ms) backwards; }
+@keyframes drop {
+  from { transform: translateY(-140%) rotate(-14deg); opacity: 0; }
+}
+.lede {
+  margin: 1.75rem 0 0;
+  max-width: 30rem;
+  font-size: 1.2rem;
+  color: var(--sub);
+}
+
+/* ---------- builder ---------- */
+.panel {
+  background: var(--panel);
+  color: var(--panel-ink);
+  border-radius: 22px;
+  padding: 1.4rem 1.25rem 1.5rem;
+  box-shadow: 6px 6px 0 var(--coral);
+}
+.builder { margin-top: -1.5rem; position: relative; }
+.panel h2 {
+  margin: 0 0 1rem;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+.field { border: 0; padding: 0; margin: 0 0 1.25rem; min-width: 0; }
+.field > label, .field > legend {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  width: 100%; padding: 0; margin-bottom: 0.5rem;
+  font-weight: 700; font-size: 1rem;
+}
+.count { font-weight: 500; color: var(--panel-sub); font-size: 0.9rem; }
+input[type="text"] {
+  width: 100%;
+  font: inherit; font-size: 1.1rem; font-weight: 500;
+  padding: 0.8rem 1rem;
+  color: var(--panel-ink);
+  background: transparent;
+  border: 3px solid var(--panel-ink);
+  border-radius: 14px;
+}
+input[type="text"]::placeholder { color: var(--panel-sub); opacity: 0.8; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip, .elem { position: relative; display: inline-block; }
+.chip input, .elem input {
+  position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; inset: 0; cursor: pointer;
+}
+.chip span {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid var(--panel-ink);
+  border-radius: 999px;
+  font-weight: 700; font-size: 0.98rem;
+  color: var(--panel-ink);
+  transition: background 0.15s, transform 0.15s;
+}
+.chip input:checked + span {
+  background: var(--sun); color: #10195E;
+  box-shadow: 0 3px 0 var(--panel-ink);
+  transform: translateY(-2px);
+}
+.chip input:disabled { cursor: not-allowed; }
+.chip input:disabled + span { opacity: 0.4; }
+.chip input:focus-visible + span, .elem input:focus-visible + span {
+  outline: 4px solid var(--coral-strong); outline-offset: 3px;
+}
+.elems { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+@media (min-width: 520px) { .elems { grid-template-columns: repeat(4, 1fr); } }
+.elem { display: block; }
+.elem span {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 3.4rem; padding: 0.6rem;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--c1), var(--c2));
+  color: #fff; font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.elem b { font-size: 1.4rem; font-weight: 400; text-shadow: none; }
+.elem input:checked + span { box-shadow: 0 0 0 4px var(--panel), 0 0 0 7px var(--panel-ink); }
+.err { min-height: 1.4em; margin: 0 0 0.6rem; color: var(--coral-strong); font-weight: 700; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { color: #FF9A90; } }
+:root[data-theme="dark"] .err { color: #FF9A90; }
+.forge {
+  width: 100%;
+  font-family: var(--display); font-weight: 800; font-size: 1.05rem;
+  padding: 1rem 1.25rem;
+  color: #fff; background: var(--coral-strong);
+  border: 0; border-radius: 16px;
+  box-shadow: 0 5px 0 #8F2117;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.forge:active { transform: translateY(4px); box-shadow: 0 1px 0 #8F2117; }
+
+/* ---------- card stage ---------- */
+.stage { display: grid; place-items: center; padding-top: 2.5rem; padding-bottom: 1rem; }
+.ghost {
+  width: min(320px, 84vw); aspect-ratio: 5 / 7;
+  border: 3px dashed var(--sub); border-radius: 22px;
+  display: grid; place-items: center; text-align: center;
+  padding: 1.5rem; color: var(--sub); font-weight: 500;
+}
+.cardwrap {
+  width: min(320px, 84vw); aspect-ratio: 5 / 7;
+  animation: enter 0.9s cubic-bezier(0.2, 1.2, 0.3, 1) backwards;
+}
+@keyframes enter {
+  from { opacity: 0; transform: translateY(50px) rotateY(-90deg) scale(0.9); }
+}
+.card {
+  position: relative; width: 100%; height: 100%;
+  padding: 8px; border-radius: 22px;
+  background: linear-gradient(145deg, var(--c1), var(--c2));
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.38);
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  touch-action: pan-y;
+  -webkit-user-select: none; user-select: none;
+}
+.card.live { transition: transform 0.08s linear; }
+.face {
+  position: relative; height: 100%;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.7rem; border-radius: 15px; overflow: hidden;
+  color: #fff;
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, 0.14), transparent 60%), #0F1544;
+}
+.toprow { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; }
+.pill {
+  padding: 0.2rem 0.65rem; border-radius: 999px;
+  background: var(--rc); color: #10195E; font-size: 0.72rem; font-weight: 700;
+}
+.art {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  display: grid; place-items: center; overflow: hidden;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), transparent 35%),
+    linear-gradient(160deg, var(--c1), var(--c2));
+}
+.art::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.12) 0 10px, transparent 10px 24px);
+}
+.emoji {
+  position: relative; z-index: 1;
+  font-size: clamp(3.6rem, 20vw, 5.2rem); line-height: 1;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.25));
+}
+.cname {
+  margin: 0; text-align: center; overflow-wrap: anywhere;
+  font-family: var(--display); font-weight: 800;
+  font-size: var(--nsize, 1.7rem); line-height: 1.1; letter-spacing: -0.02em;
+}
+.ctitle { margin: 0; text-align: center; font-weight: 700; font-size: 0.95rem; color: var(--sun); }
+.stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.stats li {
+  display: grid; grid-template-columns: 5.2rem 1fr 1.6rem; gap: 0.5rem; align-items: center;
+  font-size: 0.8rem; font-weight: 700;
+}
+.bar { height: 0.5rem; border-radius: 99px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+.fill {
+  height: 100%; width: var(--v); border-radius: inherit;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  animation: grow 1s cubic-bezier(0.2, 0.9, 0.2, 1) 0.5s backwards;
+}
+@keyframes grow { from { width: 0; } }
+.stats b { text-align: right; }
+.foot { display: flex; justify-content: space-between; margin: 0; font-size: 0.68rem; color: #AEB8F5; }
+.holo {
+  position: absolute; inset: 0; border-radius: 15px; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s;
+  mix-blend-mode: overlay;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(115deg, rgba(255, 90, 78, 0.35), rgba(255, 210, 63, 0.35), rgba(61, 220, 151, 0.35), rgba(43, 196, 255, 0.35), rgba(176, 107, 255, 0.35));
+}
+.card.live .holo { opacity: 1; }
+.hint { text-align: center; color: var(--sub); font-size: 0.9rem; margin: 1.25rem 0 0; }
+
+/* ---------- wishes ---------- */
+.wish { padding-top: 3.5rem; padding-bottom: 3.5rem; }
+.wish h2 {
+  margin: 0 0 0.25rem;
+  font-family: var(--display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em;
+}
+.wish-for { margin: 0 0 1rem; color: var(--sub); }
+.wish blockquote {
+  margin: 0 0 1.5rem; min-height: 6em;
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(1.3rem, 5.2vw, 1.9rem); line-height: 1.3; letter-spacing: -0.015em;
+}
+.again {
+  font: inherit; font-weight: 700; color: var(--ink); background: transparent;
+  padding: 0.75rem 1.4rem; border: 3px solid var(--ink); border-radius: 999px; cursor: pointer;
+}
+.again:hover { background: var(--ink); color: var(--bg); }
+footer { padding: 1.5rem 1.25rem 3rem; text-align: center; color: var(--sub); font-size: 0.9rem; }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ch, .cardwrap, .fill { animation: none; }
+  .card, .card.live { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1 class="title" id="title">
+      <span class="sr">Happy Boys' Day</span>
+      <span class="line" aria-hidden="true">Happy</span>
+      <span class="line" aria-hidden="true">Boys'</span>
+      <span class="line" aria-hidden="true">Day</span>
+    </h1>
+    <p class="lede">To every boy who builds, asks why, and gets back up: today is yours. Make a collectible hero card with your name on it.</p>
+  </div>
+</header>
+
+<main>
+  <section class="wrap builder" aria-labelledby="builder-h">
+    <form id="builder" class="panel" novalidate>
+      <h2 id="builder-h">Make your hero card</h2>
+
+      <div class="field">
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" maxlength="16" autocomplete="off" autocapitalize="words" placeholder="Type it here">
+      </div>
+
+      <fieldset class="field">
+        <legend>Pick 3 powers <span class="count" id="count" aria-live="polite">0 of 3 chosen</span></legend>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" name="power" value="Courage"><span>🦁 Courage</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Speed"><span>⚡ Speed</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Brain"><span>🧠 Brain</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Teamwork"><span>🤝 Teamwork</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Humor"><span>😄 Humor</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Focus"><span>🎯 Focus</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Creativity"><span>🎨 Creativity</span></label>
+          <label class="chip"><input type="checkbox" name="power" value="Kindness"><span>💛 Kindness</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend>Choose your element</legend>
+        <div class="elems">
+          <label class="elem" style="--c1:#FF5A36;--c2:#FFB627"><input type="radio" name="elem" value="fire" checked><span><b>🔥</b>Fire</span></label>
+          <label class="elem" style="--c1:#0FA3FF;--c2:#2B4DFF"><input type="radio" name="elem" value="ocean"><span><b>🌊</b>Ocean</span></label>
+          <label class="elem" style="--c1:#8A4DFF;--c2:#FF4FD8"><input type="radio" name="elem" value="thunder"><span><b>⚡</b>Thunder</span></label>
+          <label class="elem" style="--c1:#1FBF75;--c2:#0B7A5C"><input type="radio" name="elem" value="forest"><span><b>🌲</b>Forest</span></label>
+        </div>
+      </fieldset>
+
+      <p class="err" id="err" role="alert"></p>
+      <button class="forge" type="submit">Forge my card</button>
+    </form>
+  </section>
+
+  <section class="wrap stage" id="stage" aria-live="polite" aria-label="Your hero card">
+    <div class="ghost">Your card lands here.<br>Fill in the form and forge it.</div>
+  </section>
+  <p class="hint" id="hint" hidden>Tilt it: drag your finger or mouse across the card.</p>
+
+  <section class="wrap wish" aria-labelledby="wish-h">
+    <h2 id="wish-h">A wish for you</h2>
+    <p class="wish-for" id="wishFor">For you</p>
+    <blockquote id="wish"></blockquote>
+    <button type="button" class="again" id="wishBtn">Another wish</button>
+  </section>
+</main>
+
+<footer>Built as a single file by Claude Sonnet 5. Screenshot your card and send it to a friend.</footer>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const h = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  const ELEMENTS = {
+    fire:    { emoji: '🔥', name: 'Fire',    c1: '#FF5A36', c2: '#FFB627', adj: 'Blazing' },
+    ocean:   { emoji: '🌊', name: 'Ocean',   c1: '#0FA3FF', c2: '#2B4DFF', adj: 'Tidal' },
+    thunder: { emoji: '⚡', name: 'Thunder', c1: '#8A4DFF', c2: '#FF4FD8', adj: 'Storm' },
+    forest:  { emoji: '🌲', name: 'Forest',  c1: '#1FBF75', c2: '#0B7A5C', adj: 'Wild' }
+  };
+  const POWERS = {
+    Courage: 'Lionheart', Speed: 'Sprinter', Brain: 'Mastermind', Teamwork: 'Captain',
+    Humor: 'Jester', Focus: 'Sharpshooter', Creativity: 'Inventor', Kindness: 'Guardian'
+  };
+  const WISHES = [
+    'May today be loud, silly, and full of good snacks.',
+    'Keep asking why. That one question built every bridge and every rocket.',
+    'Being kind is a strength, and you can practice it every day.',
+    'Fall down seven times, get up eight, and pull a friend up with you.',
+    "You don't have to be the strongest. Be the one who shows up.",
+    'Try the thing that scares you, with someone who has your back.',
+    'Every expert was once a beginner who did not quit.',
+    'Build something today, even if it is small, even if it is weird.',
+    'Being gentle and being brave belong together.',
+    'Take care of your body, your mind, and the people around you.',
+    'Your curiosity is a superpower. Feed it.',
+    'Whatever you love, get a little better at it every day.'
+  ];
+
+  /* ---------- deterministic randomness: same inputs, same card ---------- */
+  function fnv(str) {
+    let x = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      x ^= str.charCodeAt(i);
+      x = Math.imul(x, 16777619) >>> 0;
+    }
+    return x >>> 0;
+  }
+  function mulberry32(a) {
+    return function () {
+      let t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------- headline: letters drop in, then pop when touched ---------- */
+  function pop(el) {
+    if (reduce || !el.animate) return;
+    el.animate(
+      [
+        { transform: 'translateY(0) rotate(0deg) scale(1)' },
+        { transform: 'translateY(-14%) rotate(-7deg) scale(1.12)' },
+        { transform: 'translateY(0) rotate(0deg) scale(1)' }
+      ],
+      { duration: 420, easing: 'cubic-bezier(0.3, 1.6, 0.5, 1)' }
+    );
+  }
+  document.querySelectorAll('#title .line').forEach((line, li) => {
+    const text = line.textContent;
+    line.textContent = '';
+    Array.from(text).forEach((c, i) => {
+      const s = h('span', 'ch', c);
+      s.style.setProperty('--d', (li * 4 + i) * 60 + 'ms');
+      s.addEventListener('pointerenter', () => pop(s));
+      line.appendChild(s);
+    });
+  });
+
+  /* ---------- confetti ---------- */
+  let confettiRaf = 0;
+  function confetti() {
+    if (reduce) return;
+    const cv = $('#confetti');
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cancelAnimationFrame(confettiRaf);
+
+    const colors = ['#FFD23F', '#FF5A4E', '#3DDC97', '#FFFFFF', '#2BC4FF', '#C79BFF'];
+    const ps = Array.from({ length: 160 }, (_, i) => {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.8;
+      const sp = 8 + Math.random() * 12;
+      return {
+        x: W / 2, y: H * 0.5,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        w: 6 + Math.random() * 7, h: 4 + Math.random() * 6,
+        r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.35,
+        c: colors[i % colors.length], round: i % 4 === 0
+      };
+    });
+    let last = performance.now();
+    let life = 0;
+    const tick = (now) => {
+      const dt = Math.min((now - last) / 16.667, 3);
+      last = now;
+      life += dt;
+      ctx.clearRect(0, 0, W, H);
+      for (const p of ps) {
+        p.vy += 0.32 * dt;
+        p.vx *= Math.pow(0.992, dt);
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.r += p.vr * dt;
+        if (p.y > H + 20) continue;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.c;
+        if (p.round) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w / 2, 0, 6.283);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        }
+        ctx.restore();
+      }
+      if (life < 200) confettiRaf = requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, W, H);
+    };
+    confettiRaf = requestAnimationFrame(tick);
+  }
+/* ---------- card tilt with holographic shine ---------- */
+  function bindTilt(card) {
+    let raf = 0;
+    const move = (e) => {
+      const r = card.getBoundingClientRect();
+      const x = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+      const y = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        card.style.setProperty('--rx', ((0.5 - y) * 24).toFixed(2) + 'deg');
+        card.style.setProperty('--ry', ((x - 0.5) * 24).toFixed(2) + 'deg');
+        card.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+        card.classList.add('live');
+      });
+    };
+    const leave = () => {
+      cancelAnimationFrame(raf);
+      card.classList.remove('live');
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+      card.style.setProperty('--mx', '50%');
+      card.style.setProperty('--my', '30%');
+    };
+    card.addEventListener('pointermove', move);
+    card.addEventListener('pointerleave', leave);
+    card.addEventListener('pointercancel', leave);
+  }
+  /* ---------- build a card ---------- */
+  function buildCard(name, powers, elemKey) {
+    const el = ELEMENTS[elemKey];
+    const rand = mulberry32(fnv(name.toLowerCase() + '|' + powers.slice().sort().join(',') + '|' + elemKey));
+    const stats = powers.map((p) => ({ label: p, value: 72 + Math.floor(rand() * 28) }));
+    const avg = stats.reduce((sum, s) => sum + s.value, 0) / stats.length;
+    const rarity = avg >= 89 ? ['Legendary', '#FFD23F']
+                 : avg >= 84 ? ['Epic', '#C79BFF']
+                 : ['Rare', '#7FE3FF'];
+    const best = stats.reduce((a, s) => (s.value > a.value ? s : a), stats[0]);
+    const title = el.adj + ' ' + POWERS[best.label];
+    const number = 1000 + Math.floor(rand() * 9000);
+    const wrap = h('div', 'cardwrap');
+    wrap.setAttribute('role', 'img');
+    wrap.setAttribute('aria-label',
+      'Hero card for ' + name + ': ' + title + ', ' + rarity[0] + '. ' +
+      stats.map((s) => s.label + ' ' + s.value).join(', ') + '.');
+    const card = h('div', 'card');
+    card.style.setProperty('--c1', el.c1);
+    card.style.setProperty('--c2', el.c2);
+    const face = h('div', 'face');
+    const toprow = h('div', 'toprow');
+    const pill = h('span', 'pill', rarity[0]);
+    pill.style.setProperty('--rc', rarity[1]);
+    toprow.append(pill, h('span', '', el.emoji + ' ' + el.name));
+    const art = h('div', 'art');
+    art.append(h('span', 'emoji', el.emoji));
+    const nm = h('h3', 'cname', name);
+    nm.style.setProperty('--nsize', name.length > 13 ? '1.15rem' : name.length > 9 ? '1.45rem' : '1.8rem');
+    const list = h('ul', 'stats');
+    stats.forEach((s) => {
+      const li = h('li');
+      const bar = h('div', 'bar');
+      const fill = h('div', 'fill');
+      fill.style.setProperty('--v', s.value + '%');
+      bar.append(fill);
+      li.append(h('span', '', s.label), bar, h('b', '', String(s.value)));
+      list.append(li);
+    });
+    const foot = h('p', 'foot');
+    foot.append(h('span', '', "Boys' Day Edition"), h('span', '', 'No. ' + number));
+    face.append(toprow, art, nm, h('p', 'ctitle', title), list, foot, h('div', 'holo'));
+    card.append(face);
+    wrap.append(card);
+    bindTilt(card);
+    return wrap;
+  }
+  /* ---------- form ---------- */
+  const form = $('#builder');
+  const nameInput = $('#name');
+  const powerBoxes = Array.from(form.querySelectorAll('input[name="power"]'));
+  const countEl = $('#count');
+  const errEl = $('#err');
+  const stage = $('#stage');
+  function syncPowers() {
+    const on = powerBoxes.filter((b) => b.checked).length;
+    countEl.textContent = on + ' of 3 chosen';
+    powerBoxes.forEach((b) => { b.disabled = !b.checked && on >= 3; });
+    if (errEl.textContent) errEl.textContent = '';
+  }
+  powerBoxes.forEach((b) => b.addEventListener('change', syncPowers));
+  nameInput.addEventListener('input', () => { errEl.textContent = ''; });
+  syncPowers();
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim().replace(/\s+/g, ' ');
+    const powers = powerBoxes.filter((b) => b.checked).map((b) => b.value);
+    const elemKey = form.elements.elem.value;
+    if (!name) {
+      errEl.textContent = 'Type your name first.';
+      nameInput.focus();
+      return;
+    }
+    if (powers.length !== 3) {
+      errEl.textContent = 'Pick exactly 3 powers.';
+      return;
+    }
+    stage.replaceChildren(buildCard(name, powers, elemKey));
+    $('#hint').hidden = false;
+    stage.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    confetti();
+  });
+  /* ---------- wishes ---------- */
+  const wishEl = $('#wish');
+  const wishFor = $('#wishFor');
+  let wishIdx = Math.floor(Math.random() * WISHES.length);
+  function showWish() {
+    const n = nameInput.value.trim();
+    wishFor.textContent = n ? 'For ' + n : 'For you';
+    wishEl.textContent = WISHES[wishIdx];
+    if (!reduce && wishEl.animate) {
+      wishEl.animate(
+        [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 350, easing: 'ease-out' }
+      );
+    }
+  }
+  $('#wishBtn').addEventListener('click', () => {
+    let n;
+    do { n = Math.floor(Math.random() * WISHES.length); } while (n === wishIdx);
+    wishIdx = n;
+    showWish();
+  });
+  showWish();
+})();
+</script>
+</body>
+</html>

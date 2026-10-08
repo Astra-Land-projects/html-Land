@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Slow Binary Waterfall</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+}
+
+body{
+    font-family:"Courier New", monospace;
+}
+
+/* =========================
+   CANVAS
+========================= */
+
+canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+
+/* =========================
+   VIGNETTE
+========================= */
+
+.vignette{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+
+    background:
+        radial-gradient(
+            circle,
+            transparent 35%,
+            rgba(0,0,0,.35) 75%,
+            rgba(0,0,0,.8) 100%
+        );
+
+    z-index:3;
+}
+
+/* =========================
+   SCANLINES
+========================= */
+
+.scanlines{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:4;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(0,255,80,.025) 0px,
+            rgba(0,255,80,.025) 1px,
+            transparent 1px,
+            transparent 5px
+        );
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center{
+    position:fixed;
+    inset:0;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    z-index:5;
+
+    pointer-events:none;
+
+    text-align:center;
+}
+
+.title{
+    color:#00ff66;
+
+    font-size:
+        clamp(18px,4vw,45px);
+
+    letter-spacing:5px;
+
+    text-shadow:
+        0 0 8px #00ff66,
+        0 0 20px #00ff66,
+        0 0 40px rgba(0,255,100,.5);
+
+    opacity:.8;
+}
+
+.subtitle{
+    margin-top:12px;
+
+    color:rgba(0,255,100,.45);
+
+    font-size:11px;
+
+    letter-spacing:4px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<canvas id="rain"></canvas>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<div class="center">
+
+    <div>
+
+        <div class="title">
+            0101010101010
+        </div>
+
+        <div class="subtitle">
+            SLOW BINARY WATERFALL
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ==================================================
+   SLOW BINARY WATERFALL
+================================================== */
+
+const canvas =
+    document.getElementById("rain");
+
+const ctx =
+    canvas.getContext("2d");
+
+let width;
+let height;
+
+let streams = [];
+
+
+/* ==================================================
+   CONFIGURATION
+================================================== */
+
+/*
+    این قسمت عمداً آهسته تنظیم شده.
+*/
+
+const FONT_SIZE = 18;
+
+/*
+    فاصله زیاد بین صفر و یک‌ها
+    باعث می‌شود هر عدد واضح دیده شود.
+*/
+
+const GAP = 27;
+
+/*
+    سرعت حرکت بسیار کم.
+*/
+
+const SPEED_MIN = 0.45;
+const SPEED_MAX = 1.15;
+
+
+/* ==================================================
+   RESIZE
+================================================== */
+
+function resize(){
+
+    width =
+        canvas.width =
+        window.innerWidth;
+
+    height =
+        canvas.height =
+        window.innerHeight;
+
+    createStreams();
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+/* ==================================================
+   RANDOM BINARY
+================================================== */
+
+function randomBit(){
+
+    return Math.random() > .5
+        ? "1"
+        : "0";
+}
+
+
+/* ==================================================
+   CREATE STREAM
+================================================== */
+
+function createStream(x){
+
+    /*
+        هر آبشار تعداد مشخصی صفر و یک دارد.
+    */
+
+    const length =
+        Math.floor(
+            Math.random() * 13 + 12
+        );
+
+    const bits = [];
+
+    for(
+        let i = 0;
+        i < length;
+        i++
+    ){
+
+        bits.push(
+            randomBit()
+        );
+    }
+
+    return {
+
+        x:x,
+
+        /*
+            شروع از قسمت‌های مختلف بالای صفحه
+        */
+
+        y:
+            Math.random() *
+            -height,
+
+        /*
+            سرعت بسیار آهسته
+        */
+
+        speed:
+            Math.random() *
+            (SPEED_MAX - SPEED_MIN)
+            + SPEED_MIN,
+
+        bits:bits,
+
+        opacity:
+            Math.random() *
+            .45 + .45,
+
+        /*
+            زمان تعویض صفر و یک
+        */
+
+        changeTimer:0,
+
+        changeSpeed:
+            Math.random() *
+            500 + 350,
+
+        glow:
+            Math.random() > .5
+    };
+}
+
+
+/* ==================================================
+   CREATE ALL STREAMS
+================================================== */
+
+function createStreams(){
+
+    streams = [];
+
+    /*
+        ستون‌های زیاد ولی نه بیش از حد
+        تا صفر و یک‌ها خوانا بمانند.
+    */
+
+    const count =
+        Math.floor(
+            width / 28
+        );
+
+    for(
+        let i = 0;
+        i < count;
+        i++
+    ){
+
+        streams.push(
+            createStream(
+                i * 28 + 5
+            )
+        );
+    }
+}
+
+
+/* ==================================================
+   DRAW STREAM
+================================================== */
+
+function drawStream(stream){
+
+    ctx.font =
+        "bold " +
+        FONT_SIZE +
+        "px Courier New";
+
+    /*
+        هر صفر و یک جداگانه رسم می‌شود.
+    */
+
+    for(
+        let i = 0;
+        i < stream.bits.length;
+        i++
+    ){
+
+        const y =
+            stream.y -
+            i * GAP;
+
+        if(
+            y < -30 ||
+            y > height + 30
+        ){
+            continue;
+        }
+
+
+        /*
+            سر آبشار روشن‌تر است.
+        */
+
+        const fade =
+            1 -
+            (
+                i /
+                stream.bits.length
+            );
+
+
+        if(i === 0){
+
+            /*
+                اولین عدد تقریباً سفید-سبز
+            */
+
+            ctx.fillStyle =
+                `rgba(
+                    220,
+                    255,
+                    225,
+                    ${Math.min(
+                        stream.opacity + .4,
+                        1
+                    )}
+                )`;
+
+            ctx.shadowColor =
+                "#00ff55";
+
+            ctx.shadowBlur =
+                15;
+
+        }else{
+
+            ctx.fillStyle =
+                `rgba(
+                    0,
+                    255,
+                    80,
+                    ${stream.opacity * fade}
+                )`;
+
+            ctx.shadowColor =
+                "#00ff55";
+
+            ctx.shadowBlur =
+                stream.glow
+                    ? 8
+                    : 3;
+        }
+
+
+        ctx.fillText(
+            stream.bits[i],
+            stream.x,
+            y
+        );
+    }
+
+    ctx.shadowBlur = 0;
+}
+
+
+/* ==================================================
+   UPDATE
+================================================== */
+
+let lastTime = performance.now();
+
+function update(){
+
+    const now =
+        performance.now();
+
+    const delta =
+        now - lastTime;
+
+    lastTime = now;
+
+
+    for(
+        const stream
+        of streams
+    ){
+
+        /*
+            حرکت آهسته
+        */
+
+        stream.y +=
+            stream.speed *
+            delta /
+            16.67;
+
+
+        /*
+            تغییر صفر و یک‌ها
+        */
+
+        stream.changeTimer +=
+            delta;
+
+
+        if(
+            stream.changeTimer >=
+            stream.changeSpeed
+        ){
+
+            stream.changeTimer = 0;
+
+            /*
+                فقط چند رقم را تغییر می‌دهیم
+                تا تغییرات قابل مشاهده باشد.
+            */
+
+            const changes =
+                Math.floor(
+                    Math.random() * 3
+                ) + 1;
+
+
+            for(
+                let j = 0;
+                j < changes;
+                j++
+            ){
+
+                const index =
+                    Math.floor(
+                        Math.random() *
+                        stream.bits.length
+                    );
+
+                stream.bits[index] =
+                    randomBit();
+            }
+        }
+
+
+        /*
+            وقتی کامل پایین رفت
+            دوباره از بالا شروع شود.
+        */
+
+        const bottom =
+            stream.y +
+            stream.bits.length *
+            GAP;
+
+
+        if(
+            bottom >
+            height + 100
+        ){
+
+            stream.y =
+                Math.random() *
+                -500;
+
+            stream.speed =
+                Math.random() *
+                (SPEED_MAX - SPEED_MIN)
+                + SPEED_MIN;
+
+            stream.changeTimer = 0;
+
+            /*
+                یک رشته جدید بساز
+            */
+
+            for(
+                let i = 0;
+                i < stream.bits.length;
+                i++
+            ){
+
+                stream.bits[i] =
+                    randomBit();
+            }
+        }
+    }
+}
+
+
+/* ==================================================
+   DRAW
+================================================== */
+
+function draw(){
+
+    /*
+        Trail خیلی آرام
+        تا حرکت قبلی کمی باقی بماند.
+    */
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.075)";
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    for(
+        const stream
+        of streams
+    ){
+
+        drawStream(stream);
+    }
+}
+
+
+/* ==================================================
+   LOOP
+================================================== */
+
+function loop(){
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+}
+
+
+/* ==================================================
+   START
+================================================== */
+
+resize();
+
+loop();
+
+</script>
+
+</body>
+</html>

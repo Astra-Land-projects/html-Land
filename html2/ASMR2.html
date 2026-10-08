@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#07090e">
+<title>Astra ASMR — Soft Physics</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+    margin:0;
+    min-height:100%;
+    background:#07090e;
+    color:#fff;
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    padding:18px;
+}
+
+.app{
+    width:min(1120px,100%);
+}
+
+/* HEADER */
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:15px;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:11px;
+}
+
+.logo-mark{
+    width:42px;
+    height:42px;
+    border-radius:13px;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(145deg,#f4f5f7,#6e7480);
+    color:#090b10;
+    font-weight:900;
+    font-size:20px;
+    box-shadow:0 8px 25px #0008;
+}
+
+.title{
+    font-size:clamp(22px,5vw,34px);
+    font-weight:850;
+    letter-spacing:-1px;
+}
+
+.subtitle{
+    color:#858c9c;
+    font-size:12px;
+    margin-top:2px;
+}
+
+.badge{
+    border:1px solid #292e3a;
+    background:#10131a;
+    border-radius:999px;
+    padding:8px 12px;
+    color:#aeb5c4;
+    font-size:11px;
+    white-space:nowrap;
+}
+
+/* SCENE */
+
+.scene{
+    position:relative;
+    width:100%;
+    height:min(68vh,650px);
+    min-height:430px;
+    overflow:hidden;
+    border-radius:24px;
+    border:1px solid #272c38;
+
+    background:
+        radial-gradient(
+            circle at 50% 18%,
+            #29303d 0%,
+            #151923 33%,
+            #0a0c11 75%
+        );
+
+    box-shadow:
+        0 35px 100px #000b,
+        inset 0 0 70px #0006;
+}
+
+/* LIGHT */
+
+.light{
+    position:absolute;
+    width:300px;
+    height:300px;
+    left:50%;
+    top:-170px;
+    transform:translateX(-50%);
+    background:#fff;
+    opacity:.025;
+    filter:blur(80px);
+    pointer-events:none;
+}
+
+/* FLOOR */
+
+.floor{
+    position:absolute;
+    left:5%;
+    width:90%;
+    bottom:12%;
+    height:2px;
+
+    background:#6d7482;
+
+    box-shadow:
+        0 0 18px #bfc6d433,
+        0 0 70px #77809022;
+}
+
+.floor-shadow{
+    position:absolute;
+    left:30%;
+    width:40%;
+    bottom:11%;
+    height:30px;
+
+    border-radius:50%;
+    background:#000;
+    opacity:.55;
+    filter:blur(18px);
+}
+
+/* RODS */
+
+.rod{
+    position:absolute;
+    background:
+        linear-gradient(
+            90deg,
+            #5c6370,
+            #f3f4f6 45%,
+            #737a88
+        );
+
+    box-shadow:
+        0 0 22px #fff2,
+        0 0 60px #fff1;
+
+    border-radius:999px;
+
+    transform-origin:center;
+}
+
+.rod.vertical{
+    width:13px;
+    height:74%;
+    left:50%;
+    top:12%;
+    transform:translateX(-50%);
+}
+
+.rod.horizontal{
+    height:13px;
+    width:76%;
+    left:12%;
+    top:48%;
+}
+
+.rod.diagonal{
+    width:13px;
+    height:82%;
+    left:50%;
+    top:8%;
+    transform:
+        translateX(-50%)
+        rotate(28deg);
+}
+
+/* OBJECT */
+
+.object{
+    position:absolute;
+
+    left:50%;
+    top:-180px;
+
+    width:155px;
+    height:90px;
+
+    transform:
+        translateX(-50%)
+        scale(1);
+
+    box-shadow:
+        0 25px 45px #0009;
+
+    will-change:
+        top,
+        transform,
+        border-radius;
+}
+
+/* IMPACT */
+
+.object.impact{
+    animation:
+        impact
+        1.35s
+        cubic-bezier(.17,.8,.2,1)
+        forwards;
+}
+
+@keyframes impact{
+
+    0%{
+        top:-160px;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    55%{
+        top:58%;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    66%{
+        top:67%;
+        transform:
+            translateX(-50%)
+            scale(1.28,.28);
+    }
+
+    76%{
+        top:61%;
+        transform:
+            translateX(-50%)
+            scale(1.45,.42);
+    }
+
+    87%{
+        top:65%;
+        transform:
+            translateX(-50%)
+            scale(1.12,.55);
+    }
+
+    100%{
+        top:64%;
+        transform:
+            translateX(-50%)
+            scale(1.08,.52);
+    }
+}
+
+/* ROD COLLISION */
+
+.object.rod-collision{
+    animation:
+        rodCollision
+        1.55s
+        cubic-bezier(.16,.8,.2,1)
+        forwards;
+}
+
+@keyframes rodCollision{
+
+    0%{
+        top:-160px;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    37%{
+        top:30%;
+        transform:
+            translateX(-50%)
+            scale(1);
+    }
+
+    48%{
+        top:39%;
+        transform:
+            translateX(-50%)
+            scale(1.08,.75);
+    }
+
+    57%{
+        top:45%;
+        transform:
+            translateX(-50%)
+            scale(1.35,.35);
+    }
+
+    66%{
+        top:50%;
+        transform:
+            translateX(-50%)
+            scale(1.5,.42);
+    }
+
+    77%{
+        top:59%;
+        transform:
+            translateX(-50%)
+            scale(1.2,.5);
+    }
+
+    100%{
+        top:66%;
+        transform:
+            translateX(-50%)
+            scale(1.06,.54);
+    }
+}
+
+/* UI */
+
+.controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+    margin-top:14px;
+}
+
+button,
+select{
+    appearance:none;
+    border:1px solid #303644;
+    background:#141821;
+    color:#fff;
+
+    padding:12px 15px;
+
+    border-radius:13px;
+
+    font-weight:700;
+    font-size:13px;
+
+    cursor:pointer;
+
+    transition:
+        transform .15s,
+        background .15s;
+}
+
+button:hover,
+select:hover{
+    background:#202530;
+}
+
+button:active{
+    transform:scale(.96);
+}
+
+.primary{
+    background:#f3f4f6;
+    color:#090b0f;
+    border-color:#f3f4f6;
+}
+
+.primary:hover{
+    background:#fff;
+}
+
+.info{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:10px;
+
+    color:#858c9b;
+    font-size:12px;
+}
+
+.status{
+    color:#c0c5cf;
+}
+
+/* MOBILE */
+
+@media(max-width:650px){
+
+    body{
+        padding:10px;
+    }
+
+    .badge{
+        display:none;
+    }
+
+    .scene{
+        height:62vh;
+        min-height:420px;
+    }
+
+    .object{
+        width:125px;
+        height:70px;
+    }
+
+    .controls button,
+    .controls select{
+        flex:1;
+        min-width:120px;
+    }
+
+    .info{
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+
+        <div class="logo">
+
+            <div class="logo-mark">
+                A
+            </div>
+
+            <div>
+                <div class="title">
+                    Astra ASMR
+                </div>
+
+                <div class="subtitle">
+                    Soft objects · satisfying physics
+                </div>
+            </div>
+
+        </div>
+
+        <div class="badge">
+            ONE FILE • NO BACKEND
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <div
+            class="scene"
+            id="scene">
+
+            <div class="light"></div>
+
+            <div
+                class="rod"
+                id="rod">
+            </div>
+
+            <div class="floor-shadow"></div>
+
+            <div class="floor"></div>
+
+            <div
+                class="object"
+                id="object">
+            </div>
+
+        </div>
+
+
+        <div class="controls">
+
+            <button
+                class="primary"
+                id="playButton">
+                ▶ Play Random
+            </button>
+
+            <button
+                id="objectButton">
+                🎲 Random Object
+            </button>
+
+            <button
+                id="soundButton">
+                🔊 Sound On
+            </button>
+
+            <select id="shapeSelect">
+
+                <option value="random">
+                    Random Object
+                </option>
+
+                <option value="block">
+                    Soft Block
+                </option>
+
+                <option value="sphere">
+                    Soft Sphere
+                </option>
+
+                <option value="capsule">
+                    Capsule
+                </option>
+
+                <option value="ring">
+                    Soft Ring
+                </option>
+
+                <option value="blob">
+                    Liquid Blob
+                </option>
+
+                <option value="star">
+                    Soft Star
+                </option>
+
+                <option value="diamond">
+                    Soft Diamond
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="info">
+
+            <span
+                class="status"
+                id="status">
+                Ready — press Play
+            </span>
+
+            <span>
+                🎧 Headphones recommended
+            </span>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   OBJECT LIBRARY
+========================================= */
+
+const OBJECTS = {
+
+    block:{
+        name:"Soft Block",
+        width:"160px",
+        height:"90px",
+        radius:"20px",
+        background:
+            "linear-gradient(135deg,#ffffff,#777f8e)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    sphere:{
+        name:"Soft Sphere",
+        width:"105px",
+        height:"105px",
+        radius:"50%",
+        background:
+            "radial-gradient(circle at 30% 25%,#ffffff,#747c8b)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    capsule:{
+        name:"Soft Capsule",
+        width:"180px",
+        height:"76px",
+        radius:"999px",
+        background:
+            "linear-gradient(135deg,#f5f6f8,#6f7786)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    ring:{
+        name:"Soft Ring",
+        width:"125px",
+        height:"125px",
+        radius:"50%",
+        background:
+            "radial-gradient(circle,#0b0d12 0 28%,#f1f2f4 30% 68%,#707887 70%)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    blob:{
+        name:"Liquid Blob",
+        width:"160px",
+        height:"115px",
+        radius:"45% 55% 58% 42%",
+        background:
+            "radial-gradient(circle at 30% 25%,#ffffff,#7796a4)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    star:{
+        name:"Soft Star",
+        width:"145px",
+        height:"145px",
+        radius:"20px",
+        background:
+            "linear-gradient(135deg,#ffffff,#717988)",
+        shadow:
+            "0 25px 45px #0009"
+    },
+
+    diamond:{
+        name:"Soft Diamond",
+        width:"120px",
+        height:"120px",
+        radius:"18px",
+        background:
+            "linear-gradient(135deg,#ffffff,#707887)",
+        shadow:
+            "0 25px 45px #0009"
+    }
+
+};
+
+
+/* =========================================
+   DOM
+========================================= */
+
+const objectElement =
+    document.getElementById("object");
+
+const rodElement =
+    document.getElementById("rod");
+
+const scene =
+    document.getElementById("scene");
+
+const statusElement =
+    document.getElementById("status");
+
+const shapeSelect =
+    document.getElementById("shapeSelect");
+
+const playButton =
+    document.getElementById("playButton");
+
+const objectButton =
+    document.getElementById("objectButton");
+
+const soundButton =
+    document.getElementById("soundButton");
+
+
+/* =========================================
+   STATE
+========================================= */
+
+let audioContext = null;
+
+let soundEnabled = true;
+
+let currentObject = "block";
+
+
+/* =========================================
+   RANDOM
+========================================= */
+
+function randomItem(array){
+
+    return array[
+        Math.floor(
+            Math.random() * array.length
+        )
+    ];
+
+}
+
+
+/* =========================================
+   APPLY OBJECT
+========================================= */
+
+function applyObject(type){
+
+    const data =
+        OBJECTS[type];
+
+    currentObject =
+        type;
+
+    objectElement.style.width =
+        data.width;
+
+    objectElement.style.height =
+        data.height;
+
+    objectElement.style.borderRadius =
+        data.radius;
+
+    objectElement.style.background =
+        data.background;
+
+    objectElement.style.boxShadow =
+        data.shadow;
+
+
+    /*
+       Special shapes
+    */
+
+    if(type === "star"){
+
+        objectElement.style.clipPath =
+            "polygon(" +
+
+            "50% 0%," +
+            "61% 35%," +
+            "100% 35%," +
+            "68% 57%," +
+            "80% 100%," +
+            "50% 72%," +
+            "20% 100%," +
+            "32% 57%," +
+            "0% 35%," +
+            "39% 35%" +
+
+            ")";
+
+    }
+
+    else if(type === "diamond"){
+
+        objectElement.style.clipPath =
+            "polygon(50% 0%,100% 50%,50% 100%,0% 50%)";
+
+    }
+
+    else{
+
+        objectElement.style.clipPath =
+            "none";
+
+    }
+
+}
+
+
+/* =========================================
+   SELECT OBJECT
+========================================= */
+
+function chooseObject(){
+
+    let type =
+        shapeSelect.value;
+
+
+    if(type === "random"){
+
+        type =
+            randomItem(
+                Object.keys(OBJECTS)
+            );
+
+    }
+
+
+    applyObject(type);
+
+    statusElement.innerText =
+        OBJECTS[type].name;
+
+}
+
+
+/* =========================================
+   RANDOM ROD
+========================================= */
+
+function randomRod(){
+
+    const rods = [
+        "vertical",
+        "horizontal",
+        "diagonal"
+    ];
+
+    const selected =
+        randomItem(rods);
+
+
+    rodElement.className =
+        "rod " + selected;
+
+
+    return selected;
+
+}
+
+
+/* =========================================
+   START SCENE
+========================================= */
+
+function playRandom(){
+
+    chooseObject();
+
+    const rodType =
+        randomRod();
+
+
+    /*
+       Remove previous animation
+    */
+
+    objectElement.classList.remove(
+        "impact",
+        "rod-collision"
+    );
+
+
+    /*
+       Reset browser animation
+    */
+
+    void objectElement.offsetWidth;
+
+
+    /*
+       65% chance of hitting rod
+    */
+
+    const hitsRod =
+        Math.random() < .65;
+
+
+    if(hitsRod){
+
+        objectElement.classList.add(
+            "rod-collision"
+        );
+
+        statusElement.innerText =
+            OBJECTS[currentObject].name +
+            " → soft rod collision";
+
+
+        setTimeout(
+            playImpactSound,
+            520
+        );
+
+    }
+
+    else{
+
+        objectElement.classList.add(
+            "impact"
+        );
+
+        statusElement.innerText =
+            OBJECTS[currentObject].name +
+            " → soft impact";
+
+
+        setTimeout(
+            playImpactSound,
+            650
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   AUDIO CONTEXT
+========================================= */
+
+function getAudio(){
+
+    if(!audioContext){
+
+        audioContext =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+
+    if(
+        audioContext.state ===
+        "suspended"
+    ){
+
+        audioContext.resume();
+
+    }
+
+
+    return audioContext;
+
+}
+
+
+/* =========================================
+   SOFT IMPACT SOUND
+========================================= */
+
+function playImpactSound(){
+
+    if(!soundEnabled)
+        return;
+
+
+    const ctx =
+        getAudio();
+
+    const now =
+        ctx.currentTime;
+
+
+    /*
+       LOW THUMP
+    */
+
+    const oscillator =
+        ctx.createOscillator();
+
+    const gain =
+        ctx.createGain();
+
+
+    oscillator.type =
+        "sine";
+
+
+    oscillator.frequency.setValueAtTime(
+        115,
+        now
+    );
+
+    oscillator.frequency.exponentialRampToValueAtTime(
+        42,
+        now + .65
+    );
+
+
+    gain.gain.setValueAtTime(
+        .0001,
+        now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .20,
+        now + .018
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .0001,
+        now + .7
+    );
+
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        ctx.destination
+    );
+
+
+    oscillator.start(now);
+
+    oscillator.stop(
+        now + .72
+    );
+
+
+    /*
+       SOFT TEXTURE
+    */
+
+    const buffer =
+        ctx.createBuffer(
+            1,
+            ctx.sampleRate * .42,
+            ctx.sampleRate
+        );
+
+
+    const data =
+        buffer.getChannelData(0);
+
+
+    for(
+        let i = 0;
+        i < data.length;
+        i++
+    ){
+
+        const envelope =
+            Math.exp(
+                -i /
+                data.length *
+                8
+            );
+
+        data[i] =
+            (Math.random()*2-1)
+            *
+            envelope;
+
+    }
+
+
+    const noise =
+        ctx.createBufferSource();
+
+    noise.buffer =
+        buffer;
+
+
+    const filter =
+        ctx.createBiquadFilter();
+
+    filter.type =
+        "lowpass";
+
+    filter.frequency.value =
+        1700;
+
+
+    const noiseGain =
+        ctx.createGain();
+
+    noiseGain.gain.setValueAtTime(
+        .0001,
+        now
+    );
+
+    noiseGain.gain.exponentialRampToValueAtTime(
+        .045,
+        now + .025
+    );
+
+    noiseGain.gain.exponentialRampToValueAtTime(
+        .0001,
+        now + .45
+    );
+
+
+    noise
+        .connect(filter)
+        .connect(noiseGain)
+        .connect(ctx.destination);
+
+
+    noise.start(
+        now + .01
+    );
+
+
+    /*
+       SMALL CLICK
+       for rod collision
+    */
+
+    if(
+        objectElement.classList.contains(
+            "rod-collision"
+        )
+    ){
+
+        const click =
+            ctx.createOscillator();
+
+        const clickGain =
+            ctx.createGain();
+
+
+        click.type =
+            "triangle";
+
+        click.frequency.value =
+            420;
+
+
+        clickGain.gain.setValueAtTime(
+            .06,
+            now
+        );
+
+        clickGain.gain.exponentialRampToValueAtTime(
+            .0001,
+            now + .08
+        );
+
+
+        click
+            .connect(clickGain)
+            .connect(ctx.destination);
+
+
+        click.start(now);
+
+        click.stop(
+            now + .09
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   SOUND TOGGLE
+========================================= */
+
+function toggleSound(){
+
+    soundEnabled =
+        !soundEnabled;
+
+
+    if(soundEnabled){
+
+        soundButton.innerText =
+            "🔊 Sound On";
+
+    }
+    else{
+
+        soundButton.innerText =
+            "🔇 Sound Off";
+
+    }
+
+}
+
+
+/* =========================================
+   EVENTS
+========================================= */
+
+playButton.addEventListener(
+    "click",
+    playRandom
+);
+
+
+objectButton.addEventListener(
+    "click",
+    chooseObject
+);
+
+
+soundButton.addEventListener(
+    "click",
+    toggleSound
+);
+
+
+/*
+   Clicking scene = play
+*/
+
+scene.addEventListener(
+    "click",
+    playRandom
+);
+
+
+/*
+   Initial state
+*/
+
+applyObject("block");
+
+rodElement.className =
+    "rod vertical";
+
+</script>
+
+</body>
+</html>

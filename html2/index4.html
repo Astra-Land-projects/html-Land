@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>تبدیل واحدها</title>
+</head>
+
+<body>
+
+    <h1>تبدیل سانتی‌متر به اینچ</h1>
+
+    <input type="number" id="cmValue" placeholder="سانتی‌متر">
+    <button onclick="convert()">تبدیل به اینچ</button>
+    <p>اینچ: <span id="inchValue"></span></p>
+
+    <script>
+        function convert() {
+            const cm = document.getElementById("cmValue").value;
+            const inch = cm * 0.393701;
+            document.getElementById("inchValue").textContent = inch.toFixed(2);
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,99 @@
+DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>برنامه‌ریز تکالیف مدرسه</title>
+<style>
+  body{font-family:Tahoma,Arial;background:#f0f4f8;margin:0;padding:20px;}
+  .container{max-width:600px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1);}
+  h1{text-align:center;color:#2c3e50;}
+  .input-row{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;}
+  input,select{padding:8px;border:1px solid #ccc;border-radius:6px;flex:1;}
+  button{padding:8px 16px;background:#3498db;color:#fff;border:none;border-radius:6px;cursor:pointer;}
+  button:hover{background:#2980b9;}
+  ul{list-style:none;padding:0;}
+  li{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;}
+  li.done span{text-decoration:line-through;color:#999;}
+  .priority-high{border-right:4px solid #e74c3c;}
+  .priority-medium{border-right:4px solid #f39c12;}
+  .priority-low{border-right:4px solid #2ecc71;}
+  .actions button{margin-left:5px;padding:4px 8px;font-size:12px;}
+  .del{background:#e74c3c;}
+  .del:hover{background:#c0392b;}
+  .stats{text-align:center;margin-top:15px;color:#555;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 برنامه‌ریز تکالیف مدرسه</h1>
+  <div class="input-row">
+    <input id="taskInput" placeholder="عنوان تکلیف...">
+    <input id="subjectInput" placeholder="درس">
+    <input id="dateInput" type="date">
+    <select id="priorityInput">
+      <option value="low">کم‌اهمیت</option>
+      <option value="medium" selected>متوسط</option>
+      <option value="high">مهم</option>
+    </select>
+    <button onclick="addTask()">افزودن</button>
+  </div>
+  <ul id="taskList"></ul>
+  <div class="stats" id="stats"></div>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem('school_tasks')||'[]');
+
+function save(){
+  localStorage.setItem('school_tasks', JSON.stringify(tasks));
+  render();
+}
+
+function addTask(){
+  const title = document.getElementById('taskInput').value.trim();
+  const subject = document.getElementById('subjectInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  const priority = document.getElementById('priorityInput').value;
+  if(!title) return alert('عنوان تکلیف را وارد کنید');
+  tasks.push({id:Date.now(), title, subject, date, priority, done:false});
+  document.getElementById('taskInput').value='';
+  document.getElementById('subjectInput').value='';
+  document.getElementById('dateInput').value='';
+  save();
+}
+
+function toggleDone(id){
+  tasks = tasks.map(t=> t.id===id ? {...t, done:!t.done}: t);
+  save();
+}
+
+function deleteTask(id){
+  tasks = tasks.filter(t=>t.id!==id);
+  save();
+}
+
+function render(){
+  const list = document.getElementById('taskList');
+  list.innerHTML='';
+  tasks.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  tasks.forEach(t=>{
+    const li = document.createElement('li');
+    li.className = 'priority-'+t.priority + (t.done?' done':'');
+    li.innerHTML = `
+      <span onclick="toggleDone(${t.id})" style="cursor:pointer;flex:1">
+        <b>${t.title}</b> ${t.subject? '('+t.subject+')':''} ${t.date? '📅 '+t.date:''}
+      </span>
+      <span class="actions">
+        <button onclick="toggleDone(${t.id})">${t.done?'برگردان':'انجام شد'}</button>
+        <button class="del" onclick="deleteTask(${t.id})">حذف</button>
+      </span>`;
+    list.appendChild(li);
+  });
+  const done = tasks.filter(t=>t.done).length;
+  document.getElementById('stats').textContent = `${done} از ${tasks.length} تکلیف انجام شده`;
+}
+
+render();
+</script>
+</body>
+</html>

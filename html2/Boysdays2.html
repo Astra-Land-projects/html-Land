@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>روز پسر مبارک</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:Tahoma,'Segoe UI',sans-serif;
+  background:radial-gradient(circle at 50% 0%,#1b1035,#07060f 70%);
+  color:#fff;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+#fx{position:fixed;inset:0;z-index:1;pointer-events:none}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;z-index:0;animation:float 14s ease-in-out infinite}
+.o1{width:400px;height:400px;background:#7b2ff7;top:-140px;right:-120px}
+.o2{width:340px;height:340px;background:#f107a3;bottom:-130px;left:-100px;animation-delay:-5s}
+.o3{width:300px;height:300px;background:#00c6ff;top:45%;left:55%;animation-delay:-9s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-50px) scale(1.18)}}
+.card{
+  position:relative;z-index:2;
+  width:min(92vw,620px);
+  padding:46px 34px 36px;
+  text-align:center;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:30px;
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  box-shadow:0 30px 80px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.25);
+  animation:rise .9s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(45px) scale(.95)}to{opacity:1;transform:none}}
+.icon{font-size:58px;line-height:1;display:inline-block;animation:bounce 2s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(6deg)}}
+h1{
+  font-size:clamp(26px,6.5vw,46px);font-weight:900;margin:16px 0 12px;
+  background:linear-gradient(90deg,#ffd700,#ff6b6b,#4ecdc4,#ffd700);
+  background-size:300% auto;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:shine 4s linear infinite;
+}
+@keyframes shine{to{background-position:300% center}}
+.sub{font-size:clamp(13px,3.4vw,16px);color:#cbd5e1;line-height:2}
+.msg{margin-top:18px;font-size:clamp(13px,3.6vw,17px);font-weight:bold;color:#ffd93d;min-height:26px;transition:.3s}
+button{
+  margin-top:22px;padding:16px 40px;font-family:inherit;font-size:16.5px;font-weight:bold;
+  color:#2a0a3d;background:linear-gradient(135deg,#ffe259,#ffa751);
+  border:none;border-radius:60px;cursor:pointer;
+  box-shadow:0 10px 30px rgba(255,167,81,.45);
+  transition:.25s;
+}
+button:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 18px 44px rgba(255,167,81,.7)}
+button:active{transform:scale(.95)}
+.row{margin-top:26px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.row span{font-size:26px;display:inline-block;animation:bob 2.6s ease-in-out infinite}
+.row span:nth-child(2){animation-delay:.25s}
+.row span:nth-child(3){animation-delay:.5s}
+.row span:nth-child(4){animation-delay:.75s}
+.row span:nth-child(5){animation-delay:1s}
+.row span:nth-child(6){animation-delay:1.25s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+
+<div class="card">
+  <div class="icon">🎉</div>
+  <h1>روز پسر مبارک</h1>
+  <p class="sub">امروز روز توئه؛ باحال‌ترین، باهوش‌ترین و بی‌همتاترین آدم دنیا 🖤</p>
+  <p class="msg" id="msg">یه کلیک بزن تا جشن بگیریم 🎆</p>
+  <button id="go">بزن حالشو ببر 🎇</button>
+  <div class="row">
+    <span>🎮</span><span>⚽</span><span>🎧</span><span>🚀</span><span>💪</span><span>🔥</span>
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('fx');
+const ctx = cv.getContext('2d');
+let W, H;
+function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; makeConfetti(); }
+addEventListener('resize', resize);
+
+const COLORS = ['#ffd93d','#ff6b6b','#4ecdc4','#a78bfa','#f472b6','#60a5fa','#34d399'];
+let confetti = [], sparks = [];
+
+function makeConfetti(){
+  confetti = [];
+  const n = Math.min(150, Math.floor(W/9));
+  for(let i=0;i<n;i++){
+    confetti.push({
+      x: Math.random()*W, y: Math.random()*-H,
+      w: 5+Math.random()*7, h: 8+Math.random()*10,
+      vy: 1.2+Math.random()*2.6, vx: -0.9+Math.random()*1.8,
+      rot: Math.random()*6.28, vr: -0.09+Math.random()*0.18,
+      col: COLORS[(Math.random()*COLORS.length)|0]
+    });
+  }
+}
+
+function burst(x, y, count){
+  count = count || 70;
+  const hue = Math.random()*360;
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = Math.random()*6 + 1.5;
+    sparks.push({
+      x, y,
+      vx: Math.cos(a)*sp, vy: Math.sin(a)*sp,
+      life: 1, decay: 0.011 + Math.random()*0.016,
+      col: 'hsl(' + (hue + Math.random()*70) + ',100%,63%)',
+      r: 1.4 + Math.random()*2.2
+    });
+  }
+}
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+
+  // جرقه‌ها با حالت نور افزودنی
+  ctx.globalCompositeOperation = 'lighter';
+  for(let i=sparks.length-1;i>=0;i--){
+    const s = sparks[i];
+    s.x += s.vx; s.y += s.vy;
+    s.vx *= 0.98; s.vy *= 0.98; s.vy += 0.045;
+    s.life -= s.decay;
+    if(s.life <= 0){ sparks.splice(i,1); continue; }
+    ctx.globalAlpha = s.life;
+    ctx.fillStyle = s.col;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r * s.life, 0, 6.283);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  // کاغذرنگی‌ها
+  for(const p of confetti){
+    p.y += p.vy; p.x += p.vx; p.rot += p.vr;
+    if(p.y > H+40){ p.y = -40; p.x = Math.random()*W; }
+    if(p.x < -40) p.x = W+40;
+    if(p.x > W+40) p.x = -40;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = p.col;
+    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  }
+  requestAnimationFrame(loop);
+}
+
+resize();
+loop();
+
+// پیام‌های تشویقی
+const MSGS = [
+  'تو یه پسر فوق‌العاده‌ای 💪',
+  'بهت افتخار می‌کنم 🌟',
+  'ادامه بده، داری عالی پیش میری 🚀',
+  'امروز روز توئه 🎂',
+  'بی‌همتا و خاصی ✨',
+  'هرچی بخوای می‌تونی بسازی 🔥',
+  'خنده‌هات دنیا رو قشنگ‌تر می‌کنه 😎'
+];
+let mi = 0;
+const msgEl = document.getElementById('msg');
+
+function celebrate(){
+  // آتیش‌بازی پشت سر هم
+  for(let i=0;i<5;i++){
+    setTimeout(()=>{
+      burst(W*0.15 + Math.random()*W*0.7, H*0.12 + Math.random()*H*0.55, 80);
+    }, i*170);
+  }
+  msgEl.style.opacity = 0;
+  setTimeout(()=>{
+    msgEl.textContent = MSGS[mi % MSGS.length];
+    mi++;
+    msgEl.style.opacity = 1;
+  }, 180);
+}
+
+document.getElementById('go').addEventListener('click', celebrate);
+document.addEventListener('click', e => {
+  if(e.target.id !== 'go') burst(e.clientX, e.clientY, 45);
+});
+// آتیش‌بازی خودکار هر چند ثانیه
+setInterval(()=>{
+  burst(W*0.15 + Math.random()*W*0.7, H*0.15 + Math.random()*H*0.5, 55);
+}, 3800);
+</script>
+</body>
+</html>
