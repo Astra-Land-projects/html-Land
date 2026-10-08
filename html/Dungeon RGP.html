@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astra Dungeon RPG</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        user-select: none;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at top, #24213b 0%, #0d0d16 55%, #050509 100%);
+        color: #fff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #game {
+        width: min(1000px, 96vw);
+        background: rgba(12, 12, 22, 0.96);
+        border: 2px solid #a875ff;
+        border-radius: 18px;
+        box-shadow: 0 0 40px rgba(168, 117, 255, .25);
+        overflow: hidden;
+    }
+
+    header {
+        padding: 16px 20px;
+        background: linear-gradient(90deg, #171326, #24163a);
+        border-bottom: 1px solid #3c2a5d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+    }
+
+    header h1 {
+        margin: 0;
+        color: #c59cff;
+        font-size: 24px;
+    }
+
+    #status {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        font-size: 14px;
+    }
+
+    .stat {
+        background: #171523;
+        padding: 7px 11px;
+        border-radius: 8px;
+        border: 1px solid #33294a;
+    }
+
+    #layout {
+        display: grid;
+        grid-template-columns: 1fr 250px;
+    }
+
+    #left {
+        padding: 14px;
+    }
+
+    canvas {
+        display: block;
+        width: 100%;
+        max-width: 720px;
+        aspect-ratio: 16 / 10;
+        margin: auto;
+        background: #08090e;
+        border: 2px solid #30264a;
+        border-radius: 12px;
+    }
+
+    #panel {
+        border-left: 1px solid #30264a;
+        background: #11101b;
+        padding: 16px;
+    }
+
+    .panel-title {
+        color: #c59cff;
+        font-weight: bold;
+        margin-bottom: 12px;
+    }
+
+    .bar {
+        height: 12px;
+        background: #292531;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 6px 0 14px;
+    }
+
+    .bar > div {
+        height: 100%;
+        width: 100%;
+        transition: width .2s;
+    }
+
+    #hpBar {
+        background: #e84b65;
+    }
+
+    #xpBar {
+        background: #a875ff;
+    }
+
+    button {
+        width: 100%;
+        padding: 11px;
+        margin-top: 8px;
+        border: 0;
+        border-radius: 9px;
+        background: #251a3b;
+        color: white;
+        cursor: pointer;
+        border: 1px solid #513c73;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #382355;
+    }
+
+    #log {
+        height: 145px;
+        overflow-y: auto;
+        background: #08080d;
+        border: 1px solid #2b2538;
+        border-radius: 9px;
+        padding: 9px;
+        margin-top: 14px;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .hint {
+        margin-top: 10px;
+        color: #aaa;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    #message {
+        text-align: center;
+        padding: 10px;
+        color: #c59cff;
+        font-weight: bold;
+    }
+
+    @media (max-width: 750px) {
+        #layout {
+            grid-template-columns: 1fr;
+        }
+
+        #panel {
+            border-left: 0;
+            border-top: 1px solid #30264a;
+        }
+
+        header {
+            flex-direction: column;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<header>
+    <h1>⚔️ ASTRA DUNGEON</h1>
+
+    <div id="status">
+        <div class="stat">❤️ <span id="hpText">100/100</span></div>
+        <div class="stat">⭐ Lv.<span id="levelText">1</span></div>
+        <div class="stat">💰 <span id="goldText">0</span></div>
+        <div class="stat">⚔️ <span id="attackText">20</span></div>
+    </div>
+</header>
+
+<div id="layout">
+
+<div id="left">
+    <canvas id="canvas" width="720" height="450"></canvas>
+
+    <div id="message">
+        WASD / Arrow Keys = Move &nbsp; | &nbsp; SPACE = Attack
+    </div>
+</div>
+
+<aside id="panel">
+
+    <div class="panel-title">PLAYER</div>
+
+    <div>❤️ Health</div>
+    <div class="bar">
+        <div id="hpBar"></div>
+    </div>
+
+    <div>⭐ Experience</div>
+    <div class="bar">
+        <div id="xpBar"></div>
+    </div>
+
+    <button onclick="usePotion()">🧪 Use Potion (<span id="potionText">3</span>)</button>
+    <button onclick="saveGame()">💾 Save Game</button>
+    <button onclick="loadGame()">📂 Load Game</button>
+    <button onclick="restartGame()">🔄 New Game</button>
+
+    <div class="panel-title" style="margin-top:18px;">COMBAT LOG</div>
+
+    <div id="log"></div>
+
+    <div class="hint">
+        Defeat enemies to gain XP and gold.
+        Find the boss and defeat it to clear the dungeon.
+    </div>
+
+</aside>
+
+</div>
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const keys = {};
+
+document.addEventListener("keydown", e => {
+    keys[e.key.toLowerCase()] = true;
+
+    if (e.code === "Space") {
+        e.preventDefault();
+        attack();
+    }
+});
+
+document.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+let player;
+let enemies;
+let particles;
+let gameOver = false;
+let dungeonCleared = false;
+
+function newPlayer() {
+    return {
+        x: 100,
+        y: 225,
+        size: 24,
+
+        hp: 100,
+        maxHp: 100,
+
+        attack: 20,
+
+        level: 1,
+        xp: 0,
+        xpNeeded: 100,
+
+        gold: 0,
+        potions: 3,
+
+        speed: 3.5,
+
+        attackCooldown: 0
+    };
+}
+
+function createEnemy(x, y, type = "goblin") {
+
+    if (type === "boss") {
+        return {
+            x,
+            y,
+            size: 46,
+            hp: 250,
+            maxHp: 250,
+            attack: 18,
+            speed: 1,
+            color: "#b54cff",
+            type: "boss",
+            xp: 150,
+            gold: 100,
+            alive: true
+        };
+    }
+
+    return {
+        x,
+        y,
+        size: 25,
+        hp: 55,
+        maxHp: 55,
+        attack: 8,
+        speed: 1.15,
+        color: "#d64b5d",
+        type: "goblin",
+        xp: 35,
+        gold: 15,
+        alive: true
+    };
+}
+
+function createDungeon() {
+
+    enemies = [
+        createEnemy(400, 100),
+        createEnemy(550, 330),
+        createEnemy(300, 350),
+        createEnemy(580, 120),
+        createEnemy(430, 250),
+        createEnemy(630, 350),
+        createEnemy(500, 70),
+        createEnemy(650, 200)
+    ];
+
+    enemies.push(
+        createEnemy(610, 80, "boss")
+    );
+}
+
+function restartGame() {
+
+    player = newPlayer();
+    particles = [];
+    gameOver = false;
+    dungeonCleared = false;
+
+    createDungeon();
+
+    log("⚔️ Welcome to Astra Dungeon!");
+    log("👹 Defeat every enemy.");
+    updateUI();
+}
+
+function log(text) {
+
+    const box = document.getElementById("log");
+
+    const line = document.createElement("div");
+    line.textContent = text;
+
+    box.prepend(line);
+
+    while (box.children.length > 25) {
+        box.removeChild(box.lastChild);
+    }
+}
+
+function updateUI() {
+
+    document.getElementById("hpText").textContent =
+        `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+
+    document.getElementById("levelText").textContent =
+        player.level;
+
+    document.getElementById("goldText").textContent =
+        player.gold;
+
+    document.getElementById("attackText").textContent =
+        player.attack;
+
+    document.getElementById("potionText").textContent =
+        player.potions;
+
+    document.getElementById("hpBar").style.width =
+        `${Math.max(0, player.hp / player.maxHp * 100)}%`;
+
+    document.getElementById("xpBar").style.width =
+        `${player.xp / player.xpNeeded * 100}%`;
+}
+
+function usePotion() {
+
+    if (gameOver) return;
+
+    if (player.potions <= 0) {
+        log("❌ No potions left.");
+        return;
+    }
+
+    if (player.hp >= player.maxHp) {
+        log("❤️ Your health is already full.");
+        return;
+    }
+
+    player.potions--;
+
+    const heal = 35;
+
+    player.hp = Math.min(
+        player.maxHp,
+        player.hp + heal
+    );
+
+    log(`🧪 You recovered ${heal} HP.`);
+
+    updateUI();
+}
+
+function gainXP(amount) {
+
+    player.xp += amount;
+
+    while (player.xp >= player.xpNeeded) {
+
+        player.xp -= player.xpNeeded;
+
+        player.level++;
+
+        player.xpNeeded =
+            Math.floor(player.xpNeeded * 1.35);
+
+        player.maxHp += 15;
+        player.hp = player.maxHp;
+
+        player.attack += 5;
+
+        player.potions++;
+
+        log(`🎉 LEVEL UP! You are now level ${player.level}!`);
+        log("⚔️ Attack increased!");
+    }
+}
+
+function attack() {
+
+    if (gameOver || dungeonCleared) return;
+
+    if (player.attackCooldown > 0) return;
+
+    player.attackCooldown = 25;
+
+    let hit = false;
+
+    for (const enemy of enemies) {
+
+        if (!enemy.alive) continue;
+
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < player.size + enemy.size + 28) {
+
+            enemy.hp -= player.attack;
+
+            hit = true;
+
+            createParticles(
+                enemy.x,
+                enemy.y,
+                "#ffdf70"
+            );
+
+            log(`⚔️ You hit the ${enemy.type} for ${player.attack} damage.`);
+
+            if (enemy.hp <= 0) {
+
+                enemy.alive = false;
+
+                player.gold += enemy.gold;
+
+                gainXP(enemy.xp);
+
+                log(
+                    `💀 ${enemy.type.toUpperCase()} defeated! +${enemy.gold} gold`
+                );
+
+                if (enemy.type === "boss") {
+                    dungeonCleared = true;
+                    log("👑 BOSS DEFEATED!");
+                    log("🏆 DUNGEON CLEARED!");
+                }
+            }
+        }
+    }
+
+    if (!hit) {
+        log("⚔️ Attack missed.");
+    }
+}
+
+function update() {
+
+    if (gameOver || dungeonCleared) return;
+
+    let dx = 0;
+    let dy = 0;
+
+    if (keys["w"] || keys["arrowup"]) dy -= 1;
+    if (keys["s"] || keys["arrowdown"]) dy += 1;
+    if (keys["a"] || keys["arrowleft"]) dx -= 1;
+    if (keys["d"] || keys["arrowright"]) dx += 1;
+
+    if (dx !== 0 || dy !== 0) {
+
+        const length = Math.hypot(dx, dy);
+
+        dx /= length;
+        dy /= length;
+
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+    }
+
+    player.x = Math.max(25, Math.min(W - 25, player.x));
+    player.y = Math.max(25, Math.min(H - 25, player.y));
+
+    if (player.attackCooldown > 0) {
+        player.attackCooldown--;
+    }
+
+    updateEnemies();
+    updateParticles();
+
+    if (player.hp <= 0) {
+
+        player.hp = 0;
+        gameOver = true;
+
+        log("💀 YOU DIED!");
+        log("🔄 Press New Game to try again.");
+    }
+
+    updateUI();
+}
+
+function updateEnemies() {
+
+    for (const enemy of enemies) {
+
+        if (!enemy.alive) continue;
+
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+
+        const distance = Math.hypot(dx, dy);
+
+        if (distance > enemy.size + player.size) {
+
+            enemy.x += dx / distance * enemy.speed;
+            enemy.y += dy / distance * enemy.speed;
+
+        } else {
+
+            if (Math.random() < 0.025) {
+
+                player.hp -= enemy.attack;
+
+                createParticles(
+                    player.x,
+                    player.y,
+                    "#ff4f64"
+                );
+
+                log(
+                    `💥 ${enemy.type} attacked you for ${enemy.attack} damage.`
+                );
+            }
+        }
+    }
+}
+
+function createParticles(x, y, color) {
+
+    for (let i = 0; i < 8; i++) {
+
+        particles.push({
+            x,
+            y,
+            vx: (Math.random() - .5) * 5,
+            vy: (Math.random() - .5) * 5,
+            life: 25,
+            color
+        });
+    }
+}
+
+function updateParticles() {
+
+    for (const p of particles) {
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+    }
+
+    particles =
+        particles.filter(p => p.life > 0);
+}
+
+function drawDungeon() {
+
+    ctx.fillStyle = "#08090e";
+    ctx.fillRect(0, 0, W, H);
+
+    // Floor tiles
+    for (let x = 0; x < W; x += 40) {
+
+        for (let y = 0; y < H; y += 40) {
+
+            ctx.strokeStyle = "#151521";
+            ctx.strokeRect(x, y, 40, 40);
+        }
+    }
+
+    // Walls
+    ctx.strokeStyle = "#5c3d82";
+    ctx.lineWidth = 8;
+
+    ctx.strokeRect(
+        8,
+        8,
+        W - 16,
+        H - 16
+    );
+
+    // Decorative crystals
+    ctx.fillStyle = "#8d62ff";
+
+    for (let i = 0; i < 10; i++) {
+
+        const x = 30 + i * 70;
+        const y = i % 2 === 0 ? 25 : H - 25;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x + 6, y);
+        ctx.lineTo(x, y + 8);
+        ctx.lineTo(x - 6, y);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+function drawPlayer() {
+
+    ctx.save();
+
+    ctx.translate(player.x, player.y);
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,.4)";
+    ctx.beginPath();
+    ctx.ellipse(0, 14, 18, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = "#67d6ff";
+    ctx.fillRect(-12, -12, 24, 24);
+
+    // Helmet
+    ctx.fillStyle = "#d9e4ff";
+    ctx.fillRect(-10, -16, 20, 7);
+
+    // Eye
+    ctx.fillStyle = "#101018";
+    ctx.fillRect(4, -8, 4, 4);
+
+    // Sword
+    ctx.strokeStyle = "#fff2b2";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(10, 2);
+    ctx.lineTo(23, -12);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawEnemy(enemy) {
+
+    if (!enemy.alive) return;
+
+    ctx.save();
+
+    ctx.translate(enemy.x, enemy.y);
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.beginPath();
+    ctx.ellipse(
+        0,
+        enemy.size * .6,
+        enemy.size * .75,
+        enemy.size * .3,
+        0,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.fillStyle = enemy.color;
+
+    ctx.beginPath();
+    ctx.arc(
+        0,
+        0,
+        enemy.size / 2,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = "#fff";
+
+    ctx.fillRect(
+        -enemy.size / 5,
+        -enemy.size / 8,
+        5,
+        5
+    );
+
+    ctx.fillRect(
+        enemy.size / 10,
+        -enemy.size / 8,
+        5,
+        5
+    );
+
+    ctx.restore();
+
+    // Health bar
+    const barWidth = enemy.size * 1.6;
+
+    ctx.fillStyle = "#24151a";
+
+    ctx.fillRect(
+        enemy.x - barWidth / 2,
+        enemy.y - enemy.size - 10,
+        barWidth,
+        5
+    );
+
+    ctx.fillStyle =
+        enemy.type === "boss"
+            ? "#ff3864"
+            : "#5ee36d";
+
+    ctx.fillRect(
+        enemy.x - barWidth / 2,
+        enemy.y - enemy.size - 10,
+        barWidth * (enemy.hp / enemy.maxHp),
+        5
+    );
+
+    if (enemy.type === "boss") {
+
+        ctx.fillStyle = "#ff9df4";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            "BOSS",
+            enemy.x,
+            enemy.y - enemy.size - 17
+        );
+    }
+}
+
+function drawParticles() {
+
+    for (const p of particles) {
+
+        ctx.globalAlpha =
+            p.life / 25;
+
+        ctx.fillStyle = p.color;
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            4,
+            4
+        );
+    }
+
+    ctx.globalAlpha = 1;
+}
+
+function drawOverlay() {
+
+    if (!gameOver && !dungeonCleared)
+        return;
+
+    ctx.fillStyle = "rgba(0,0,0,.7)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = "center";
+
+    if (dungeonCleared) {
+
+        ctx.fillStyle = "#ffd86b";
+        ctx.font = "bold 42px Arial";
+
+        ctx.fillText(
+            "DUNGEON CLEARED!",
+            W / 2,
+            H / 2 - 15
+        );
+
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#fff";
+
+        ctx.fillText(
+            `Level ${player.level} • ${player.gold} Gold`,
+            W / 2,
+            H / 2 + 25
+        );
+
+    } else {
+
+        ctx.fillStyle = "#ff526b";
+        ctx.font = "bold 48px Arial";
+
+        ctx.fillText(
+            "YOU DIED",
+            W / 2,
+            H / 2
+        );
+    }
+}
+
+function draw() {
+
+    drawDungeon();
+
+    for (const enemy of enemies) {
+        drawEnemy(enemy);
+    }
+
+    drawPlayer();
+    drawParticles();
+    drawOverlay();
+}
+
+function gameLoop() {
+
+    update();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function saveGame() {
+
+    const data = {
+        player,
+        enemies,
+        dungeonCleared
+    };
+
+    localStorage.setItem(
+        "astraDungeonSave",
+        JSON.stringify(data)
+    );
+
+    log("💾 Game saved.");
+}
+
+function loadGame() {
+
+    const saved =
+        localStorage.getItem("astraDungeonSave");
+
+    if (!saved) {
+        log("❌ No save found.");
+        return;
+    }
+
+    const data =
+        JSON.parse(saved);
+
+    player = data.player;
+    enemies = data.enemies;
+    dungeonCleared = data.dungeonCleared;
+
+    gameOver = false;
+
+    log("📂 Game loaded.");
+
+    updateUI();
+}
+
+restartGame();
+gameLoop();
+
+</script>
+
+</body>
+</html>

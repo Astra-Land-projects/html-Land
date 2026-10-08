@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Dino</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;overflow:hidden;background:#f7f7f7}
+body{display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif}
+#game{position:relative;width:min(100vw,1000px);height:min(100vh,420px);overflow:hidden;background:#f7f7f7}
+canvas{width:100%;height:100%;display:block}
+#score{position:absolute;right:25px;top:18px;color:#555;font:bold 22px Arial;letter-spacing:2px}
+#message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#444}
+#message h1{font-size:38px;margin-bottom:10px}
+#message p{color:#777;font-size:15px}
+button{margin-top:18px;padding:9px 22px;background:white;border:1px solid #777;border-radius:4px;color:#444;font-weight:bold;cursor:pointer}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="canvas"></canvas>
+<div id="score">00000</div>
+<div id="message"><h1 id="title">ASTRA DINO</h1><p id="description">SPACE / CLICK / TAP TO START</p><button id="restart">START</button></div>
+</div>
+<script>
+const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),game=document.getElementById("game");
+const scoreEl=document.getElementById("score"),message=document.getElementById("message"),title=document.getElementById("title"),desc=document.getElementById("description"),restart=document.getElementById("restart");
+let W,H,groundY;
+function resize(){const r=game.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;canvas.width=W*d;canvas.height=H*d;canvas.style.width=W+"px";canvas.style.height=H+"px";ctx.setTransform(d,0,0,d,0,0);groundY=H-65;dino.y=groundY-dino.height}
+addEventListener("resize",resize);
+
+let audio=null;
+function initAudio(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume()}
+function beep(f,t,type="square",v=.025){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+t);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+t)}
+
+let seed=1;
+function newSeed(){seed=(Date.now()^Math.floor(Math.random()*2147483647))>>>0}
+function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+function range(a,b){return a+rnd()*(b-a)}
+function int(a,b){return Math.floor(range(a,b+1))}
+
+let state="menu",score=0,best=Number(localStorage.getItem("astraDinoBest")||0),distance=0,speed=280,time=0,nextDistance=430,lastType=null;
+let obstacles=[];
+const dino={x:85,y:0,width:44,height:48,vy:0,gravity:1850,jump:-690,onGround:true,frame:0};
+
+function resetDino(){dino.y=groundY-dino.height;dino.vy=0;dino.onGround=true;dino.frame=0}
+function nextObstacle(){nextDistance=range(300,560)}
+function spawn(){
+ let type;
+ if(lastType==="bird")type=rnd()<.75?"cactus":"bird";
+ else if(lastType==="cactus")type=rnd()<.30?"bird":"cactus";
+ else type=rnd()<.82?"cactus":"bird";
+ if(type==="cactus"){
+  const v=int(1,3),w=v===1?24:v===2?42:62,h=v===1?int(38,52):v===2?int(42,58):int(36,50);
+  obstacles.push({type,x:W+40,y:groundY-h,width:w,height:h,passed:false});
+ }else{
+  const ys=[groundY-55,groundY-100,groundY-145];
+  obstacles.push({type,x:W+40,y:ys[int(0,2)],width:46,height:28,wing:0,passed:false});
+ }
+ lastType=type;
+}
+function bg(){
+ ctx.fillStyle="#f7f7f7";ctx.fillRect(0,0,W,H);
+ ctx.fillStyle="#e8e8e8";const off=(distance*.15)%900;
+ for(let i=-1;i<5;i++){const x=i*260-off,y=45+(i%3)*35;ctx.fillRect(x,y,55,7);ctx.fillRect(x+15,y-6,30,8)}
+}
+function ground(){
+ ctx.strokeStyle="#777";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,groundY+2);ctx.lineTo(W,groundY+2);ctx.stroke();
+ ctx.fillStyle="#888";const off=(distance*.8)%45;for(let x=-off;x<W;x+=45)ctx.fillRect(x,groundY+9,6,2)
+}
+function drawDino(){
+ const x=dino.x,y=dino.y;ctx.fillStyle="#444";
+ ctx.fillRect(x+7,y+15,29,25);ctx.fillRect(x+25,y+5,12,22);ctx.fillRect(x+30,y,17,18);ctx.fillRect(x+42,y+8,10,9);
+ ctx.fillStyle="#f7f7f7";ctx.fillRect(x+40,y+4,3,3);ctx.fillStyle="#444";ctx.fillRect(x,y+22,12,8);ctx.fillRect(x-7,y+27,10,6);
+ const leg=Math.floor(dino.frame/8)%2;
+ if(dino.onGround){if(leg===0){ctx.fillRect(x+12,y+37,7,12);ctx.fillRect(x+28,y+38,7,10)}else{ctx.fillRect(x+12,y+38,7,10);ctx.fillRect(x+28,y+37,7,12)}}else{ctx.fillRect(x+13,y+37,7,8);ctx.fillRect(x+29,y+37,7,8)}
+}
+function drawCactus(o){
+ const{x,y,width:w,height:h}=o;ctx.fillStyle="#444";ctx.fillRect(x+w*.35,y,w*.3,h);
+ if(w>30){ctx.fillRect(x,y+h*.42,w*.35,7);ctx.fillRect(x,y+h*.25,7,h*.2);ctx.fillRect(x+w*.65,y+h*.55,w*.35,7);ctx.fillRect(x+w*.65,y+h*.35,7,h*.22)}
+}
+function drawBird(o){
+ const{x,y}=o,wing=Math.floor(o.wing/8)%2;ctx.fillStyle="#555";ctx.fillRect(x+7,y+8,27,13);ctx.fillRect(x+28,y+4,12,13);ctx.fillRect(x+39,y+9,8,5);
+ if(wing===0)ctx.fillRect(x+12,y+2,15,7);else ctx.fillRect(x+12,y+16,15,7);
+ ctx.fillStyle="#f7f7f7";ctx.fillRect(x+34,y+6,2,2)
+}
+function drawObstacles(){for(const o of obstacles)o.type==="cactus"?drawCactus(o):drawBird(o)}
+function hit(a,b){const ax=a.x+6,ay=a.y+5,aw=a.width-12,ah=a.height-8,bx=b.x+4,by=b.y+3,bw=b.width-8,bh=b.height-6;return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by}
+function jump(){initAudio();if(state==="menu"||state==="gameover"){start();return}if(state!=="playing"||!dino.onGround)return;dino.vy=dino.jump;dino.onGround=false;beep(500,.07)}
+function start(){initAudio();newSeed();state="playing";score=0;distance=0;speed=280;time=0;nextDistance=range(300,560);lastType=null;obstacles=[];resetDino();scoreEl.textContent="00000";message.classList.add("hidden")}
+function over(){if(state!=="playing")return;state="gameover";beep(100,.35,"sawtooth",.04);if(score>best){best=score;localStorage.setItem("astraDinoBest",best)}title.textContent="GAME OVER";desc.textContent="SCORE: "+score+"   BEST: "+best;restart.textContent="PLAY AGAIN";message.classList.remove("hidden")}
+function update(dt){
+ if(state!=="playing")return;
+ speed=Math.min(620,280+score*5);dino.vy+=dino.gravity*dt;dino.y+=dino.vy*dt;
+ if(dino.y+dino.height>=groundY){dino.y=groundY-dino.height;dino.vy=0;dino.onGround=true}else dino.onGround=false;
+ dino.frame+=dt*60;distance+=speed*dt;time+=speed*dt;
+ if(time>=nextDistance){spawn();time=0;nextObstacle()}
+ for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.x-=speed*dt;if(o.type==="bird")o.wing+=dt*60;
+  if(!o.passed&&o.x+o.width<dino.x){o.passed=true;score++;scoreEl.textContent=String(score).padStart(5,"0");beep(850,.045,"square",.018)}
+  if(o.x+o.width<-100)obstacles.splice(i,1)
+ }
+ for(const o of obstacles)if(hit(dino,o)){over();break}
+}
+function draw(){bg();ground();drawObstacles();drawDino()}
+function loop(now){const dt=Math.min((now-last)/1000,.035);last=now;update(dt);draw();requestAnimationFrame(loop)}
+let last=performance.now();
+addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();jump()}});
+game.addEventListener("pointerdown",e=>{if(e.target!==restart)jump()});
+restart.addEventListener("click",e=>{e.stopPropagation();start()});
+resize();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

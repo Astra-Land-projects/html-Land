@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pour Water</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top: #f7f0e3;
+    --bg-bot: #e8d8b8;
+    --wood-a: #c99b62;
+    --wood-b: #a3733f;
+    --wood-dark: #7a5228;
+    --ink: #3a2c1c;
+    --ink-soft: #8a7a63;
+    --accent: #c8792e;
+    --panel: rgba(255,250,240,0.72);
+    --panel-border: rgba(122,82,40,0.18);
+    --water-a: #6ec3ea;
+    --water-b: #1f7fb3;
+    --glass-line: rgba(255,255,255,0.85);
+    --glass-shadow: rgba(90,110,120,0.35);
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 100%);
+    font-family:'Inter',sans-serif; color:var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+  canvas{ display:block; touch-action:none; }
+
+  .topbar{
+    position:fixed; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 20px;
+  }
+  .title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+    letter-spacing:0.03em; display:flex; align-items:center; gap:8px;
+  }
+  .title .dot{ width:7px; height:7px; border-radius:50%; background: var(--water-b); }
+
+  .top-controls{ display:flex; gap:10px; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--panel-border);
+    background: var(--panel); color: var(--wood-dark); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; backdrop-filter: blur(8px); transition: transform .15s ease, background .2s ease;
+  }
+  .icon-btn:hover{ background: rgba(255,250,240,0.92); }
+  .icon-btn:active{ transform: scale(0.92); }
+  .icon-btn.muted{ color: #b5432c; }
+
+  .hint{
+    position:fixed; bottom:18px; left:0; right:0; z-index:5; text-align:center;
+    font-size:11.5px; color: var(--ink-soft); letter-spacing:0.02em;
+  }
+  .hint b{ color: var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title"><span class="dot"></span>Pour Water</div>
+  <div class="top-controls">
+    <button class="icon-btn" id="muteBtn" aria-label="Mute">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path id="soundWaves" d="M16 9a5 5 0 0 1 0 6M18.5 6.5a9 9 0 0 1 0 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="resetBtn" aria-label="Reset">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 4v5h5M20 20v-5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 15a8 8 0 0 0 13.9 2.5M18.5 9A8 8 0 0 0 4.6 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<canvas id="scene"></canvas>
+
+<div class="hint"><b>Drag near the rim</b> to tilt a glass · <b>drag the base</b> to move it</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  let W, H, tableY;
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    tableY = H * 0.70;
+  }
+  window.addEventListener('resize', resize);
+
+  /* =========================================================
+     GLASS GEOMETRY
+  ========================================================= */
+  const GLASS_HEIGHT = 148;
+  const TOP_R = 40;
+  const BOTTOM_R = 29;
+
+  function makeGlass(id, x, y){
+    return { id, x, y, angle: 0, targetAngle: 0, height: GLASS_HEIGHT, topR: TOP_R, bottomR: BOTTOM_R };
+  }
+
+  let glassA, glassB;
+
+  function axisDir(g){ return { x: Math.sin(g.angle), y: -Math.cos(g.angle) }; }
+  function perpDir(g){ return { x: Math.cos(g.angle), y: Math.sin(g.angle) }; }
+
+  function toLocal(g, wx, wy){
+    const ax = axisDir(g), pp = perpDir(g);
+    const rx = wx - g.x, ry = wy - g.y;
+    return { lx: rx*pp.x + ry*pp.y, ly: rx*ax.x + ry*ax.y };
+  }
+  function toWorld(g, lx, ly){
+    const ax = axisDir(g), pp = perpDir(g);
+    return { x: g.x + lx*pp.x + ly*ax.x, y: g.y + lx*pp.y + ly*ax.y };
+  }
+  function halfWidthAt(g, ly){
+    const t = Math.max(0, Math.min(1, ly / g.height));
+    return g.bottomR + (g.topR - g.bottomR) * t;
+  }
+
+  /* =========================================================
+     PARTICLES / PHYSICS
+  ========================================================= */
+  const GRAVITY = 1550;
+  const PR = 3.3;              // particle radius
+  const SIDE_DAMP = 0.14;
+  const BOTTOM_DAMP = 0.28;
+  const CAPTURE_MARGIN = 4;
+  const MAX_SPEED = 1300;
+  const REPEL_DIST = PR * 2.05;
+
+  let particles = [];
+
+  function fillGlass(g, fillFrac, count){
+    const fillHeight = g.height * fillFrac;
+    let placed = 0, attempts = 0;
+    while(placed < count && attempts < count * 6){
+      attempts++;
+      const ly = Math.random() * fillHeight + 2;
+      const hw = halfWidthAt(g, ly) - PR - 1;
+      const lx = (Math.random()*2 - 1) * Math.max(2, hw);
+      const w = toWorld(g, lx, ly);
+      particles.push({ x:w.x, y:w.y, vx:0, vy:0, owner:g.id, age:0 });
+      placed++;
+    }
+  }
+
+  function resetScene(){
+    particles = [];
+    glassA = makeGlass('A', W*0.36, tableY);
+    glassB = makeGlass('B', W*0.64, tableY);
+    fillGlass(glassA, 0.58, 110);
+  }
+
+  function glasses(){ return [glassA, glassB]; }
+  function glassById(id){ return id === 'A' ? glassA : (id === 'B' ? glassB : null); }
+
+  let pourEvents = 0; // particles that exited a glass this frame (for sound)
+  let landEvents = 0; // particles captured this frame (for plink sound)
+
+  function stepPhysics(dt){
+    pourEvents = 0; landEvents = 0;
+
+    // ease glass angles toward target (smoother tilt feel)
+    glasses().forEach(g=>{ g.angle += (g.targetAngle - g.angle) * Math.min(1, dt*14); });
+
+    // integrate
+    for(const p of particles){
+      if(p.owner === 'spilled'){
+        p.age += dt;
+        p.vx *= 0.9; p.vy *= 0.9;
+        p.x += p.vx*dt; p.y += p.vy*dt;
+        continue;
+      }
+      p.vy += GRAVITY * dt;
+      if(p.vx > MAX_SPEED) p.vx = MAX_SPEED; else if(p.vx < -MAX_SPEED) p.vx = -MAX_SPEED;
+      if(p.vy > MAX_SPEED) p.vy = MAX_SPEED; else if(p.vy < -MAX_SPEED) p.vy = -MAX_SPEED;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+
+    // constraint resolution
+    for(const p of particles){
+      if(p.owner === 'spilled') continue;
+
+      if(p.owner === 'free'){
+        // try capture by any glass
+        let captured = false;
+        for(const g of glasses()){
+          const { lx, ly } = toLocal(g, p.x, p.y);
+          const hw = halfWidthAt(g, Math.max(0, Math.min(g.height, ly)));
+          if(ly >= -6 && ly <= g.height - CAPTURE_MARGIN && Math.abs(lx) <= hw + 3){
+            p.owner = g.id;
+            p.vx *= 0.35; p.vy *= 0.35;
+            captured = true;
+            landEvents++;
+            break;
+          }
+        }
+        if(!captured){
+          if(p.y > tableY + 4 || p.x < -20 || p.x > W + 20){
+            p.owner = 'spilled';
+            p.vy = -60 - Math.random()*40;
+            p.vx *= 0.3;
+            p.age = 0;
+            p.y = Math.min(p.y, tableY);
+          }
+        }
+        continue;
+      }
+
+      // owned by a glass
+      const g = glassById(p.owner);
+      if(!g) continue;
+      const ax = axisDir(g), pp = perpDir(g);
+      let { lx, ly } = toLocal(g, p.x, p.y);
+
+      if(ly > g.height){
+        p.owner = 'free';
+        pourEvents++;
+        continue;
+      }
+
+      // local velocity components
+      let vlx = p.vx*pp.x + p.vy*pp.y;
+      let vly = p.vx*ax.x + p.vy*ax.y;
+
+      if(ly < 0){
+        ly = 0;
+        vly = -vly * BOTTOM_DAMP;
+      }
+      const hw = halfWidthAt(g, ly) - PR;
+      if(lx < -hw){ lx = -hw; vlx = -vlx * SIDE_DAMP; }
+      else if(lx > hw){ lx = hw; vlx = -vlx * SIDE_DAMP; }
+
+      const w = toWorld(g, lx, ly);
+      p.x = w.x; p.y = w.y;
+      p.vx = vlx*pp.x + vly*ax.x;
+      p.vy = vlx*pp.y + vly*ax.y;
+    }
+
+    // particle-particle repulsion (skip spilled)
+    const n = particles.length;
+    for(let i=0;i<n;i++){
+      const a = particles[i];
+      if(a.owner === 'spilled') continue;
+      for(let j=i+1;j<n;j++){
+        const b = particles[j];
+        if(b.owner === 'spilled') continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d2 = dx*dx + dy*dy;
+        if(d2 < REPEL_DIST*REPEL_DIST && d2 > 0.0001){
+          const d = Math.sqrt(d2);
+          const overlap = (REPEL_DIST - d) * 0.5;
+          const nx = dx/d, ny = dy/d;
+          a.x -= nx*overlap*0.5; a.y -= ny*overlap*0.5;
+          b.x += nx*overlap*0.5; b.y += ny*overlap*0.5;
+          const avgvx = (a.vx+b.vx)*0.02, avgvy = (a.vy+b.vy)*0.02;
+          a.vx += (avgvx - a.vx*0.02); a.vy += (avgvy - a.vy*0.02);
+          b.vx += (avgvx - b.vx*0.02); b.vy += (avgvy - b.vy*0.02);
+        }
+      }
+    }
+
+    // cull faded spilled particles
+    particles = particles.filter(p => !(p.owner === 'spilled' && p.age > 1.6));
+  }
+
+  /* =========================================================
+     AUDIO — procedural pour noise + landing plinks
+  ========================================================= */
+  let audioCtx = null, noiseSrc = null, noiseFilter = null, noiseGain = null;
+  let muted = false;
+  let pourLevel = 0;
+  let lastPlink = 0;
+
+  function ensureAudio(){
+    if(audioCtx) return;
+    try{
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const bufSize = audioCtx.sampleRate * 2;
+      const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<bufSize;i++) data[i] = Math.random()*2 - 1;
+      noiseSrc = audioCtx.createBufferSource();
+      noiseSrc.buffer = buf; noiseSrc.loop = true;
+      noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = 1000;
+      noiseFilter.Q.value = 0.6;
+      noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0;
+      noiseSrc.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
+      noiseSrc.start();
+    }catch(e){ audioCtx = null; }
+  }
+
+  function updateAudio(dt){
+    if(!audioCtx || !noiseGain) return;
+    const targetLevel = Math.min(1, pourEvents * 0.5 + (particles.filter(p=>p.owner==='free').length) * 0.03);
+    pourLevel += (targetLevel - pourLevel) * Math.min(1, dt*6);
+    const gain = muted ? 0 : Math.min(0.28, pourLevel * 0.3);
+    try{
+      noiseGain.gain.setTargetAtTime(gain, audioCtx.currentTime, 0.05);
+      noiseFilter.frequency.setTargetAtTime(700 + pourLevel*900, audioCtx.currentTime, 0.08);
+    }catch(e){}
+
+    if(landEvents > 0 && !muted){
+      const now = audioCtx.currentTime;
+      if(now - lastPlink > 0.07){
+        lastPlink = now;
+        try{
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 1000 + Math.random()*500;
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.14, now+0.008);
+          g.gain.exponentialRampToValueAtTime(0.0001, now+0.12);
+          osc.connect(g).connect(audioCtx.destination);
+          osc.start(now); osc.stop(now+0.13);
+        }catch(e){}
+      }
+    }
+  }
+
+  /* =========================================================
+     RENDERING
+  ========================================================= */
+  function drawTable(){
+    const grad = ctx.createLinearGradient(0, tableY, 0, H);
+    grad.addColorStop(0, 'var(--wood-a)'.includes('var') ? '#c99b62' : '#c99b62');
+    grad.addColorStop(1, '#8a5f30');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, tableY, W, H - tableY);
+
+    ctx.strokeStyle = 'rgba(122,82,40,0.25)';
+    ctx.lineWidth = 1;
+    for(let i=0;i<7;i++){
+      const gy = tableY + 14 + i*((H-tableY-14)/7) + Math.sin(i*13.1)*4;
+      ctx.beginPath();
+      ctx.moveTo(0, gy);
+      ctx.bezierCurveTo(W*0.3, gy+6, W*0.7, gy-6, W, gy);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fillRect(0, tableY, W, 4);
+  }
+
+  function glassPolygon(g){
+    const bl = toWorld(g, -g.bottomR, 0);
+    const tl = toWorld(g, -g.topR, g.height);
+    const tr = toWorld(g, g.topR, g.height);
+    const br = toWorld(g, g.bottomR, 0);
+    return [bl, tl, tr, br];
+  }
+
+  function drawGlassOutline(g, front){
+    const [bl, tl, tr, br] = glassPolygon(g);
+    ctx.beginPath();
+    ctx.moveTo(bl.x, bl.y);
+    ctx.lineTo(tl.x, tl.y);
+    ctx.lineTo(tr.x, tr.y);
+    ctx.lineTo(br.x, br.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fill();
+    ctx.strokeStyle = front ? 'rgba(120,140,150,0.55)' : 'rgba(120,140,150,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // highlight streak
+    const hl1 = toWorld(g, -g.bottomR*0.45, g.height*0.12);
+    const hl2 = toWorld(g, -g.topR*0.55, g.height*0.85);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(hl1.x, hl1.y);
+    ctx.lineTo(hl2.x, hl2.y);
+    ctx.stroke();
+  }
+
+  function drawParticles(){
+    for(const p of particles){
+      let alpha = 0.9;
+      let r = PR;
+      if(p.owner === 'spilled'){
+        alpha = Math.max(0, 1 - p.age/1.6) * 0.6;
+        r = PR * (1 + p.age*0.4);
+      }
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = '#3fa3d6';
+      ctx.shadowBlur = 6;
+      const grad = ctx.createRadialGradient(p.x - r*0.3, p.y - r*0.3, 0.3, p.x, p.y, r);
+      grad.addColorStop(0, '#bfe8fb');
+      grad.addColorStop(0.5, '#5fb6e0');
+      grad.addColorStop(1, '#1f7fb3');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  function frame(ts){
+    ctx.clearRect(0,0,W,H);
+    drawTable();
+
+    glasses().forEach(g => drawGlassOutline(g, false));
+    drawParticles();
+    glasses().forEach(g => drawGlassOutline(g, true));
+  }
+
+  /* =========================================================
+     MAIN LOOP
+  ========================================================= */
+  let lastTs = null;
+  function loop(ts){
+    if(lastTs === null) lastTs = ts;
+    let dt = (ts - lastTs) / 1000;
+    if(dt > 0.033) dt = 0.033;
+    lastTs = ts;
+
+    stepPhysics(dt);
+    updateAudio(dt);
+    frame(ts);
+
+    requestAnimationFrame(loop);
+  }
+
+  /* =========================================================
+     INTERACTION — drag base to move, drag body/rim to tilt
+  ========================================================= */
+  let drag = null; // { glass, mode, grabOffsetX, grabOffsetY }
+
+  function hitGlass(wx, wy){
+    for(const g of glasses()){
+      const { lx, ly } = toLocal(g, wx, wy);
+      const hw = halfWidthAt(g, Math.max(0, Math.min(g.height, ly))) + 16;
+      if(ly >= -14 && ly <= g.height + 24 && Math.abs(lx) <= hw){
+        const mode = ly < g.height * 0.34 ? 'move' : 'tilt';
+        return { g, mode };
+      }
+    }
+    return null;
+  }
+
+  function pointerPos(e){
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('pointerdown', (e)=>{
+    ensureAudio();
+    const pos = pointerPos(e);
+    const hit = hitGlass(pos.x, pos.y);
+    if(!hit) return;
+    if(hit.mode === 'move'){
+      drag = { glass: hit.g, mode:'move', offX: hit.g.x - pos.x, offY: hit.g.y - pos.y };
+    } else {
+      drag = { glass: hit.g, mode:'tilt' };
+    }
+    canvas.setPointerCapture(e.pointerId);
+  });
+
+  canvas.addEventListener('pointermove', (e)=>{
+    if(!drag) return;
+    const pos = pointerPos(e);
+    if(drag.mode === 'move'){
+      drag.glass.x = pos.x + drag.offX;
+      drag.glass.y = pos.y + drag.offY;
+    } else {
+      const dx = pos.x - drag.glass.x;
+      const dy = pos.y - drag.glass.y;
+      let ang = Math.atan2(dx, -dy);
+      const LIMIT = Math.PI * 0.94;
+      if(ang > LIMIT) ang = LIMIT;
+      if(ang < -LIMIT) ang = -LIMIT;
+      drag.glass.targetAngle = ang;
+    }
+  });
+
+  function endDrag(e){
+    drag = null;
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  /* =========================================================
+     UI BUTTONS
+  ========================================================= */
+  const muteBtn = document.getElementById('muteBtn');
+  muteBtn.addEventListener('click', ()=>{
+    muted = !muted;
+    muteBtn.classList.toggle('muted', muted);
+  });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    resetScene();
+  });
+
+  /* =========================================================
+     INIT
+  ========================================================= */
+  resize();
+  resetScene();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

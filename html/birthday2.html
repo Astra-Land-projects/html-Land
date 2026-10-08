@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎂 تولدت مبارک داداش!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0b0c1a 0%, #1a1a3e 40%, #2d1b4e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Vazir', 'Tahoma', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* کانوس برای کانفتی‌ها */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-container {
+            perspective: 1200px;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 48px;
+            padding: 50px 40px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 215, 0, 0.1) inset;
+            transform: rotateY(5deg) rotateX(2deg);
+            transition: all 0.4s ease;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: rotateY(0deg) rotateX(0deg) scale(1.02);
+            box-shadow: 0 50px 100px rgba(255, 215, 0, 0.25);
+        }
+
+        h1 {
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #f9e05d, #ffb347, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            font-weight: 900;
+        }
+
+        .sub-title {
+            color: #ffd966;
+            font-size: 1.6rem;
+            border-bottom: 2px dashed rgba(255, 215, 0, 0.4);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px rgba(255, 200, 0, 0.3);
+        }
+
+        .message {
+            color: #e4e4f0;
+            font-size: 1.25rem;
+            line-height: 2.2rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 20px 25px;
+            border-radius: 28px;
+            border-right: 4px solid #f7c948;
+            margin-bottom: 30px;
+        }
+
+        .message span {
+            color: #ffd966;
+            font-weight: bold;
+        }
+
+        .btn-surprise {
+            background: linear-gradient(145deg, #f7c948, #f5a623);
+            border: none;
+            padding: 18px 45px;
+            border-radius: 60px;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #1a1a2e;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(245, 166, 35, 0.4);
+            transition: 0.25s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .btn-surprise:hover {
+            transform: scale(1.07) translateY(-5px);
+            box-shadow: 0 20px 45px rgba(245, 166, 35, 0.7);
+            background: linear-gradient(145deg, #ffdb70, #ffb347);
+        }
+
+        .btn-surprise:active {
+            transform: scale(0.95);
+        }
+
+        .hidden-message {
+            margin-top: 30px;
+            font-size: 1.8rem;
+            color: #ffb3b3;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(255, 0, 100, 0.1);
+            padding: 15px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 100, 150, 0.3);
+        }
+
+        .hidden-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .footer-note {
+            margin-top: 30px;
+            color: #9a9acf;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+        }
+
+        @media (max-width: 550px) {
+            .card { padding: 30px 20px; }
+            h1 { font-size: 2.8rem; }
+            .sub-title { font-size: 1.2rem; }
+            .message { font-size: 1rem; line-height: 1.9rem; }
+            .btn-surprise { font-size: 1.3rem; padding: 14px 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="card-container">
+        <div class="card">
+            <h1>🎂 تولدت مبارک</h1>
+            <div class="sub-title">✨ داداش قهرمان من ✨</div>
+
+            <div class="message">
+                🥳 امروز روز خاص <span>تو</span> ست، روزی که دنیا با وجودت زیباتر شد.<br>
+                این یه کادوی کوچیک از ته دل منه، واسه یه آدم بزرگ.<br>
+                امیدوارم سال پیشِ رو پر از <span>عشق، شادی، سلامتی</span> و کلی موفقیت باشه برات. 🌟
+            </div>
+
+            <button class="btn-surprise" id="surpriseBtn">🎁 بزن تا سورپرایز بشی!</button>
+
+            <div class="hidden-message" id="hiddenMsg">
+                💥 تولدت مبارک رفیق! 💥<br>
+                <span style="font-size: 1rem; color: #ccaaff;">همیشه به خودت افتخار کن، چون بی‌نظیری.</span>
+            </div>
+
+            <div class="footer-note">
+                ❤️ کادو از طرف یه دوست برنامه‌نویس | فردا روز توئه
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- سیستم کانفتی (جشن) ----------
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let W, H;
+        let pieces = [];
+        let running = true;
+
+        function resizeCanvas() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class ConfettiPiece {
+            constructor() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * H - H * 0.2;
+                this.w = Math.random() * 10 + 5;
+                this.h = Math.random() * 7 + 4;
+                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+                this.speedY = Math.random() * 4 + 2;
+                this.speedX = (Math.random() - 0.5) * 3;
+                this.rotation = Math.random() * 360;
+                this.rotSpeed = (Math.random() - 0.5) * 0.1;
+                this.opacity = 1;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX + Math.sin(this.y * 0.01) * 0.5;
+                this.rotation += this.rotSpeed;
+
+                if (this.y > H + 30) {
+                    this.y = -30;
+                    this.x = Math.random() * W;
+                    this.speedY = Math.random() * 4 + 2;
+                    this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+                }
+                if (this.x > W + 20) this.x = -20;
+                if (this.x < -20) this.x = W + 20;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 8;
+                ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+                ctx.restore();
+            }
+        }
+
+        // پر کردن اولیه
+        for (let i = 0; i < 170; i++) {
+            const p = new ConfettiPiece();
+            p.y = Math.random() * H;
+            pieces.push(p);
+        }
+
+        function drawConfetti() {
+            if (!running) return;
+            ctx.clearRect(0, 0, W, H);
+            pieces.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(drawConfetti);
+        }
+        drawConfetti();
+
+        // ---------- انفجار کانفتی هنگام کلیک (سورپرایز) ----------
+        function burstConfetti(count = 80) {
+            for (let i = 0; i < count; i++) {
+                const p = new ConfettiPiece();
+                p.x = W / 2 + (Math.random() - 0.5) * 300;
+                p.y = H / 2 + (Math.random() - 0.5) * 200;
+                p.speedY = (Math.random() - 0.3) * 10 + 2;
+                p.speedX = (Math.random() - 0.5) * 14;
+                p.w = Math.random() * 14 + 6;
+                p.h = Math.random() * 10 + 5;
+                p.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                p.rotSpeed = (Math.random() - 0.5) * 0.2;
+                pieces.push(p);
+            }
+            // محدودیت تعداد برای جلوگیری از سنگین شدن
+            if (pieces.length > 500) {
+                pieces = pieces.slice(-350);
+            }
+        }
+
+        // ---------- دکمه سورپرایز ----------
+        const btn = document.getElementById('surpriseBtn');
+        const hiddenMsg = document.getElementById('hiddenMsg');
+
+        btn.addEventListener('click', function() {
+            // نمایش پیام پنهان
+            hiddenMsg.classList.toggle('show');
+
+            // انفجار کانفتی
+            burstConfetti(120);
+
+            // تکون دادن کارت
+            const card = document.querySelector('.card');
+            card.style.transform = 'scale(0.98) rotateY(0deg)';
+            setTimeout(() => {
+                card.style.transform = 'scale(1.05) rotateY(3deg)';
+            }, 100);
+            setTimeout(() => {
+                card.style.transform = 'scale(1) rotateY(0deg)';
+            }, 250);
+
+            // متن دکمه عوض شه
+            if (this.textContent.includes('بزن')) {
+                this.textContent = '🎊 بازم جشن!';
+            } else {
+                this.textContent = '🎁 بزن تا سورپرایز بشی!';
+                // اگه دوباره زد، بازم کانفتی بده
+                setTimeout(() => burstConfetti(80), 100);
+            }
+
+            // لرزش ملایم برای چند ثانیه
+            setTimeout(() => burstConfetti(50), 400);
+        });
+
+        // کانفتی اولیه رو کمی بیشتر کن
+        setTimeout(() => {
+            for (let i = 0; i < 40; i++) {
+                const p = new ConfettiPiece();
+                p.y = Math.random() * H;
+                pieces.push(p);
+            }
+        }, 500);
+
+        // اگه صفحه خیلی شلوغ شد، گهگاه تمیز کن
+        setInterval(() => {
+            if (pieces.length > 600) {
+                pieces = pieces.slice(0, 450);
+            }
+        }, 10000);
+
+        console.log('🎂 تولدت مبارک داداش! امیدوارم خوشت اومده باشه.');
+    </script>
+</body>
+</html>

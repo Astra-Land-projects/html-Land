@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Wall Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wall-a: #211a13;
+    --wall-b: #0c0906;
+    --frame-dark: #2a1c10;
+    --frame-mid: #6b4a2b;
+    --frame-light: #b98a4f;
+    --face: #f3e9d8;
+    --face-edge: #e2d2b4;
+    --ink: #2b2016;
+    --ink-soft: #6b5c48;
+    --gold: #d4a24c;
+    --gold-soft: rgba(212,162,76,0.35);
+    --text: #f0e6d6;
+    --text-dim: #a89b86;
+    --panel: rgba(26, 20, 14, 0.62);
+    --panel-border: rgba(212,162,76,0.16);
+    --danger: #d1633f;
+    --ok: #7fae7a;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background: radial-gradient(ellipse at 50% 38%, var(--wall-a) 0%, var(--wall-b) 75%);
+    font-family:'Inter',sans-serif; color:var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app{ position:fixed; inset:0; display:flex; flex-direction:column; }
+  .view{
+    flex:1; display:none; overflow-y:auto; padding: 28px 20px 100px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .view.active{ display:flex; flex-direction:column; align-items:center; }
+
+  /* ---------- Clock face ---------- */
+  .clock-wrap{ margin-top: 6px; }
+  .clock-svg{ width: min(76vw, 380px); height: min(76vw, 380px); display:block; }
+  .digital-readout{ text-align:center; margin-top: 22px; }
+  .digital-time{
+    font-family:'Cormorant Garamond', serif; font-weight:600; font-size: 40px;
+    letter-spacing: 0.02em; color: var(--text);
+  }
+  .digital-date{
+    font-family:'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-top: 4px;
+  }
+
+  /* ---------- Shared headers ---------- */
+  .view-header{
+    width:100%; max-width: 420px; display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 18px;
+  }
+  .view-title{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size: 22px; letter-spacing: 0.01em;
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--panel-border);
+    background: rgba(212,162,76,0.08); color: var(--gold); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition: background .2s ease, transform .15s ease;
+  }
+  .icon-btn:hover{ background: rgba(212,162,76,0.18); }
+  .icon-btn:active{ transform: scale(0.92); }
+
+  /* ---------- Alarm list ---------- */
+  .alarm-list{ width:100%; max-width: 420px; display:flex; flex-direction:column; gap: 12px; }
+  .alarm-card{
+    background: var(--panel); border:1px solid var(--panel-border); border-radius: 16px;
+    padding: 16px 18px; display:flex; align-items:center; justify-content:space-between;
+    backdrop-filter: blur(10px);
+  }
+  .alarm-info{ display:flex; flex-direction:column; gap:5px; }
+  .alarm-time{ font-family:'Cormorant Garamond', serif; font-weight:600; font-size:28px; line-height:1; }
+  .alarm-meta{ font-size:11px; color:var(--text-dim); letter-spacing:0.04em; display:flex; gap:8px; align-items:center; }
+  .alarm-days{ display:flex; gap:4px; }
+  .day-chip{
+    font-size:9px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background: rgba(212,162,76,0.14); color: var(--text-dim);
+  }
+  .day-chip.on{ background: var(--gold); color:#241a0d; font-weight:700; }
+  .alarm-actions{ display:flex; align-items:center; gap:10px; }
+  .trash-btn{ background:none; border:none; color: var(--text-dim); cursor:pointer; padding:4px; }
+  .trash-btn:hover{ color: var(--danger); }
+
+  .switch{ position:relative; width:44px; height:26px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider-track{
+    position:absolute; inset:0; background: rgba(255,255,255,0.12); border-radius: 20px;
+    cursor:pointer; transition: background .2s ease;
+  }
+  .slider-track:before{
+    content:""; position:absolute; width:20px; height:20px; left:3px; top:3px;
+    background:#e9e0d0; border-radius:50%; transition: transform .2s ease;
+  }
+  .switch input:checked + .slider-track{ background: var(--gold); }
+  .switch input:checked + .slider-track:before{ transform: translateX(18px); background:#2b2016; }
+
+  .empty-state{
+    color: var(--text-dim); font-size: 13px; text-align:center; margin-top: 40px; line-height:1.6;
+  }
+
+  /* ---------- Timer ---------- */
+  .timer-ring-wrap{ position:relative; width: min(64vw, 300px); height: min(64vw, 300px); margin-top: 10px; }
+  .timer-ring-wrap svg{ width:100%; height:100%; transform: rotate(-90deg); }
+  .timer-center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .timer-display{ font-family:'Cormorant Garamond', serif; font-weight:600; font-size: 42px; }
+  .timer-sub{ font-size:11px; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; margin-top:4px; }
+
+  .timer-setup{ display:flex; gap: 14px; align-items:center; margin-top: 26px; }
+  .num-wheel{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .num-wheel-label{ font-size:10px; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
+  .num-wheel-value{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:26px; width:56px; text-align:center;
+  }
+  .wheel-btns{ display:flex; flex-direction:column; gap:4px; }
+  .wheel-btn{
+    width:56px; height:26px; border-radius:8px; border:1px solid var(--panel-border);
+    background: rgba(212,162,76,0.08); color:var(--gold); font-size:14px; cursor:pointer;
+  }
+  .wheel-btn:active{ background: rgba(212,162,76,0.2); }
+
+  .preset-row{ display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; justify-content:center; }
+  .preset-chip{
+    padding: 7px 14px; border-radius: 20px; border:1px solid var(--panel-border);
+    background: rgba(212,162,76,0.06); color: var(--text); font-size:12px; cursor:pointer;
+  }
+  .preset-chip:active{ background: rgba(212,162,76,0.18); }
+
+  .control-row{ display:flex; gap: 14px; margin-top: 28px; }
+  .ctrl-btn{
+    padding: 13px 30px; border-radius: 26px; border:1px solid var(--panel-border);
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; letter-spacing:0.03em;
+    cursor:pointer; background: rgba(255,255,255,0.05); color: var(--text);
+  }
+  .ctrl-btn.primary{ background: var(--gold); color:#241a0d; border-color: var(--gold); }
+  .ctrl-btn.danger{ color: var(--danger); border-color: rgba(209,99,63,0.3); }
+  .ctrl-btn:active{ transform: scale(0.96); }
+
+  /* ---------- Stopwatch ---------- */
+  .stopwatch-display{ font-family:'Cormorant Garamond', serif; font-weight:600; font-size: 56px; margin-top: 30px; }
+  .stopwatch-ms{ font-size: 24px; color: var(--text-dim); }
+  .lap-list{ width:100%; max-width: 380px; margin-top: 26px; display:flex; flex-direction:column; gap:8px; }
+  .lap-row{
+    display:flex; justify-content:space-between; padding: 10px 16px; border-radius:12px;
+    background: var(--panel); border:1px solid var(--panel-border); font-size:13px;
+  }
+  .lap-num{ color: var(--text-dim); }
+
+  /* ---------- Tab bar ---------- */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; height: 78px;
+    background: rgba(12,9,6,0.85); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--panel-border);
+    display:flex; align-items:center; justify-content:space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tab-btn{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    background:none; border:none; color: var(--text-dim); cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:10.5px; letter-spacing:0.03em;
+    padding: 6px 14px;
+  }
+  .tab-btn svg{ width:22px; height:22px; }
+  .tab-btn.active{ color: var(--gold); }
+
+  /* ---------- Modal: add alarm ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(6,4,2,0.72); backdrop-filter: blur(6px);
+    display:none; align-items:flex-end; justify-content:center; z-index:20;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-sheet{
+    width:100%; max-width: 460px; background: #16110b; border-radius: 24px 24px 0 0;
+    padding: 22px 22px 30px; border: 1px solid var(--panel-border); border-bottom:none;
+    max-height: 86vh; overflow-y:auto;
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; }
+  .modal-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:17px; }
+  .modal-link{ background:none; border:none; color: var(--gold); font-size:14px; font-weight:600; cursor:pointer; }
+  .time-picker{ display:flex; align-items:center; justify-content:center; gap: 10px; margin: 18px 0 26px; }
+  .time-select{
+    font-family:'Cormorant Garamond', serif; font-size: 40px; font-weight:600; color:var(--text);
+    background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius:14px;
+    padding: 6px 4px; width: 76px; text-align:center; appearance:none;
+  }
+  .time-colon{ font-size: 32px; color: var(--text-dim); }
+  .ampm-toggle{ display:flex; flex-direction:column; gap:4px; margin-left: 4px; }
+  .ampm-btn{
+    padding: 5px 10px; border-radius:8px; border:1px solid var(--panel-border); background:transparent;
+    color: var(--text-dim); font-size:11px; cursor:pointer;
+  }
+  .ampm-btn.on{ background: var(--gold); color:#241a0d; border-color:var(--gold); }
+
+  .field-label{ font-size:11px; color:var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px; }
+  .label-input{
+    width:100%; background: rgba(255,255,255,0.04); border:1px solid var(--panel-border); border-radius:12px;
+    padding: 12px 14px; color: var(--text); font-size:14px; margin-bottom: 20px; font-family:'Inter',sans-serif;
+  }
+  .day-row{ display:flex; gap:8px; justify-content:space-between; margin-bottom: 26px; }
+  .day-toggle{
+    flex:1; padding: 10px 0; border-radius:10px; border:1px solid var(--panel-border);
+    background: rgba(255,255,255,0.03); color: var(--text-dim); font-size:11px; cursor:pointer; text-align:center;
+  }
+  .day-toggle.on{ background: var(--gold); color:#241a0d; border-color: var(--gold); font-weight:700; }
+
+  /* ---------- Ring overlay (alarm/timer firing) ---------- */
+  .ring-overlay{
+    position:fixed; inset:0; background: radial-gradient(ellipse at 50% 35%, #2a1c10 0%, #0a0704 80%);
+    display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; text-align:center;
+    padding: 30px;
+  }
+  .ring-overlay.show{ display:flex; }
+  .ring-icon{ width:70px; height:70px; color: var(--gold); animation: ringPulse 1s ease-in-out infinite; }
+  @keyframes ringPulse{ 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.12); } }
+  .ring-label{ font-family:'Cormorant Garamond', serif; font-size: 30px; font-weight:600; margin-top: 18px; }
+  .ring-time{ font-size:13px; color: var(--text-dim); margin-top:6px; letter-spacing:0.06em; }
+  .ring-actions{ display:flex; gap: 16px; margin-top: 36px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- CLOCK VIEW -->
+  <div class="view active" id="view-clock">
+    <div class="clock-wrap">
+      <svg class="clock-svg" id="clockSvg" viewBox="0 0 300 300"></svg>
+    </div>
+    <div class="digital-readout">
+      <div class="digital-time" id="digitalTime">--:--:--</div>
+      <div class="digital-date" id="digitalDate">—</div>
+    </div>
+  </div>
+
+  <!-- ALARM VIEW -->
+  <div class="view" id="view-alarm">
+    <div class="view-header">
+      <div class="view-title">Alarms</div>
+      <button class="icon-btn" id="addAlarmBtn" aria-label="Add alarm">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="alarm-list" id="alarmList"></div>
+  </div>
+
+  <!-- TIMER VIEW -->
+  <div class="view" id="view-timer">
+    <div class="view-header"><div class="view-title">Timer</div></div>
+    <div class="timer-ring-wrap">
+      <svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+        <circle cx="100" cy="100" r="88" fill="none" stroke="#d4a24c" stroke-width="10" stroke-linecap="round"
+                id="timerProgress" stroke-dasharray="553" stroke-dashoffset="553"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-sub" id="timerSub">set duration</div>
+      </div>
+    </div>
+
+    <div class="timer-setup" id="timerSetup">
+      <div class="num-wheel">
+        <div class="num-wheel-label">Hours</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="h" data-dir="1">▲</button></div>
+        <div class="num-wheel-value" id="hVal">00</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="h" data-dir="-1">▼</button></div>
+      </div>
+      <div class="num-wheel">
+        <div class="num-wheel-label">Min</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="m" data-dir="1">▲</button></div>
+        <div class="num-wheel-value" id="mVal">05</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="m" data-dir="-1">▼</button></div>
+      </div>
+      <div class="num-wheel">
+        <div class="num-wheel-label">Sec</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="s" data-dir="1">▲</button></div>
+        <div class="num-wheel-value" id="sVal">00</div>
+        <div class="wheel-btns"><button class="wheel-btn" data-unit="s" data-dir="-1">▼</button></div>
+      </div>
+    </div>
+
+    <div class="preset-row" id="presetRow">
+      <button class="preset-chip" data-secs="60">1 min</button>
+      <button class="preset-chip" data-secs="300">5 min</button>
+      <button class="preset-chip" data-secs="600">10 min</button>
+      <button class="preset-chip" data-secs="1800">30 min</button>
+    </div>
+
+    <div class="control-row">
+      <button class="ctrl-btn danger" id="timerReset">Reset</button>
+      <button class="ctrl-btn primary" id="timerStart">Start</button>
+    </div>
+  </div>
+
+  <!-- STOPWATCH VIEW -->
+  <div class="view" id="view-stopwatch">
+    <div class="view-header"><div class="view-title">Stopwatch</div></div>
+    <div class="stopwatch-display"><span id="swTime">00:00</span><span class="stopwatch-ms" id="swMs">.00</span></div>
+    <div class="control-row">
+      <button class="ctrl-btn" id="swLap">Lap</button>
+      <button class="ctrl-btn primary" id="swStart">Start</button>
+    </div>
+    <div class="lap-list" id="lapList"></div>
+  </div>
+
+</div>
+
+<!-- TAB BAR -->
+<nav class="tabbar">
+  <button class="tab-btn" data-view="view-alarm">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Z" fill="currentColor"/><path d="M18 16v-5a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    Alarm
+  </button>
+  <button class="tab-btn active" data-view="view-clock">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Clock
+  </button>
+  <button class="tab-btn" data-view="view-timer">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 2h6M12 6v0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="14" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 10v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Timer
+  </button>
+  <button class="tab-btn" data-view="view-stopwatch">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 13V9M9.5 2.5h5M12 2.5V5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Stopwatch
+  </button>
+</nav>
+
+<!-- ADD/EDIT ALARM MODAL -->
+<div class="modal-overlay" id="alarmModal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <button class="modal-link" id="modalCancel">Cancel</button>
+      <div class="modal-title">New Alarm</div>
+      <button class="modal-link" id="modalSave">Save</button>
+    </div>
+
+    <div class="time-picker">
+      <select class="time-select" id="pickHour"></select>
+      <div class="time-colon">:</div>
+      <select class="time-select" id="pickMinute"></select>
+      <div class="ampm-toggle">
+        <button class="ampm-btn on" id="pickAM" data-v="AM">AM</button>
+        <button class="ampm-btn" id="pickPM" data-v="PM">PM</button>
+      </div>
+    </div>
+
+    <div class="field-label">Label</div>
+    <input class="label-input" id="pickLabel" placeholder="Alarm" maxlength="24">
+
+    <div class="field-label">Repeat</div>
+    <div class="day-row" id="dayRow">
+      <button class="day-toggle" data-day="0">S</button>
+      <button class="day-toggle" data-day="1">M</button>
+      <button class="day-toggle" data-day="2">T</button>
+      <button class="day-toggle" data-day="3">W</button>
+      <button class="day-toggle" data-day="4">T</button>
+      <button class="day-toggle" data-day="5">F</button>
+      <button class="day-toggle" data-day="6">S</button>
+    </div>
+  </div>
+</div>
+
+<!-- RING OVERLAY -->
+<div class="ring-overlay" id="ringOverlay">
+  <svg class="ring-icon" id="ringIcon" viewBox="0 0 24 24" fill="none">
+    <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Z" fill="currentColor"/>
+    <path d="M18 16v-5a6 6 0 0 0-4-5.66V4a2 2 0 1 0-4 0v1.34A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  </svg>
+  <div class="ring-label" id="ringLabel">Alarm</div>
+  <div class="ring-time" id="ringTime">7:00 AM</div>
+  <div class="ring-actions">
+    <button class="ctrl-btn" id="ringSnooze">Snooze</button>
+    <button class="ctrl-btn primary" id="ringStop">Stop</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const pad2 = n => String(n).padStart(2, '0');
+
+  // declared early so updateClock()'s first synchronous call (below) can
+  // safely reference these inside checkAlarms() without a temporal-dead-zone error
+  let alarms = [];
+  let lastAlarmCheckMinute = null;
+
+  /* =========================================================
+     ANALOG CLOCK
+  ========================================================= */
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const clockSvg = document.getElementById('clockSvg');
+
+  function el(tag, attrs){
+    const e = document.createElementNS(svgNS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // defs: gradients + shadow
+  const defs = el('defs', {});
+  defs.innerHTML = `
+    <radialGradient id="faceGrad" cx="42%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#faf3e6">
+            <stop offset="70%" stop-color="#f0e4cf"/>
+      <stop offset="100%" stop-color="#dccaa6"/>
+    </radialGradient>
+    <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7a5530"/>
+      <stop offset="45%" stop-color="#4a331d"/>
+      <stop offset="100%" stop-color="#2a1c10"/>
+    </linearGradient>
+    <filter id="clockShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  `;
+  clockSvg.appendChild(defs);
+
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:142, fill:'url(#frameGrad)', filter:'url(#clockShadow)' }));
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:142, fill:'none', stroke:'rgba(255,255,255,0.15)', 'stroke-width':1.5 }));
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:128, fill:'url(#faceGrad)' }));
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:128, fill:'none', stroke:'rgba(43,32,22,0.25)', 'stroke-width':1 }));
+
+  const ticksGroup = el('g', {});
+  for(let i=0;i<60;i++){
+    const angle = (i * 6) * Math.PI/180;
+    const isHour = i % 5 === 0;
+    const outerR = 122, innerR = isHour ? 106 : 114;
+    const x1 = 150 + outerR*Math.sin(angle), y1 = 150 - outerR*Math.cos(angle);
+    const x2 = 150 + innerR*Math.sin(angle), y2 = 150 - innerR*Math.cos(angle);
+    ticksGroup.appendChild(el('line', {
+      x1, y1, x2, y2, stroke:'#2b2016', 'stroke-width': isHour ? 2.4 : 1,
+      'stroke-linecap':'round', opacity: isHour ? 0.85 : 0.4
+    }));
+  }
+  clockSvg.appendChild(ticksGroup);
+
+  const numeralsGroup = el('g', {});
+  for(let i=1;i<=12;i++){
+    const angle = (i * 30) * Math.PI/180;
+    const r = 92;
+    const x = 150 + r*Math.sin(angle), y = 150 - r*Math.cos(angle);
+    const t = el('text', {
+      x, y: y+7, 'text-anchor':'middle', 'font-family':'Cormorant Garamond, serif',
+      'font-size': 22, 'font-weight':600, fill:'#2b2016'
+    });
+    t.textContent = i;
+    numeralsGroup.appendChild(t);
+  }
+  clockSvg.appendChild(numeralsGroup);
+
+  // brand mark
+  const brand = el('text', { x:150, y:186, 'text-anchor':'middle', 'font-family':'Space Grotesk, sans-serif', 'font-size':9, 'letter-spacing':'2px', fill:'#6b5c48' });
+  brand.textContent = 'QUARTZ';
+  clockSvg.appendChild(brand);
+
+  // hands
+  const hourHand = el('line', { x1:150, y1:150, x2:150, y2:98, stroke:'#2b2016', 'stroke-width':5, 'stroke-linecap':'round' });
+  const minHand  = el('line', { x1:150, y1:150, x2:150, y2:66, stroke:'#2b2016', 'stroke-width':3.5, 'stroke-linecap':'round' });
+  const secHand  = el('line', { x1:150, y1:168, x2:150, y2:56, stroke:'#d4a24c', 'stroke-width':1.8, 'stroke-linecap':'round' });
+  hourHand.style.transformOrigin = '150px 150px';
+  minHand.style.transformOrigin = '150px 150px';
+  secHand.style.transformOrigin = '150px 150px';
+  hourHand.style.transition = 'transform 0.4s cubic-bezier(.4,2,.6,1)';
+  minHand.style.transition = 'transform 0.4s cubic-bezier(.4,2,.6,1)';
+  secHand.style.transition = 'transform 0.12s cubic-bezier(.4,2.2,.4,1)';
+  clockSvg.appendChild(hourHand);
+  clockSvg.appendChild(minHand);
+  clockSvg.appendChild(secHand);
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:7, fill:'#2b2016' }));
+  clockSvg.appendChild(el('circle', { cx:150, cy:150, r:2.5, fill:'#d4a24c' }));
+
+  const digitalTime = document.getElementById('digitalTime');
+  const digitalDate = document.getElementById('digitalDate');
+  const dateFmt = new Intl.DateTimeFormat(undefined, { weekday:'long', month:'short', day:'numeric' });
+
+  function updateClock(){
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    hourHand.style.transform = `rotate(${h*30 + m*0.5}deg)`;
+    minHand.style.transform = `rotate(${m*6 + s*0.1}deg)`;
+    secHand.style.transform = `rotate(${s*6}deg)`;
+    digitalTime.textContent = `${pad2(now.getHours())}:${pad2(m)}:${pad2(s)}`;
+    digitalDate.textContent = dateFmt.format(now);
+    checkAlarms(now);
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  /* =========================================================
+     TAB NAVIGATION
+  ========================================================= */
+  const views = document.querySelectorAll('.view');
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      views.forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.view).classList.add('active');
+    });
+  });
+
+  /* =========================================================
+     AUDIO — simple beep via WebAudio, no external files
+  ========================================================= */
+  let audioCtx = null;
+  let beepInterval = null;
+  function playBeepLoop(){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      function beep(){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      }
+      beep();
+      beepInterval = setInterval(beep, 700);
+    }catch(e){ /* audio unavailable */ }
+  }
+  function stopBeepLoop(){
+    if(beepInterval){ clearInterval(beepInterval); beepInterval = null; }
+  }
+    /* =========================================================
+     RING OVERLAY (shared by alarm + timer)
+  ========================================================= */
+  const ringOverlay = document.getElementById('ringOverlay');
+  const ringLabel = document.getElementById('ringLabel');
+  const ringTime = document.getElementById('ringTime');
+  const ringSnooze = document.getElementById('ringSnooze');
+  const ringStop = document.getElementById('ringStop');
+  let ringingAlarm = null;
+  let ringingIsTimer = false;
+
+  function fireRing({label, time, isTimer, alarm}){
+    ringLabel.textContent = label;
+    ringTime.textContent = time;
+    ringingIsTimer = !!isTimer;
+    ringingAlarm = alarm || null;
+    ringSnooze.style.display = ringingIsTimer ? 'none' : 'inline-block';
+    ringOverlay.classList.add('show');
+    playBeepLoop();
+  }
+  function dismissRing(){
+    ringOverlay.classList.remove('show');
+    stopBeepLoop();
+    ringingAlarm = null;
+  }
+  ringStop.addEventListener('click', ()=>{
+    if(ringingIsTimer){ resetTimer(); }
+    dismissRing();
+  });
+  ringSnooze.addEventListener('click', ()=>{
+    if(ringingAlarm){
+      const snoozeTime = new Date(Date.now() + 5*60000);
+      alarms.push({
+        id: 'snz-' + Date.now(), hour: snoozeTime.getHours(), minute: snoozeTime.getMinutes(),
+        label: (ringingAlarm.label || 'Alarm') + ' (snoozed)', days: [], enabled: true, snooze: true
+      });
+      saveAlarms(); renderAlarms();
+    }
+    dismissRing();
+  });
+
+  /* =========================================================
+     ALARMS
+  ========================================================= */
+  function loadAlarms(){
+    try{
+      const raw = localStorage.getItem('wallclock_alarms');
+      alarms = raw ? JSON.parse(raw) : [];
+    }catch(e){ alarms = []; }
+  }
+  function saveAlarms(){
+    try{ localStorage.setItem('wallclock_alarms', JSON.stringify(alarms)); }catch(e){}
+  }
+
+  const alarmList = document.getElementById('alarmList');
+  const dayLetters = ['S','M','T','W','T','F','S'];
+
+  function fmt12(hour, minute){
+    const h12 = hour % 12 === 0 ? 12 : hour % 12;
+    const ampm = hour < 12 ? 'AM' : 'PM';
+    return { h12, m: pad2(minute), ampm };
+  }
+
+  function renderAlarms(){
+    alarmList.innerHTML = '';
+    if(alarms.length === 0){
+      alarmList.innerHTML = '<div class="empty-state">No alarms yet.<br>Tap + to add one.</div>';
+      return;
+    }
+    alarms
+      .slice()
+      .sort((a,b)=> (a.hour*60+a.minute) - (b.hour*60+b.minute))
+      .forEach(a=>{
+        const { h12, m, ampm } = fmt12(a.hour, a.minute);
+        const card = document.createElement('div');
+        card.className = 'alarm-card';
+        const daysHtml = (a.days && a.days.length)
+          ? `<div class="alarm-days">${dayLetters.map((l,i)=>`<span class="day-chip ${a.days.includes(i)?'on':''}">${l}</span>`).join('')}</div>`
+          : `<span>Once</span>`;
+        card.innerHTML = `
+          <div class="alarm-info">
+            <div class="alarm-time">${h12}:${m} <span style="font-size:14px;color:var(--text-dim)">${ampm}</span></div>
+            <div class="alarm-meta">${a.label ? a.label + ' · ' : ''}${daysHtml}</div>
+          </div>
+          <div class="alarm-actions">
+            <button class="trash-btn" data-id="${a.id}" aria-label="Delete">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <label class="switch">
+              <input type="checkbox" data-id="${a.id}" ${a.enabled ? 'checked' : ''}>
+              <span class="slider-track"></span>
+            </label>
+          </div>
+        `;
+        alarmList.appendChild(card);
+      });
+
+    alarmList.querySelectorAll('.trash-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        alarms = alarms.filter(a => a.id !== btn.dataset.id);
+        saveAlarms(); renderAlarms();
+      });
+    });
+    alarmList.querySelectorAll('.switch input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const a = alarms.find(a => a.id === inp.dataset.id);
+        if(a){ a.enabled = inp.checked; saveAlarms(); }
+      });
+    });
+  }
+
+  function checkAlarms(now){
+    const key = now.getHours()+':'+now.getMinutes();
+    if(key === lastAlarmCheckMinute) return;
+    if(now.getSeconds() !== 0) return;
+    lastAlarmCheckMinute = key;
+    alarms.forEach(a=>{
+      if(!a.enabled) return;
+      if(a.hour !== now.getHours() || a.minute !== now.getMinutes()) return;
+      if(a.days && a.days.length > 0 && !a.days.includes(now.getDay())) return;
+      const { h12, m, ampm } = fmt12(a.hour, a.minute);
+      fireRing({ label: a.label || 'Alarm', time: `${h12}:${m} ${ampm}`, isTimer:false, alarm:a });
+      if(!a.days || a.days.length === 0){ a.enabled = false; saveAlarms(); renderAlarms(); }
+    });
+  }
+
+  // Add alarm modal
+  const alarmModal = document.getElementById('alarmModal');
+  const addAlarmBtn = document.getElementById('addAlarmBtn');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalSave = document.getElementById('modalSave');
+  const pickHour = document.getElementById('pickHour');
+  const pickMinute = document.getElementById('pickMinute');
+  const pickAM = document.getElementById('pickAM');
+  const pickPM = document.getElementById('pickPM');
+  const pickLabel = document.getElementById('pickLabel');
+  const dayRow = document.getElementById('dayRow');
+  let selectedDays = new Set();
+  let selectedAmpm = 'AM';
+
+  for(let i=1;i<=12;i++){ const o = document.createElement('option'); o.value=i; o.textContent = pad2(i); pickHour.appendChild(o); }
+  for(let i=0;i<60;i++){ const o = document.createElement('option'); o.value=i; o.textContent = pad2(i); pickMinute.appendChild(o); }
+
+  function openAlarmModal(){
+    const now = new Date();
+    const h12 = now.getHours() % 12 === 0 ? 12 : now.getHours() % 12;
+    pickHour.value = h12;
+    pickMinute.value = now.getMinutes();
+    selectedAmpm = now.getHours() < 12 ? 'AM' : 'PM';
+    pickAM.classList.toggle('on', selectedAmpm === 'AM');
+    pickPM.classList.toggle('on', selectedAmpm === 'PM');
+    pickLabel.value = '';
+    selectedDays = new Set();
+    dayRow.querySelectorAll('.day-toggle').forEach(b => b.classList.remove('on'));
+    alarmModal.classList.add('show');
+  }
+  addAlarmBtn.addEventListener('click', openAlarmModal);
+  modalCancel.addEventListener('click', ()=> alarmModal.classList.remove('show'));
+  pickAM.addEventListener('click', ()=>{ selectedAmpm='AM'; pickAM.classList.add('on'); pickPM.classList.remove('on'); });
+  pickPM.addEventListener('click', ()=>{ selectedAmpm='PM'; pickPM.classList.add('on'); pickAM.classList.remove('on'); });
+  dayRow.querySelectorAll('.day-toggle').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const d = parseInt(btn.dataset.day, 10);
+      if(selectedDays.has(d)){ selectedDays.delete(d); btn.classList.remove('on'); }
+      else{ selectedDays.add(d); btn.classList.add('on'); }
+    });
+  });
+  modalSave.addEventListener('click', ()=>{
+    let h = parseInt(pickHour.value, 10);
+    const m = parseInt(pickMinute.value, 10);
+    if(selectedAmpm === 'AM'){ if(h === 12) h = 0; } else { if(h !== 12) h += 12; }
+    alarms.push({
+      id: 'al-' + Date.now(), hour:h, minute:m,
+      label: pickLabel.value.trim(), days: Array.from(selectedDays), enabled: true
+    });
+    saveAlarms(); renderAlarms();
+    alarmModal.classList.remove('show');
+  });
+
+  loadAlarms();
+  renderAlarms();
+
+  /* =========================================================
+     TIMER
+  ========================================================= */
+  let timerH = 0, timerM = 5, timerS = 0;
+  let timerTotalSeconds = timerM * 60;
+  let timerRemaining = timerTotalSeconds;
+  let timerRunning = false;
+  let timerInterval = null;
+
+  const hValEl = document.getElementById('hVal');
+  const mValEl = document.getElementById('mVal');
+  const sValEl = document.getElementById('sVal');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerSub = document.getElementById('timerSub');
+  const timerProgress = document.getElementById('timerProgress');
+  const timerSetup = document.getElementById('timerSetup');
+  const presetRow = document.getElementById('presetRow');
+  const timerStartBtn = document.getElementById('timerStart');
+  const timerResetBtn = document.getElementById('timerReset');
+  const RING_CIRC = 553;
+
+  function refreshWheelDisplay(){
+    hValEl.textContent = pad2(timerH);
+    mValEl.textContent = pad2(timerM);
+    sValEl.textContent = pad2(timerS);
+    timerTotalSeconds = timerH*3600 + timerM*60 + timerS;
+    timerRemaining = timerTotalSeconds;
+    renderTimerFace();
+  }
+  function renderTimerFace(){
+    const h = Math.floor(timerRemaining/3600);
+    const m = Math.floor((timerRemaining%3600)/60);
+    const s = timerRemaining%60;
+    timerDisplay.textContent = h > 0 ? `${h}:${pad2(m)}:${pad2(s)}` : `${pad2(m)}:${pad2(s)}`;
+    const frac = timerTotalSeconds > 0 ? (timerRemaining/timerTotalSeconds) : 0;
+    timerProgress.setAttribute('stroke-dashoffset', RING_CIRC * (1-frac));
+  }
+
+  document.querySelectorAll('.wheel-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(timerRunning) return;
+      const unit = btn.dataset.unit, dir = parseInt(btn.dataset.dir, 10);
+      if(unit === 'h') timerH = Math.max(0, Math.min(23, timerH + dir));
+      if(unit === 'm') timerM = Math.max(0, Math.min(59, timerM + dir));
+      if(unit === 's') timerS = Math.max(0, Math.min(59, timerS + dir));
+      refreshWheelDisplay();
+    });
+  });
+  presetRow.querySelectorAll('.preset-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      if(timerRunning) return;
+      const secs = parseInt(chip.dataset.secs, 10);
+      timerH = Math.floor(secs/3600);
+      timerM = Math.floor((secs%3600)/60);
+      timerS = secs%60;
+      refreshWheelDisplay();
+    });
+  });
+
+  function startTimer(){
+    if(timerRemaining <= 0) return;
+    timerRunning = true;
+    timerStartBtn.textContent = 'Pause';
+    timerSub.textContent = 'running';
+    timerSetup.style.opacity = '0.35'; presetRow.style.opacity = '0.35';
+    timerInterval = setInterval(()=>{
+      timerRemaining -= 1;
+      renderTimerFace();
+      if(timerRemaining <= 0){
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerStartBtn.textContent = 'Start';
+        timerSub.textContent = 'done';
+        fireRing({ label:'Timer Complete', time: `${pad2(timerH)}:${pad2(timerM)}:${pad2(timerS)} finished`, isTimer:true });
+      }
+    }, 1000);
+  }
+  function pauseTimer(){
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerStartBtn.textContent = 'Start';
+    timerSub.textContent = 'paused';
+  }
+  function resetTimer(){
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerRemaining = timerTotalSeconds;
+    timerStartBtn.textContent = 'Start';
+    timerSub.textContent = 'set duration';
+    timerSetup.style.opacity = '1'; presetRow.style.opacity = '1';
+    renderTimerFace();
+  }
+  timerStartBtn.addEventListener('click', ()=>{
+    if(timerRunning) pauseTimer(); else startTimer();
+  });
+  timerResetBtn.addEventListener('click', resetTimer);
+  refreshWheelDisplay();
+
+  /* =========================================================
+     STOPWATCH
+  ========================================================= */
+  let swRunning = false;
+  let swStartTime = 0;
+  let swElapsed = 0;
+  let swInterval = null;
+  let lapCount = 0;
+
+  const swTimeEl = document.getElementById('swTime');
+  const swMsEl = document.getElementById('swMs');
+  const swStartBtn = document.getElementById('swStart');
+  const swLapBtn = document.getElementById('swLap');
+  const lapList = document.getElementById('lapList');
+
+  function renderStopwatch(){
+    const total = swElapsed;
+    const mm = Math.floor(total/60000);
+    const ss = Math.floor((total%60000)/1000);
+    const cs = Math.floor((total%1000)/10);
+    swTimeEl.textContent = `${pad2(mm)}:${pad2(ss)}`;
+    swMsEl.textContent = `.${pad2(cs)}`;
+  }
+
+  swStartBtn.addEventListener('click', ()=>{
+    if(!swRunning){
+      swRunning = true;
+      swStartTime = Date.now() - swElapsed;
+      swInterval = setInterval(()=>{ swElapsed = Date.now() - swStartTime; renderStopwatch(); }, 30);
+      swStartBtn.textContent = 'Pause';
+      swLapBtn.textContent = 'Lap';
+    } else {
+      swRunning = false;
+      clearInterval(swInterval);
+      swStartBtn.textContent = 'Start';
+      swLapBtn.textContent = 'Reset';
+    }
+  });
+  swLapBtn.addEventListener('click', ()=>{
+    if(swRunning){
+      lapCount += 1;
+      const total = swElapsed;
+      const mm = Math.floor(total/60000), ss = Math.floor((total%60000)/1000), cs = Math.floor((total%1000)/10);
+      const row = document.createElement('div');
+      row.className = 'lap-row';
+      row.innerHTML = `<span class="lap-num">Lap ${lapCount}</span><span>${pad2(mm)}:${pad2(ss)}.${pad2(cs)}</span>`;
+      lapList.insertBefore(row, lapList.firstChild);
+    } else {
+      swElapsed = 0; lapCount = 0;
+      lapList.innerHTML = '';
+      renderStopwatch();
+      swLapBtn.textContent = 'Lap';
+    }
+  });
+  renderStopwatch();
+
+})();
+</script>
+</body>
+</html>

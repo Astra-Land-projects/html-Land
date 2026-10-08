@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Aim Trainer</title>
+
+<style>
+*{box-sizing:border-box;user-select:none}
+
+body{
+margin:0;
+min-height:100vh;
+background:#08090e;
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center;
+}
+
+#game{
+width:min(900px,95vw);
+text-align:center;
+}
+
+h1{color:#ff6b7b}
+
+canvas{
+width:100%;
+background:#10131a;
+border:2px solid #4d566b;
+border-radius:15px;
+cursor:crosshair;
+}
+
+button{
+padding:10px 18px;
+margin:8px;
+background:#171b25;
+color:white;
+border:1px solid #566176;
+border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🎯 ASTRA AIM TRAINER</h1>
+
+<div>
+🎯 Hits: <span id="hits">0</span>
+&nbsp; | &nbsp;
+❌ Misses: <span id="misses">0</span>
+&nbsp; | &nbsp;
+⏱️ <span id="time">30</span>s
+</div>
+
+<canvas id="c" width="850" height="500"></canvas>
+
+<button onclick="restart()">🔄 Restart</button>
+
+</div>
+
+<script>
+
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+
+const W=850,H=500;
+
+let target;
+let hits=0;
+let misses=0;
+let time=30;
+let game=true;
+let timer;
+
+function spawn(){
+
+target={
+  x:40+Math.random()*(W-80),
+  y:40+Math.random()*(H-80),
+  r:18+Math.random()*15
+};
+}
+
+c.addEventListener("pointerdown",e=>{
+
+if(!game)return;
+
+const rect=c.getBoundingClientRect();
+
+const x=
+  (e.clientX-rect.left)*W/rect.width;
+
+const y=
+  (e.clientY-rect.top)*H/rect.height;
+
+const d=Math.hypot(
+  x-target.x,
+  y-target.y
+);
+
+if(d<=target.r)
+  hits++;
+else
+  misses++;
+
+spawn();
+updateUI();
+});
+
+function restart(){
+
+hits=0;
+misses=0;
+time=30;
+game=true;
+
+clearInterval(timer);
+
+spawn();
+updateUI();
+
+timer=setInterval(()=>{
+
+  time--;
+
+  updateUI();
+
+  if(time<=0){
+
+   game=false;
+   clearInterval(timer);
+}
+},1000);
+}
+
+function updateUI(){
+
+document.getElementById("hits").textContent=hits;
+document.getElementById("misses").textContent=misses;
+document.getElementById("time").textContent=time;
+}
+
+function draw(){
+
+ctx.fillStyle="#10131a";
+ctx.fillRect(0,0,W,H);
+
+if(game){
+
+  // outer ring
+
+  ctx.strokeStyle="#ff596b";
+  ctx.lineWidth=5;
+
+  ctx.beginPath();
+  ctx.arc(
+   target.x,
+   target.y,
+   target.r,
+   0,
+   Math.PI*2
+  );
+  ctx.stroke();
+
+  ctx.fillStyle="#ff596b";
+
+  ctx.beginPath();
+
+  ctx.arc(
+   target.x,
+   target.y,
+   target.r*.35,
+   0,
+   Math.PI*2
+  );
+
+  ctx.fill();
+}
+
+else{
+
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+
+  ctx.fillStyle="#fff";
+  ctx.font="bold 42px Arial";
+
+  ctx.fillText(
+   "TIME!",
+   W/2,220
+  );
+
+  ctx.font="20px Arial";
+
+  ctx.fillText(
+   `Hits: ${hits} | Misses: ${misses}`,
+   W/2,260
+  );
+}
+}
+
+function loop(){
+
+draw();
+
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+
+</script>
+
+</body>
+</html>

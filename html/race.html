@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTRA 2D RACING</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at top, #25213b, #090910 70%);
+        color: white;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    #game {
+        width: min(950px, 96vw);
+        background: #0b0b12;
+        border: 2px solid #a875ff;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 0 45px rgba(168,117,255,.25);
+    }
+
+    header {
+        padding: 13px 18px;
+        background: linear-gradient(90deg, #151021, #26163b);
+        border-bottom: 1px solid #3d2b5c;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    header h1 {
+        margin: 0;
+        color: #cda9ff;
+        font-size: 22px;
+    }
+
+    #stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .stat {
+        background: #171522;
+        border: 1px solid #33284a;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 13px;
+    }
+
+    #gameArea {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        padding: 12px;
+        background: #07070c;
+    }
+
+    canvas {
+        width: min(720px, 100%);
+        aspect-ratio: 16 / 10;
+        display: block;
+
+        background: #151515;
+        border: 2px solid #35284b;
+        border-radius: 12px;
+    }
+
+    #message {
+        text-align: center;
+        padding: 9px;
+        color: #bfa7df;
+        font-size: 13px;
+    }
+
+    #controls {
+        display: flex;
+        gap: 8px;
+        padding: 0 12px 12px;
+    }
+
+    button {
+        flex: 1;
+        padding: 10px;
+
+        border: 1px solid #513c73;
+        border-radius: 9px;
+
+        background: #211833;
+        color: white;
+
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #352251;
+    }
+
+    #mobileControls {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        padding: 5px 15px 15px;
+    }
+
+    .moveBtn {
+        width: 65px;
+        height: 55px;
+        flex: none;
+        font-size: 22px;
+    }
+
+    #nitroBtn {
+        width: 100px;
+        flex: none;
+        font-size: 15px;
+    }
+
+    @media (max-width: 700px) {
+
+        body {
+            align-items: flex-start;
+            padding-top: 10px;
+        }
+
+        #mobileControls {
+            display: flex;
+        }
+
+        #message {
+            font-size: 11px;
+        }
+
+        header h1 {
+            font-size: 18px;
+        }
+
+        .stat {
+            font-size: 11px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<header>
+
+    <h1>🏎️ ASTRA 2D RACING</h1>
+
+    <div id="stats">
+
+        <div class="stat">
+            🏁 <span id="distance">0</span> m
+        </div>
+
+        <div class="stat">
+            🏎️ <span id="speed">0</span> km/h
+        </div>
+
+        <div class="stat">
+            🪙 <span id="coins">0</span>
+        </div>
+
+        <div class="stat">
+            ❤️ <span id="health">3</span>
+        </div>
+
+        <div class="stat">
+            ⚡ <span id="nitro">100</span>%
+        </div>
+
+    </div>
+
+</header>
+
+<div id="gameArea">
+
+    <canvas id="canvas" width="720" height="450"></canvas>
+
+</div>
+
+<div id="message">
+    ← → / A D = Move &nbsp; | &nbsp; SPACE = Nitro
+</div>
+
+<div id="controls">
+
+    <button onclick="startGame()">🏁 Start Race</button>
+    <button onclick="pauseGame()">⏸ Pause</button>
+    <button onclick="restartGame()">🔄 Restart</button>
+
+</div>
+
+<div id="mobileControls">
+
+    <button class="moveBtn"
+            id="leftBtn">⬅️</button>
+
+    <button id="nitroBtn">⚡ NITRO</button>
+
+    <button class="moveBtn"
+            id="rightBtn">➡️</button>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const roadWidth = 380;
+const roadLeft = (W - roadWidth) / 2;
+const roadRight = roadLeft + roadWidth;
+
+let keys = {};
+
+let gameRunning = false;
+let paused = false;
+let gameOver = false;
+
+let distance = 0;
+let coins = 0;
+let health = 3;
+
+let baseSpeed = 6;
+let speed = 6;
+
+let nitro = 100;
+let nitroActive = false;
+
+let roadOffset = 0;
+
+let enemyTimer = 0;
+let coinTimer = 0;
+
+let enemies = [];
+let coinObjects = [];
+let particles = [];
+
+const player = {
+
+    x: W / 2,
+    y: H - 90,
+
+    width: 42,
+    height: 70,
+
+    vx: 0,
+
+    color: "#6edbff"
+};
+
+function startGame() {
+
+    if (gameOver) {
+        restartGame();
+    }
+
+    gameRunning = true;
+    paused = false;
+}
+
+function pauseGame() {
+
+    if (!gameRunning || gameOver) return;
+
+    paused = !paused;
+}
+
+function restartGame() {
+
+    distance = 0;
+    coins = 0;
+    health = 3;
+
+    baseSpeed = 6;
+    speed = 6;
+
+    nitro = 100;
+
+    roadOffset = 0;
+
+    enemyTimer = 0;
+    coinTimer = 0;
+
+    enemies = [];
+    coinObjects = [];
+    particles = [];
+
+    player.x = W / 2;
+
+    gameOver = false;
+    paused = false;
+    gameRunning = true;
+
+    updateUI();
+}
+
+document.addEventListener("keydown", e => {
+
+    keys[e.key.toLowerCase()] = true;
+
+    if (e.code === "Space") {
+
+        e.preventDefault();
+
+        nitroActive = true;
+    }
+
+    if (e.key.toLowerCase() === "p") {
+        pauseGame();
+    }
+});
+
+document.addEventListener("keyup", e => {
+
+    keys[e.key.toLowerCase()] = false;
+
+    if (e.code === "Space") {
+        nitroActive = false;
+    }
+});
+
+
+// Mobile controls
+
+function holdButton(button, key) {
+
+    button.addEventListener("touchstart", e => {
+        e.preventDefault();
+        keys[key] = true;
+    });
+
+    button.addEventListener("touchend", e => {
+        e.preventDefault();
+        keys[key] = false;
+    });
+}
+
+holdButton(
+    document.getElementById("leftBtn"),
+    "arrowleft"
+);
+
+holdButton(
+    document.getElementById("rightBtn"),
+    "arrowright"
+);
+
+const nitroButton =
+    document.getElementById("nitroBtn");
+
+nitroButton.addEventListener("touchstart", e => {
+    e.preventDefault();
+    nitroActive = true;
+});
+
+nitroButton.addEventListener("touchend", e => {
+    e.preventDefault();
+    nitroActive = false;
+});
+
+
+function spawnEnemy() {
+
+    const lanes = 3;
+
+    const laneWidth = roadWidth / lanes;
+
+    const lane =
+        Math.floor(Math.random() * lanes);
+
+    const x =
+        roadLeft +
+        laneWidth * lane +
+        laneWidth / 2;
+
+    const colors = [
+        "#ff4757",
+        "#ffd43b",
+        "#a875ff",
+        "#55efc4"
+    ];
+
+    enemies.push({
+
+        x: x,
+
+        y: -100,
+
+        width: 42,
+
+        height: 70,
+
+        speed:
+            speed * (.75 + Math.random() * .45),
+
+        color:
+            colors[Math.floor(
+                Math.random() * colors.length
+            )],
+
+        rotation: 0
+
+    });
+}
+
+
+function spawnCoin() {
+
+    const x =
+        roadLeft +
+        30 +
+        Math.random() *
+        (roadWidth - 60);
+
+    coinObjects.push({
+
+        x: x,
+
+        y: -30,
+
+        radius: 9,
+
+        rotation: 0
+
+    });
+}
+
+
+function update() {
+
+    if (!gameRunning || paused || gameOver)
+        return;
+
+    // Difficulty
+
+    baseSpeed += 0.0008;
+
+    speed = baseSpeed;
+
+    // Nitro
+
+    if (nitroActive && nitro > 0) {
+
+        speed += 7;
+
+        nitro -= 0.65;
+
+        createParticle(
+            player.x,
+            player.y + 35,
+            "#69d9ff"
+        );
+
+    } else {
+
+        nitro = Math.min(
+            100,
+            nitro + 0.08
+        );
+    }
+
+    // Movement
+
+    let move = 0;
+
+    if (
+        keys["arrowleft"] ||
+        keys["a"]
+    ) {
+        move -= 1;
+    }
+
+    if (
+        keys["arrowright"] ||
+        keys["d"]
+    ) {
+        move += 1;
+    }
+
+    player.x += move * 6.5;
+
+    // Stay on road
+
+    const minX =
+        roadLeft + player.width / 2;
+
+    const maxX =
+        roadRight - player.width / 2;
+
+    player.x =
+        Math.max(
+            minX,
+            Math.min(maxX, player.x)
+        );
+
+    // Road
+
+    roadOffset += speed;
+
+    if (roadOffset > 80)
+        roadOffset = 0;
+
+    // Distance
+
+    distance += speed * 0.04;
+
+    // Enemy spawning
+
+    enemyTimer++;
+
+    const spawnRate =
+        Math.max(
+            28,
+            80 - speed * 3
+        );
+
+    if (enemyTimer > spawnRate) {
+
+        enemyTimer = 0;
+
+        spawnEnemy();
+    }
+
+    // Coin spawning
+
+    coinTimer++;
+
+    if (coinTimer > 55) {
+
+        coinTimer = 0;
+
+        spawnCoin();
+    }
+
+    updateEnemies();
+    updateCoins();
+    updateParticles();
+
+    updateUI();
+}
+
+
+function updateEnemies() {
+
+    for (const enemy of enemies) {
+
+        enemy.y += enemy.speed;
+
+    }
+
+    // Collision
+
+    for (const enemy of enemies) {
+
+        if (
+            enemy.y > H + 100
+        ) {
+            continue;
+        }
+
+        if (
+            rectCollision(
+                player,
+                enemy
+            )
+        ) {
+
+            enemy.y = H + 200;
+
+            health--;
+
+            createExplosion(
+                player.x,
+                player.y
+            );
+
+            if (health <= 0) {
+
+                gameOver = true;
+
+                gameRunning = false;
+            }
+        }
+    }
+
+    enemies =
+        enemies.filter(
+            e => e.y < H + 120
+        );
+}
+
+
+function updateCoins() {
+
+    for (const coin of coinObjects) {
+
+        coin.y += speed;
+
+        coin.rotation += .15;
+
+        const dx =
+            coin.x - player.x;
+
+        const dy =
+            coin.y - player.y;
+
+        const distanceToCoin =
+            Math.hypot(dx, dy);
+
+        if (
+            distanceToCoin <
+            coin.radius + 25
+        ) {
+
+            coin.y = H + 100;
+
+            coins++;
+
+            createParticle(
+                coin.x,
+                coin.y,
+                "#ffd86b"
+            );
+        }
+    }
+
+    coinObjects =
+        coinObjects.filter(
+            c => c.y < H + 50
+        );
+}
+
+
+function rectCollision(a, b) {
+
+    return (
+
+        a.x - a.width / 2 <
+        b.x + b.width / 2 &&
+
+        a.x + a.width / 2 >
+        b.x - b.width / 2 &&
+
+        a.y - a.height / 2 <
+        b.y + b.height / 2 &&
+
+        a.y + a.height / 2 >
+        b.y - b.height / 2
+
+    );
+}
+
+
+function createParticle(x, y, color) {
+
+    particles.push({
+
+        x: x,
+
+        y: y,
+
+        vx:
+            (Math.random() - .5) * 2,
+
+        vy:
+            Math.random() * 2 + 1,
+
+        life: 25,
+
+        color: color,
+
+        size: Math.random() * 4 + 2
+    });
+}
+
+
+function createExplosion(x, y) {
+
+    for (let i = 0; i < 25; i++) {
+
+        particles.push({
+
+            x: x,
+
+            y: y,
+
+            vx:
+                (Math.random() - .5) * 8,
+
+            vy:
+                (Math.random() - .5) * 8,
+
+            life: 35,
+
+            color:
+                Math.random() > .5
+                ? "#ff5c5c"
+                : "#ffd86b",
+
+            size:
+                Math.random() * 5 + 2
+        });
+    }
+}
+
+
+function updateParticles() {
+
+    for (const p of particles) {
+
+        p.x += p.vx;
+
+        p.y += p.vy;
+
+        p.life--;
+
+        p.size *= .97;
+    }
+
+    particles =
+        particles.filter(
+            p => p.life > 0
+        );
+}
+
+
+function drawBackground() {
+
+    // Grass
+
+    ctx.fillStyle = "#14251a";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    // Road
+
+    ctx.fillStyle = "#25252a";
+
+    ctx.fillRect(
+        roadLeft,
+        0,
+        roadWidth,
+        H
+    );
+
+    // Road borders
+
+    ctx.fillStyle = "#d8d8d8";
+
+    ctx.fillRect(
+        roadLeft,
+        0,
+        5,
+        H
+    );
+
+    ctx.fillRect(
+        roadRight - 5,
+        0,
+        5,
+        H
+    );
+
+    // Lane lines
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.7)";
+
+    ctx.lineWidth = 4;
+
+    ctx.setLineDash([
+        28,
+        28
+    ]);
+
+    ctx.lineDashOffset =
+        roadOffset;
+
+    for (let i = 1; i < 3; i++) {
+
+        const x =
+            roadLeft +
+            i * roadWidth / 3;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            0
+        );
+
+        ctx.lineTo(
+            x,
+            H
+        );
+
+        ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
+}
+
+
+function drawPlayer() {
+
+    ctx.save();
+
+    ctx.translate(
+        player.x,
+        player.y
+    );
+
+    // Shadow
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.4)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        32,
+        25,
+        9,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Car body
+
+    ctx.fillStyle =
+        player.color;
+
+    roundRect(
+        -21,
+        -35,
+        42,
+        70,
+        9
+    );
+
+    ctx.fill();
+
+    // Windows
+
+    ctx.fillStyle =
+        "#10202d";
+
+    roundRect(
+        -14,
+        -18,
+        28,
+        20,
+        5
+    );
+
+    ctx.fill();
+
+    // Front glass
+
+    ctx.fillStyle =
+        "#8ee8ff";
+
+    roundRect(
+        -12,
+        -15,
+        24,
+        13,
+        4
+    );
+
+    ctx.fill();
+
+    // Wheels
+
+    ctx.fillStyle = "#080808";
+
+    ctx.fillRect(
+        -25,
+        -25,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        18,
+        -25,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        -25,
+        10,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        18,
+        10,
+        7,
+        17
+    );
+
+    // Headlights
+
+    ctx.fillStyle = "#fff7a8";
+
+    ctx.fillRect(
+        -15,
+        -34,
+        8,
+        4
+    );
+
+    ctx.fillRect(
+        7,
+        -34,
+        8,
+        4
+    );
+
+    // Nitro flame
+
+    if (nitroActive && nitro > 0) {
+
+        ctx.fillStyle = "#ffb84d";
+
+        ctx.beginPath();
+
+        ctx.moveTo(-8, 35);
+
+        ctx.lineTo(0, 55);
+
+        ctx.lineTo(8, 35);
+
+        ctx.closePath();
+
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+
+function drawEnemy(enemy) {
+
+    ctx.save();
+
+    ctx.translate(
+        enemy.x,
+        enemy.y
+    );
+
+    // Shadow
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.45)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        32,
+        25,
+        9,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Body
+
+    ctx.fillStyle =
+        enemy.color;
+
+    roundRect(
+        -21,
+        -35,
+        42,
+        70,
+        9
+    );
+
+    ctx.fill();
+
+    // Window
+
+    ctx.fillStyle =
+        "#171c29";
+
+    roundRect(
+        -14,
+        -17,
+        28,
+        20,
+        5
+    );
+
+    ctx.fill();
+
+    // Wheels
+
+    ctx.fillStyle =
+        "#080808";
+
+    ctx.fillRect(
+        -25,
+        -25,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        18,
+        -25,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        -25,
+        10,
+        7,
+        17
+    );
+
+    ctx.fillRect(
+        18,
+        10,
+        7,
+        17
+    );
+
+    ctx.restore();
+}
+
+
+function drawCoins() {
+
+    for (const coin of coinObjects) {
+
+        ctx.save();
+
+        ctx.translate(
+            coin.x,
+            coin.y
+        );
+
+        const scale =
+            Math.cos(
+                coin.rotation
+            );
+
+        ctx.scale(
+            Math.abs(scale) + .2,
+            1
+        );
+
+        ctx.fillStyle =
+            "#ffd84f";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            0,
+            coin.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle =
+            "#9b6d00";
+
+        ctx.font =
+            "bold 11px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            "$",
+            0,
+            1
+        );
+
+        ctx.restore();
+    }
+}
+
+
+function drawParticles() {
+
+    for (const p of particles) {
+
+        ctx.globalAlpha =
+            p.life / 35;
+
+        ctx.fillStyle =
+            p.color;
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.size,
+            p.size
+        );
+    }
+
+    ctx.globalAlpha = 1;
+}
+
+
+function drawOverlay() {
+
+    if (!gameOver)
+        return;
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.72)";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    ctx.textAlign =
+        "center";
+
+    ctx.fillStyle =
+        "#ff5c70";
+
+    ctx.font =
+        "bold 46px Arial";
+
+    ctx.fillText(
+        "RACE OVER",
+        W / 2,
+        H / 2 - 25
+    );
+
+    ctx.fillStyle =
+        "#fff";
+
+    ctx.font =
+        "18px Arial";
+
+    ctx.fillText(
+        `Distance: ${Math.floor(distance)}m  •  Coins: ${coins}`,
+        W / 2,
+        H / 2 + 15
+    );
+
+    ctx.fillStyle =
+        "#c7a7ff";
+
+    ctx.fillText(
+        "Press Restart to race again",
+        W / 2,
+        H / 2 + 50
+    );
+}
+
+
+function roundRect(
+    x,
+    y,
+    width,
+    height,
+    radius
+) {
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x + radius,
+        y
+    );
+
+    ctx.lineTo(
+        x + width - radius,
+        y
+    );
+
+    ctx.quadraticCurveTo(
+        x + width,
+        y,
+        x + width,
+        y + radius
+    );
+
+    ctx.lineTo(
+        x + width,
+        y + height - radius
+    );
+
+    ctx.quadraticCurveTo(
+        x + width,
+        y + height,
+        x + width - radius,
+        y + height
+    );
+
+    ctx.lineTo(
+        x + radius,
+        y + height
+    );
+
+    ctx.quadraticCurveTo(
+        x,
+        y + height,
+        x,
+        y + height - radius
+    );
+
+    ctx.lineTo(
+        x,
+        y + radius
+    );
+
+    ctx.quadraticCurveTo(
+        x,
+        y,
+        x + radius,
+        y
+    );
+
+    ctx.closePath();
+}
+
+
+function draw() {
+
+    drawBackground();
+
+    drawCoins();
+
+    for (const enemy of enemies) {
+        drawEnemy(enemy);
+    }
+
+    drawPlayer();
+
+    drawParticles();
+
+    drawOverlay();
+}
+
+
+function updateUI() {
+
+    document.getElementById(
+        "distance"
+    ).textContent =
+        Math.floor(distance);
+
+    document.getElementById(
+        "speed"
+    ).textContent =
+        Math.floor(speed * 25);
+
+    document.getElementById(
+        "coins"
+    ).textContent =
+        coins;
+
+    document.getElementById(
+        "health"
+    ).textContent =
+        health;
+
+    document.getElementById(
+        "nitro"
+    ).textContent =
+        Math.floor(nitro);
+}
+
+
+function loop() {
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(loop);
+}
+
+
+// Start
+
+restartGame();
+
+loop();
+
+</script>
+
+</body>
+</html>

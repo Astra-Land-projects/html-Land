@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Civilization</title>
+
+<style>
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+background:#111;
+color:white;
+font-family:Arial;
+}
+
+#game{
+max-width:1100px;
+margin:auto;
+padding:15px;
+}
+
+h1{
+text-align:center;
+color:#e8c56a;
+}
+
+.stats{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+margin-bottom:10px;
+}
+
+.stat{
+background:#202020;
+padding:10px 15px;
+border-radius:8px;
+}
+
+.layout{
+display:grid;
+grid-template-columns:1fr 280px;
+gap:15px;
+}
+
+canvas{
+width:100%;
+background:#284f2b;
+border:2px solid #777;
+}
+
+.panel{
+background:#1b1b1b;
+padding:15px;
+border-radius:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin:5px 0;
+border:0;
+border-radius:7px;
+background:#303846;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#46546a;
+}
+
+.log{
+height:150px;
+overflow:auto;
+background:#080808;
+padding:10px;
+font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🏛️ ASTRA CIVILIZATION</h1>
+
+<div class="stats">
+
+<div class="stat">🌾 <b id="food">100</b></div>
+<div class="stat">🪵 <b id="wood">100</b></div>
+<div class="stat">⛏️ <b id="stone">50</b></div>
+<div class="stat">🪙 <b id="gold">50</b></div>
+<div class="stat">👥 <b id="pop">5</b></div>
+<div class="stat">⚔️ <b id="army">0</b></div>
+
+</div>
+
+<div class="layout">
+
+<canvas id="map" width="760" height="600"></canvas>
+
+<div class="panel">
+
+  <h3>🏗️ Build</h3>
+
+  <button onclick="build('house')">
+   🏠 House — 30 Wood
+  </button>
+
+  <button onclick="build('farm')">
+   🌾 Farm — 20 Wood
+  </button>
+
+  <button onclick="build('mine')">
+   ⛏️ Mine — 40 Wood
+  </button>
+
+  <button onclick="build('barracks')">
+   🏰 Barracks — 60 Wood
+  </button>
+
+  <hr>
+
+  <h3>⚔️ Military</h3>
+
+  <button onclick="train()">
+   Train Soldier — 20 Food + 10 Gold
+  </button>
+
+  <button onclick="attack()">
+   ⚔️ Attack AI
+  </button>
+
+  <h3>📜 Event Log</h3>
+
+  <div class="log" id="log"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas=document.getElementById("map");
+const ctx=canvas.getContext("2d");
+
+let state={
+food:100,
+wood:100,
+stone:50,
+gold:50,
+pop:5,
+army:0
+};
+
+let buildings=[];
+let enemy={
+x:620,
+y:470,
+army:6,
+hp:100
+};
+
+let tick=0;
+
+function log(msg){
+
+const l=document.getElementById("log");
+
+l.innerHTML=
+  `<div>${msg}</div>`+l.innerHTML;
+}
+
+function updateUI(){
+
+for(const k in state){
+
+  const el=document.getElementById(k);
+
+  if(el)
+   el.textContent=Math.floor(state[k]);
+
+}
+}
+
+function build(type){
+
+let cost={
+  house:{wood:30},
+  farm:{wood:20},
+  mine:{wood:40},
+  barracks:{wood:60}
+}[type];
+
+if(state.wood<cost.wood){
+
+  log("❌ Not enough wood.");
+  return;
+}
+
+state.wood-=cost.wood;
+
+buildings.push({
+  type,
+  x:100+Math.random()*450,
+  y:100+Math.random()*400
+});
+
+if(type==="house")
+  state.pop+=2;
+
+if(type==="farm")
+  log("🌾 Farm built.");
+
+if(type==="mine")
+  log("⛏️ Mine built.");
+
+if(type==="barracks")
+  log("🏰 Barracks built.");
+
+updateUI();
+}
+
+function train(){
+
+if(
+  state.food<20||
+  state.gold<10
+){
+
+  log("❌ Not enough resources.");
+  return;
+}
+
+state.food-=20;
+state.gold-=10;
+state.army++;
+
+log("⚔️ Soldier trained.");
+
+updateUI();
+}
+
+function attack(){
+
+if(state.army<=0){
+
+  log("❌ You need soldiers.");
+  return;
+}
+
+const power=
+  state.army*15+
+  Math.random()*30;
+
+const enemyPower=
+  enemy.army*12+
+  Math.random()*30;
+
+if(power>enemyPower){
+
+  enemy.army=
+   Math.max(
+    0,
+    enemy.army-
+    Math.ceil(state.army/2)
+   );
+
+  state.gold+=30;
+
+  log("🏆 Victory! +30 Gold");
+
+}else{
+
+  state.army=
+   Math.max(
+    0,
+    state.army-
+    Math.ceil(enemy.army/3)
+   );
+
+  log("💀 Attack failed.");
+
+}
+
+if(enemy.army<=0){
+
+  log("👑 ENEMY DEFEATED — YOU WIN!");
+
+}
+
+updateUI();
+}
+
+function economy(){
+
+state.food+=1;
+
+if(
+  buildings.some(
+   b=>b.type==="farm"
+  )
+)
+  state.food+=2;
+
+if(
+  buildings.some(
+   b=>b.type==="mine"
+  )
+)
+  state.gold+=1;
+
+if(state.pop>0)
+  state.food-=.5;
+
+state.wood+=.5;
+
+updateUI();
+}
+
+function draw(){
+
+ctx.clearRect(
+  0,0,
+  canvas.width,
+  canvas.height
+);
+
+// terrain
+
+ctx.fillStyle="#28582e";
+ctx.fillRect(
+  0,0,
+  canvas.width,
+  canvas.height
+);
+
+// grid
+
+ctx.strokeStyle="#ffffff12";
+
+for(let x=0;x<760;x+=40){
+
+  ctx.beginPath();
+  ctx.moveTo(x,0);
+  ctx.lineTo(x,600);
+  ctx.stroke();
+
+}
+
+for(let y=0;y<600;y+=40){
+
+  ctx.beginPath();
+  ctx.moveTo(0,y);
+  ctx.lineTo(760,y);
+  ctx.stroke();
+
+}
+
+// player city
+
+ctx.fillStyle="#4b8cff";
+
+ctx.beginPath();
+ctx.arc(130,300,55,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="white";
+ctx.font="18px Arial";
+ctx.fillText(
+  "YOUR CITY",
+  75,305
+);
+
+// buildings
+
+buildings.forEach(b=>{
+
+  let color={
+   house:"#d8b26d",
+   farm:"#8fd35a",
+   mine:"#888",
+   barracks:"#9c5c5c"
+  }[b.type];
+
+  ctx.fillStyle=color;
+
+  ctx.fillRect(
+   b.x,
+   b.y,
+   32,
+   32
+  );
+
+});
+
+// enemy
+
+ctx.fillStyle="#a83c46";
+
+ctx.beginPath();
+
+ctx.arc(
+  enemy.x,
+  enemy.y,
+  50,
+  0,
+  Math.PI*2
+);
+
+ctx.fill();
+
+ctx.fillStyle="white";
+
+ctx.fillText(
+  "AI",
+  enemy.x-10,
+  enemy.y+5
+);
+
+ctx.fillText(
+  "⚔️ "+enemy.army,
+  enemy.x-20,
+  enemy.y+75
+);
+
+}
+
+function loop(){
+
+tick++;
+
+if(tick%120===0)
+  economy();
+
+draw();
+
+requestAnimationFrame(loop);
+}
+
+updateUI();
+
+log("🏛️ Welcome, ruler.");
+log("Build your civilization.");
+
+loop();
+
+</script>
+
+</body>
+</html>

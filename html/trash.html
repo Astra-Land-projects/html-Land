@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA Trash Simulator</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;background:#0b1422;color:#fff}
+body{background:linear-gradient(135deg,#0e1b2e,#172b45 45%,#07101d);user-select:none}
+#desktop{position:relative;width:100vw;height:100vh;overflow:hidden}
+#wallpaper{position:absolute;inset:0;background:
+radial-gradient(circle at 72% 35%,rgba(68,142,255,.18),transparent 24%),
+radial-gradient(circle at 20% 80%,rgba(75,211,174,.08),transparent 25%)}
+#title{position:absolute;top:25px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:5px;color:#91a9c4;opacity:.7}
+.icon{position:absolute;width:92px;text-align:center;padding:8px 4px;border-radius:7px;cursor:grab;transition:opacity .3s,transform .3s,filter .3s}
+.icon:hover{background:rgba(255,255,255,.08)}.icon.dragging{opacity:.5;transform:scale(1.05);z-index:20}
+.filepic{width:45px;height:52px;margin:auto auto 6px;background:linear-gradient(145deg,#fff,#cbd6e3);border-radius:4px;position:relative;box-shadow:0 4px 15px #0007}
+.filepic:before{content:"";position:absolute;right:0;top:0;border-left:13px solid transparent;border-bottom:13px solid #9eacbc}
+.filepic:after{content:"";position:absolute;left:9px;right:9px;top:25px;height:3px;background:#8fa0b4;box-shadow:0 8px #8fa0b4}
+.folder{background:linear-gradient(#f7c94c,#d89a19);border-radius:5px;height:40px;margin-top:12px}.folder:before{content:"";position:absolute;left:3px;top:-6px;width:22px;height:10px;background:#e9b536;border-radius:4px 4px 0 0}.folder:after{display:none}
+.name{font-size:11px;text-shadow:0 1px 3px #000;word-break:break-word}
+#trash{position:absolute;right:40px;bottom:55px;width:120px;text-align:center;padding:12px;border-radius:12px;transition:.25s;z-index:10}
+#trash.hot{background:rgba(255,70,70,.16);box-shadow:0 0 35px rgba(255,70,70,.35);transform:scale(1.08)}
+#trashIcon{width:58px;height:58px;margin:auto;border:4px solid #d9e4ef;border-top:0;border-radius:4px 4px 12px 12px;position:relative;filter:drop-shadow(0 4px 10px #000)}
+#trashIcon:before{content:"";position:absolute;left:-8px;top:-9px;width:62px;height:5px;background:#d9e4ef;border-radius:4px}
+#trashIcon:after{content:"";position:absolute;left:16px;top:-17px;width:20px;height:9px;border:4px solid #d9e4ef;border-bottom:0;border-radius:5px 5px 0 0}
+#trashLabel{font-size:11px;margin-top:7px}
+#hud{position:absolute;left:20px;bottom:22px;background:rgba(5,10,18,.72);border:1px solid #ffffff1c;border-radius:10px;padding:12px 15px;backdrop-filter:blur(8px);font-family:monospace;font-size:11px;color:#a8bfd8;z-index:30}
+#status{color:#7dffbd;margin-top:4px}
+#reset{position:absolute;right:25px;top:22px;background:#15263a;color:#d9e9f8;border:1px solid #41617d;padding:8px 12px;border-radius:7px;cursor:pointer;z-index:30}
+#flash{position:absolute;inset:0;background:#ff334422;opacity:0;pointer-events:none;z-index:50}
+#toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);opacity:0;background:rgba(5,8,14,.94);border:1px solid #ff5161;padding:18px 28px;border-radius:12px;text-align:center;z-index:60;transition:.25s;pointer-events:none;box-shadow:0 0 60px #ff183322}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}#toast b{display:block;color:#ff6b79;font-size:22px;letter-spacing:3px}.small{font-size:10px;color:#8795a5;margin-top:5px}
+@keyframes vanish{0%{opacity:1;transform:scale(1) rotate(0)}50%{opacity:.8;transform:scale(1.25) rotate(8deg)}100%{opacity:0;transform:scale(.05) rotate(-25deg);filter:blur(7px)}}
+.vanish{animation:vanish .42s forwards}
+</style>
+</head>
+<body>
+<div id="desktop"><div id="wallpaper"></div><div id="title">ASTRA · FAKE WINDOWS TRASH SIMULATOR</div>
+<button id="reset">↻ RESET DESKTOP</button>
+<div id="trash"><div id="trashIcon"></div><div id="trashLabel">Recycle Bin</div></div>
+<div id="hud">FILES: <span id="count">0</span><br>STATUS: <span id="status">READY</span></div>
+<div id="flash"></div><div id="toast"><b>RECYCLE BIN</b><div id="toastText">File moved to Trash</div><div class="small">Nothing on your real computer was touched.</div></div>
+</div>
+<script>
+const desktop=document.getElementById('desktop'), trash=document.getElementById('trash');
+const names=['Project_ASTRA','Galaxy_Simulator','homework_final','secret_notes','photo_001','NASA_data','game.exe','website.zip','music.mp3','presentation.pptx','Python_Project','Universe.db'];
+const positions=[[35,90],[145,95],[255,90],[365,95],[35,220],[145,225],[255,220],[365,225],[35,350],[145,355],[255,350],[365,355]];
+let active,dragX=0,dragY=0,deleted=0;
+
+function makeIcons(){
+ document.querySelectorAll('.icon').forEach(x=>x.remove()); deleted=0; update();
+ names.forEach((name,i)=>{
+   const el=document.createElement('div'); el.className='icon'; el.id='file'+i;
+   el.style.left=positions[i][0]+'px';el.style.top=positions[i][1]+'px';
+   const ext=name.includes('.')?'file':'folder';
+   el.innerHTML=`<div class="filepic ${ext}"></div><div class="name">${name}</div>`;
+   el.addEventListener('pointerdown',startDrag); desktop.appendChild(el);
+ });
+}
+function startDrag(e){
+ active=e.currentTarget;active.setPointerCapture(e.pointerId);active.classList.add('dragging');
+ const r=active.getBoundingClientRect();dragX=e.clientX-r.left;dragY=e.clientY-r.top;
+ active.onpointermove=dragMove;active.onpointerup=drop;active.onpointercancel=drop;
+}
+function dragMove(e){
+ active.style.left=(e.clientX-dragX)+'px';active.style.top=(e.clientY-dragY)+'px';
+ const tr=trash.getBoundingClientRect(), ar=active.getBoundingClientRect();
+ const hit=!(ar.right<tr.left||ar.left>tr.right||ar.bottom<tr.top||ar.top>tr.bottom);trash.classList.toggle('hot',hit);
+}
+function drop(e){
+ if(!active)return;active.releasePointerCapture?.(e.pointerId);active.classList.remove('dragging');
+ const tr=trash.getBoundingClientRect(), ar=active.getBoundingClientRect();
+ const hit=!(ar.right<tr.left||ar.left>tr.right||ar.bottom<tr.top||ar.top>tr.bottom);
+ if(hit){deleteFake(active)} else {active.style.transition='left .18s,top .18s';setTimeout(()=>active.style.transition='',190)}
+ trash.classList.remove('hot');active=null;
+}
+function deleteFake(el){
+ deleted++;el.classList.add('vanish');document.getElementById('status').textContent='DELETING FAKE FILE...';
+ setTimeout(()=>{el.remove();update();document.getElementById('status').textContent='READY';showToast()},420);
+}
+function update(){document.getElementById('count').textContent=document.querySelectorAll('.icon').length}
+function showToast(){document.getElementById('toastText').textContent=deleted+' fake file'+(deleted===1?'':'s')+' moved to Recycle Bin';const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),900)}
+document.getElementById('reset').onclick=makeIcons;
+makeIcons();
+</script>
+</body></html>

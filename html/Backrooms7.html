@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE BACKROOMS — ASTRA EDITION</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#fff;
+}
+
+canvas{
+    width:100%;
+    height:100%;
+    display:block;
+    cursor:crosshair;
+}
+
+#menu,
+#pause,
+#ending,
+#death{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    background:
+        radial-gradient(circle at center,#202020,#000 75%);
+}
+
+.panel{
+    width:min(760px,90vw);
+    padding:35px;
+}
+
+h1{
+    margin:0;
+    font-size:clamp(45px,9vw,95px);
+    letter-spacing:12px;
+}
+
+.yellow{color:#d8bd43}
+.blue{color:#73d9ff}
+.red{color:#d85d50}
+
+.subtitle{
+    margin:15px 0 35px;
+    color:#999;
+    letter-spacing:5px;
+}
+
+button{
+    border:1px solid #aaa;
+    background:#111;
+    color:white;
+    padding:15px 38px;
+    cursor:pointer;
+    font-weight:bold;
+    letter-spacing:3px;
+}
+
+button:hover{
+    background:#ddd;
+    color:#111;
+}
+
+.help{
+    margin-top:35px;
+    color:#777;
+    font-size:12px;
+    line-height:2;
+    letter-spacing:1px;
+}
+
+#hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:10;
+}
+
+#levelName{
+    position:absolute;
+    top:18px;
+    left:20px;
+    font-size:13px;
+    letter-spacing:4px;
+    text-shadow:0 2px 5px #000;
+}
+
+#objective{
+    margin-top:7px;
+    color:#aaa;
+    letter-spacing:1px;
+    font-size:11px;
+}
+
+#timer{
+    position:absolute;
+    top:18px;
+    right:20px;
+    font-size:12px;
+    letter-spacing:3px;
+}
+
+#crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:6px;
+    height:6px;
+    border:1px solid white;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    opacity:.7;
+}
+
+#hint{
+    position:absolute;
+    left:50%;
+    bottom:65px;
+    transform:translateX(-50%);
+    font-size:12px;
+    letter-spacing:3px;
+    opacity:0;
+    transition:.2s;
+}
+
+#message{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    z-index:20;
+    pointer-events:none;
+    font-size:clamp(20px,5vw,48px);
+    font-weight:bold;
+    letter-spacing:7px;
+    text-shadow:0 4px 20px #000;
+    opacity:0;
+}
+
+#vhs{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:30;
+    opacity:.14;
+    background:
+    repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,.04) 0,
+        rgba(255,255,255,.04) 1px,
+        transparent 1px,
+        transparent 4px
+    );
+}
+
+#vhs:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+    linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.05),
+        transparent
+    );
+    animation:scan 3s linear infinite;
+}
+
+@keyframes scan{
+    from{transform:translateX(-100%)}
+    to{transform:translateX(100%)}
+}
+
+#warning{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:25;
+    background:rgba(180,0,0,.0);
+}
+
+#controls{
+    position:fixed;
+    bottom:15px;
+    left:20px;
+    font-size:10px;
+    color:#777;
+    letter-spacing:1px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- MENU -->
+<div id="menu">
+    <div class="panel">
+        <h1 class="yellow">BACKROOMS</h1>
+        <div class="subtitle">THE THREE LEVELS</div>
+
+        <p>
+            You should never have found this place.
+        </p>
+
+        <button id="start">ENTER</button>
+
+        <div class="help">
+            W A S D — MOVE<br>
+            MOUSE — LOOK<br>
+            SHIFT — RUN<br>
+            E — INTERACT<br>
+            F — FLASHLIGHT<br>
+            ESC — PAUSE / RELEASE MOUSE
+        </div>
+    </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause" style="display:none">
+    <div class="panel">
+        <h1>PAUSED</h1>
+        <div class="subtitle">THE ROOMS ARE STILL THERE</div>
+        <button id="resume">RESUME</button>
+    </div>
+</div>
+
+<!-- END -->
+<div id="ending" style="display:none">
+    <div class="panel">
+        <h1 class="yellow">YOU ESCAPED</h1>
+        <div class="subtitle">THE BACKROOMS</div>
+        <p>
+            You survived all three levels.
+        </p>
+        <p class="help">
+            But you still don't know<br>
+            where you really were.
+        </p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+</div>
+
+<!-- DEATH -->
+<div id="death" style="display:none">
+    <div class="panel">
+        <h1>FOUND</h1>
+        <div class="subtitle">YOU WERE NOT ALONE</div>
+        <button onclick="restartLevel()">TRY AGAIN</button>
+    </div>
+</div>
+
+<div id="hud">
+    <div id="levelName">
+        LEVEL 0
+        <div id="objective">Find the exit.</div>
+    </div>
+
+    <div id="timer">00:00</div>
+
+    <div id="crosshair"></div>
+
+    <div id="hint">PRESS E</div>
+
+    <div id="controls">
+        CLICK TO CAPTURE MOUSE
+    </div>
+</div>
+
+<div id="message"></div>
+<div id="warning"></div>
+<div id="vhs"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let W=innerWidth;
+let H=innerHeight;
+let DPR=Math.min(devicePixelRatio||1,2);
+
+function resize(){
+
+    W=innerWidth;
+    H=innerHeight;
+
+    DPR=Math.min(devicePixelRatio||1,2);
+
+    canvas.width=W*DPR;
+    canvas.height=H*DPR;
+
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
+addEventListener("resize",resize);
+resize();
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio=null;
+let master=null;
+
+function audioInit(){
+
+    if(audio)return;
+
+    try{
+
+        audio=
+            new(window.AudioContext||
+            window.webkitAudioContext)();
+
+        master=audio.createGain();
+        master.gain.value=.32;
+        master.connect(audio.destination);
+
+    }catch(e){}
+}
+
+function tone(
+    frequency,
+    duration,
+    type="sine",
+    volume=.05
+){
+
+    if(!audio)return;
+
+    const osc=audio.createOscillator();
+    const gain=audio.createGain();
+
+    osc.type=type;
+    osc.frequency.value=frequency;
+
+    gain.gain.setValueAtTime(
+        volume,
+        audio.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audio.currentTime+duration
+    );
+
+    osc.connect(gain);
+    gain.connect(master);
+
+    osc.start();
+
+    osc.stop(
+        audio.currentTime+duration
+    );
+}
+
+function noise(
+    duration=.2,
+    volume=.025
+){
+
+    if(!audio)return;
+
+    const buffer=
+        audio.createBuffer(
+            1,
+            audio.sampleRate*duration,
+            audio.sampleRate
+        );
+
+    const data=
+        buffer.getChannelData(0);
+
+    for(let i=0;i<data.length;i++)
+        data[i]=Math.random()*2-1;
+
+    const source=
+        audio.createBufferSource();
+
+    const gain=
+        audio.createGain();
+
+    source.buffer=buffer;
+
+    gain.gain.value=volume;
+
+    source.connect(gain);
+    gain.connect(master);
+
+    source.start();
+}
+
+
+/* =========================================================
+   AMBIENT SOUND
+========================================================= */
+
+let ambientOsc=null;
+
+function startAmbient(){
+
+    if(!audio)return;
+
+    if(ambientOsc)
+        ambientOsc.stop();
+
+    ambientOsc=
+        audio.createOscillator();
+
+    const gain=
+        audio.createGain();
+
+    ambientOsc.type="sine";
+
+    ambientOsc.frequency.value=
+        level===0?55:
+        level===1?38:
+        72;
+
+    gain.gain.value=
+        level===0?.018:
+        level===1?.012:
+        .022;
+
+    ambientOsc.connect(gain);
+    gain.connect(master);
+
+    ambientOsc.start();
+}
+
+
+/* =========================================================
+   GAME
+========================================================= */
+
+let state="menu";
+
+let level=0;
+
+let levelTime=0;
+let totalTime=0;
+
+let flashlight=true;
+
+let exitReady=false;
+
+let keys={};
+
+let last=performance.now();
+
+const player={
+    x:2.5,
+    y:2.5,
+    angle:0,
+    stamina:100,
+    bob:0
+};
+
+
+/* =========================================================
+   MOUSE LOOK
+========================================================= */
+
+let mouseLocked=false;
+
+canvas.addEventListener("click",()=>{
+
+    if(state!=="playing")
+        return;
+
+    audioInit();
+
+    if(audio && audio.state==="suspended")
+        audio.resume();
+
+    if(document.pointerLockElement!==canvas){
+
+        if(canvas.requestPointerLock)
+            canvas.requestPointerLock();
+
+    }
+
+});
+
+document.addEventListener(
+    "pointerlockchange",
+    ()=>{
+
+        mouseLocked=
+            document.pointerLockElement===canvas;
+
+    }
+);
+
+document.addEventListener(
+    "mousemove",
+    e=>{
+
+        if(
+            state==="playing" &&
+            mouseLocked
+        ){
+
+            /*
+              This is the only major change from
+              the previous control system.
+
+              Mouse X controls horizontal rotation.
+              Mouse Y slightly controls visual pitch.
+            */
+
+            player.angle+=e.movementX*.0028;
+
+            cameraPitch+=
+                e.movementY*.0007;
+
+            cameraPitch=
+                Math.max(
+                    -.12,
+                    Math.min(.12,cameraPitch)
+                );
+        }
+    }
+);
+
+let cameraPitch=0;
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+addEventListener("keydown",e=>{
+
+    const k=e.key.toLowerCase();
+
+    keys[k]=true;
+
+    if(
+        ["w","a","s","d","shift"," "]
+        .includes(k)
+    )
+        e.preventDefault();
+
+    if(k==="f" && state==="playing"){
+
+        flashlight=!flashlight;
+
+        tone(
+            flashlight?650:180,
+            .12,
+            "square",
+            .04
+        );
+    }
+
+    if(k==="e" && state==="playing")
+        interact();
+
+    if(k==="escape"){
+
+        if(state==="playing")
+            pauseGame();
+
+    }
+
+});
+
+addEventListener("keyup",e=>{
+    keys[e.key.toLowerCase()]=false;
+});
+
+
+/* =========================================================
+   WORLD MAPS
+========================================================= */
+
+const LEVELS=[
+
+/* LEVEL 0 */
+[
+"111111111111111111111111111111",
+"100000000000000100000000000001",
+"101111111111110101111111111101",
+"101000000000010101000000000101",
+"101011111111010101011111110101",
+"101010000001010101010000010101",
+"101010111101000101010111010101",
+"101010100001111101010001010101",
+"101010101111000001010101010101",
+"101000101000000101000101000101",
+"101110101011110101111101111101",
+"100000101000010100000000000101",
+"111110101111010111111111110101",
+"100010100001010000000000010101",
+"101010111101011111111111010101",
+"101010000001000000000001010101",
+"101011111111111111111101010101",
+"101000000000000000000101000101",
+"101111111111111111110101111101",
+"100000000000000000010000000001",
+"111111111111111111111111111111"
+],
+
+/* LEVEL 1 */
+[
+"111111111111111111111111111111",
+"100000000000000000000000000001",
+"100111111111111111111111110001",
+"100100000000000000000001010001",
+"100101111111111111111101010001",
+"100100000000000000001001010001",
+"100111111111111111101001010001",
+"100000000000000000101001010001",
+"111111111111111010101001010001",
+"100000000000001010101001010001",
+"100111111111101010101001010001",
+"100100000000101010101001010001",
+"100101111110101010101001010001",
+"100100000010101010101001010001",
+"100111111010101010101001010001",
+"100000001010101010101001010001",
+"111111101010101010101001010001",
+"100000101010101010101001010001",
+"100000100000101010000001000001",
+"100000111111111111111111111101",
+"100000000000000000000000000001",
+"111111111111111111111111111111"
+],
+
+/* LEVEL 2 */
+[
+"111111111111111111111111111111",
+"100000000000001000000000000001",
+"101111111111101011111111111101",
+"101000000000101010000000001001",
+"101011111110101010111111101001",
+"101010000010101010100000101001",
+"101010111010101010101110101001",
+"101010101010101010101010101001",
+"101010101010000010101010101001",
+"101010101011111110101010101001",
+"101010100000000000101010101001",
+"101010111111111111101010101001",
+"101010000000000000001010101001",
+"101011111111111111111010101001",
+"101000000000000000000010101001",
+"101111111111111111111110101001",
+"100000000000000000000000101001",
+"101111111111111111111111101001",
+"100000000000000000000000001001",
+"101111111111111111111111111001",
+"100000000000000000000000000001",
+"111111111111111111111111111111"
+]
+];
+
+
+/* =========================================================
+   MAP DATA
+========================================================= */
+
+let map=[];
+let MW=0;
+let MH=0;
+
+function loadMap(){
+
+    map=LEVELS[level];
+
+    MH=map.length;
+    MW=map[0].length;
+}
+
+function wall(x,y){
+
+    if(
+        x<0||
+        y<0||
+        x>=MW||
+        y>=MH
+    )
+        return true;
+
+    return map[Math.floor(y)]
+        [Math.floor(x)]==="1";
+}
+
+function blocked(x,y){
+
+    const r=.18;
+
+    return(
+        wall(x-r,y-r)||
+        wall(x+r,y-r)||
+        wall(x-r,y+r)||
+        wall(x+r,y+r)
+    );
+}
+
+
+/* =========================================================
+   LEVEL OBJECTS
+========================================================= */
+
+const objects=[
+    {
+        x:MW-3.5,
+        y:MH-2.5
+    }
+];
+
+let exit={
+    x:MW-2.5,
+    y:MH-2.5
+};
+
+
+/* =========================================================
+   ENTITIES
+========================================================= */
+
+const entity={
+
+    active:false,
+
+    x:15,
+    y:15,
+
+    speed:0.7,
+
+    type:0,
+
+    visible:false,
+
+    scare:0
+
+};
+
+
+/* =========================================================
+   LEVEL INITIALIZATION
+========================================================= */
+
+function initLevel(){
+
+    loadMap();
+
+    levelTime=0;
+
+    exitReady=false;
+
+    flashlight=true;
+
+    player.stamina=100;
+
+    cameraPitch=0;
+
+    /*
+       Safe spawn.
+    */
+
+    player.x=2.5;
+    player.y=2.5;
+    player.angle=0;
+
+    /*
+       Entity starts far away.
+    */
+
+    entity.active=false;
+    entity.visible=false;
+    entity.scare=0;
+
+    if(level===0){
+
+        entity.type=0;
+
+        entity.x=MW-5.5;
+        entity.y=3.5;
+
+        document.getElementById("levelName")
+        .firstChild.textContent=
+        "LEVEL 0 — THE YELLOW ROOMS";
+
+        document.getElementById("objective")
+        .textContent=
+        "Find the exit.";
+
+    }
+
+    if(level===1){
+
+        entity.type=1;
+
+        entity.x=MW-5.5;
+        entity.y=MH-5.5;
+
+        document.getElementById("levelName")
+        .firstChild.textContent=
+        "LEVEL 1 — THE POOL ROOMS";
+
+        document.getElementById("objective")
+        .textContent=
+        "Cross the flooded rooms.";
+
+    }
+
+    if(level===2){
+
+        entity.type=2;
+
+        entity.x=MW-5.5;
+        entity.y=MH-5.5;
+
+        document.getElementById("levelName")
+        .firstChild.textContent=
+        "LEVEL 2 — THE PIPES";
+
+        document.getElementById("objective")
+        .textContent=
+        "Find the final exit.";
+
+    }
+
+    startAmbient();
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.getElementById("start").onclick=()=>{
+
+    audioInit();
+
+    if(audio && audio.state==="suspended")
+        audio.resume();
+
+    document.getElementById("menu")
+        .style.display="none";
+
+    state="playing";
+
+    level=0;
+
+    initLevel();
+
+    showMessage(
+        "LEVEL 0",
+        1.5
+    );
+
+    setTimeout(()=>{
+        showMessage(
+            "DON'T LOOK BACK",
+            1.4
+        );
+    },1800);
+};
+
+
+/* =========================================================
+   PAUSE
+========================================================= */
+
+function pauseGame(){
+
+    state="pause";
+
+    document.getElementById("pause")
+        .style.display="flex";
+
+    if(document.exitPointerLock)
+        document.exitPointerLock();
+}
+
+function resumeGame(){
+
+    state="playing";
+
+    document.getElementById("pause")
+        .style.display="none";
+
+    canvas.click();
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+let msgTimer=null;
+
+function showMessage(text,duration=1.5){
+
+    const el=
+        document.getElementById("message");
+
+    el.textContent=text;
+    el.style.opacity="1";
+
+    clearTimeout(msgTimer);
+
+    msgTimer=setTimeout(()=>{
+        el.style.opacity="0";
+    },duration*1000);
+}
+
+
+/* =========================================================
+   PLAYER MOVEMENT
+========================================================= */
+
+function updatePlayer(dt){
+
+    let forward=
+        (keys["w"]?1:0)-
+        (keys["s"]?1:0);
+
+    let side=
+        (keys["d"]?1:0)-
+        (keys["a"]?1:0);
+
+    if(!forward && !side)
+        return;
+
+    const len=
+        Math.hypot(forward,side);
+
+    forward/=len;
+    side/=len;
+
+    const sprint=
+        keys["shift"] &&
+        player.stamina>0 &&
+        forward>0;
+
+    let speed=
+        sprint?3.2:1.65;
+
+    /*
+       Level 1 has water resistance.
+    */
+
+    if(level===1)
+        speed*=.82;
+
+    const move=speed*dt;
+
+    const dx=
+        (
+            Math.cos(player.angle)*forward-
+            Math.sin(player.angle)*side
+        )*move;
+
+    const dy=
+        (
+            Math.sin(player.angle)*forward+
+            Math.cos(player.angle)*side
+        )*move;
+
+    if(!blocked(player.x+dx,player.y))
+        player.x+=dx;
+
+    if(!blocked(player.x,player.y+dy))
+        player.y+=dy;
+
+    if(sprint)
+        player.stamina-=32*dt;
+    else
+        player.stamina+=18*dt;
+
+    player.stamina=
+        Math.max(
+            0,
+            Math.min(100,player.stamina)
+        );
+
+    player.bob+=dt*(sprint?12:7);
+}
+
+
+/* =========================================================
+   ENTITY AI
+========================================================= */
+
+function updateEntity(dt){
+
+    const distance=
+        Math.hypot(
+            player.x-entity.x,
+            player.y-entity.y
+        );
+
+    /*
+       Entity wakes up after exploration.
+    */
+
+    if(
+        !entity.active &&
+        levelTime>8
+    ){
+
+        entity.active=true;
+
+        showMessage(
+            level===0?
+            "SOMETHING HEARD YOU":
+            level===1?
+            "THE WATER IS NOT EMPTY":
+            "THE PIPES ARE MOVING",
+            2
+        );
+
+        noise(.8,.06);
+    }
+
+    if(!entity.active)
+        return;
+
+    const dx=
+        player.x-entity.x;
+
+    const dy=
+        player.y-entity.y;
+
+    const angle=
+        Math.atan2(dy,dx);
+
+    let speed=
+        entity.speed;
+
+    if(level===0)
+        speed=.72;
+
+    if(level===1)
+        speed=.55;
+
+    if(level===2)
+        speed=.82;
+
+    /*
+       Entity becomes faster when close.
+    */
+
+    if(distance<5)
+        speed*=1.45;
+
+    const nx=
+        entity.x+
+        Math.cos(angle)*speed*dt;
+
+    const ny=
+        entity.y+
+        Math.sin(angle)*speed*dt;
+
+    if(!blocked(nx,entity.y))
+        entity.x=nx;
+
+    if(!blocked(entity.x,ny))
+        entity.y=ny;
+
+    /*
+       Close enough = death.
+    */
+
+    if(distance<.48){
+
+        state="death";
+
+        document.getElementById("death")
+            .style.display="flex";
+
+        if(document.exitPointerLock)
+            document.exitPointerLock();
+
+        noise(.7,.1);
+        tone(55,.7,"sawtooth",.1);
+    }
+}
+
+/* =========================================================
+   EXIT
+========================================================= */
+
+function renderExit(){
+
+    const dx=
+        exit.x-player.x;
+
+    const dy=
+        exit.y-player.y;
+
+    const distance=
+        Math.hypot(dx,dy);
+
+    let angle=
+        Math.atan2(dy,dx)-
+        player.angle;
+
+    while(angle>Math.PI)
+        angle-=Math.PI*2;
+
+    while(angle<-Math.PI)
+        angle+=Math.PI*2;
+
+    const FOV=Math.PI/3;
+
+    if(
+        Math.abs(angle)>FOV/2 ||
+        distance>20
+    )
+        return;
+
+    const sx=
+        W/2+
+        angle/(FOV/2)*(W/2);
+
+    const size=
+        Math.min(
+            H,
+            H/(distance*.8)
+        );
+
+    ctx.save();
+
+    ctx.translate(
+        sx,
+        H/2
+    );
+
+    ctx.globalAlpha=
+        Math.max(
+            .15,
+            1-distance/15
+        );
+
+    ctx.strokeStyle=
+        level===0?
+        "#e7d35d":
+        level===1?
+        "#8ceaff":
+        "#ff7768";
+
+    ctx.lineWidth=3;
+
+    ctx.strokeRect(
+        -size*.25,
+        -size*.45,
+        size*.5,
+        size*.9
+    );
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   ENTITY RENDER
+========================================================= */
+
+function renderEntity(){
+
+    if(!entity.active)
+        return;
+
+    const dx=
+        entity.x-player.x;
+
+    const dy=
+        entity.y-player.y;
+
+    const distance=
+        Math.hypot(dx,dy);
+
+    let angle=
+        Math.atan2(dy,dx)-
+        player.angle;
+
+    while(angle>Math.PI)
+        angle-=Math.PI*2;
+
+    while(angle<-Math.PI)
+        angle+=Math.PI*2;
+
+    const FOV=Math.PI/3;
+
+    if(
+        Math.abs(angle)>FOV/2+.2 ||
+        distance>17
+    )
+        return;
+
+    const sx=
+        W/2+
+        angle/(FOV/2)*(W/2);
+
+    const size=
+        Math.min(
+            H*1.4,
+            H/(distance*.7)
+        );
+
+    const alpha=
+        Math.max(
+            .2,
+            Math.min(
+                1,
+                1-distance/14
+            )
+        );
+
+    ctx.save();
+
+    ctx.translate(
+        sx,
+        H/2
+    );
+
+    ctx.globalAlpha=alpha;
+
+
+    /* =====================================================
+       LEVEL 0 ENTITY
+       Tall striped silhouette
+    ===================================================== */
+
+    if(entity.type===0){
+
+        /*
+           Body
+        */
+
+        ctx.fillStyle="#090909";
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            0,
+            size*.18,
+            size*.19,
+            size*.58,
+            0,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        /*
+           Head
+        */
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            -size*.38,
+            size*.20,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        /*
+           Stripes
+        */
+
+        ctx.strokeStyle="#ddd";
+
+        ctx.lineWidth=
+            Math.max(
+                2,
+                size*.025
+            );
+
+        for(let i=-2;i<=2;i++){
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                -size*.16,
+                size*(i*.07)
+            );
+
+            ctx.lineTo(
+                size*.16,
+                size*(i*.07)
+            );
+
+            ctx.stroke();
+        }
+
+        /*
+           Eyes
+        */
+
+        ctx.fillStyle="#fff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -size*.07,
+            -size*.42,
+            size*.018,
+            0,
+            Math.PI*2
+        );
+
+        ctx.arc(
+            size*.07,
+            -size*.42,
+            size*.018,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+
+    /* =====================================================
+       LEVEL 1 ENTITY
+       Black smiling triangular spirit
+    ===================================================== */
+
+    if(entity.type===1){
+
+        ctx.fillStyle="#020202";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            -size*.55
+        );
+
+        ctx.lineTo(
+            -size*.32,
+            size*.35
+        );
+
+        ctx.lineTo(
+            size*.32,
+            size*.35
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        /*
+           Smile
+        */
+
+        ctx.strokeStyle="#fff";
+
+        ctx.lineWidth=
+            Math.max(
+                1,
+                size*.018
+            );
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            -size*.02,
+            size*.14,
+            0,
+            Math.PI
+        );
+
+        ctx.stroke();
+
+        /*
+           Eyes
+        */
+
+        ctx.fillStyle="#fff";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -size*.08,
+            -size*.14,
+            size*.025,
+            0,
+            Math.PI*2
+        );
+
+        ctx.arc(
+            size*.08,
+            -size*.14,
+            size*.025,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+    /* =====================================================
+       LEVEL 2 ENTITY
+       Pipe crawler
+    ===================================================== */
+
+    if(entity.type===2){
+
+        ctx.strokeStyle="#050505";
+
+        ctx.lineWidth=
+            Math.max(
+                5,
+                size*.08
+            );
+
+        /*
+           Main body
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -size*.25,
+            -size*.1
+        );
+
+        ctx.lineTo(
+            size*.25,
+            -size*.1
+        );
+
+        ctx.stroke();
+
+        /*
+           Crawling limbs
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -size*.20,
+            0
+        );
+
+        ctx.lineTo(
+            -size*.48,
+            size*.4
+        );
+
+        ctx.moveTo(
+            size*.20,
+            0
+        );
+
+        ctx.lineTo(
+            size*.48,
+            size*.4
+        );
+
+        ctx.moveTo(
+            -size*.12,
+            -size*.1
+        );
+
+        ctx.lineTo(
+            -size*.40,
+            -size*.45
+        );
+
+        ctx.moveTo(
+            size*.12,
+            -size*.1
+        );
+
+        ctx.lineTo(
+            size*.40,
+            -size*.45
+        );
+
+        ctx.stroke();
+
+        /*
+           Red eyes
+        */
+
+        ctx.fillStyle="#ff3d3d";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            -size*.07,
+            -size*.2,
+            size*.025,
+            0,
+            Math.PI*2
+        );
+
+        ctx.arc(
+            size*.07,
+            -size*.2,
+            size*.025,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   LIGHTING
+========================================================= */
+
+function renderLighting(){
+
+    let darkness=
+        level===0?.72:
+        level===1?.58:
+        .82;
+
+    if(!flashlight)
+        darkness+=.13;
+
+    const gradient=
+        ctx.createRadialGradient(
+            W/2,
+            H/2,
+            20,
+            W/2,
+            H/2,
+            Math.min(W,H)*.72
+        );
+
+    gradient.addColorStop(
+        0,
+        flashlight?
+        "rgba(255,255,240,.10)":
+        "rgba(0,0,0,.10)"
+    );
+
+    gradient.addColorStop(
+        .35,
+        flashlight?
+        "rgba(255,255,255,.025)":
+        "rgba(0,0,0,.32)"
+    );
+
+    gradient.addColorStop(
+        1,
+        `rgba(0,0,0,${darkness})`
+    );
+
+    ctx.fillStyle=gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+       Level-specific lights.
+    */
+
+    if(level===0){
+
+        const flicker=
+            .06+
+            Math.sin(gameClock*14)*.025+
+            Math.sin(gameClock*43)*.01;
+
+        ctx.fillStyle=
+            `rgba(255,240,150,${flicker})`;
+
+        ctx.fillRect(
+            W*.1,
+            H*.03,
+            W*.8,
+            4
+        );
+    }
+
+    if(level===1){
+
+        ctx.fillStyle=
+            "rgba(80,210,255,.045)";
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+
+    if(level===2){
+
+        const pulse=
+            .025+
+            Math.sin(gameClock*5)*.015;
+
+        ctx.fillStyle=
+            `rgba(255,80,40,${pulse})`;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+}
+
+
+/* =========================================================
+   FOG
+========================================================= */
+
+function renderFog(){
+
+    const fog=
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            H
+        );
+
+    if(level===1){
+
+        fog.addColorStop(
+            0,
+            "rgba(0,40,55,.04)"
+        );
+
+        fog.addColorStop(
+            1,
+            "rgba(0,100,120,.12)"
+        );
+
+    }else if(level===2){
+
+        fog.addColorStop(
+            0,
+            "rgba(100,100,100,.02)"
+        );
+
+        fog.addColorStop(
+            1,
+            "rgba(30,30,30,.16)"
+        );
+
+    }else{
+
+        fog.addColorStop(
+            0,
+            "rgba(80,60,10,.02)"
+        );
+
+        fog.addColorStop(
+            1,
+            "rgba(0,0,0,.13)"
+        );
+    }
+
+    ctx.fillStyle=fog;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+}
+
+
+/* =========================================================
+   VHS NOISE
+========================================================= */
+
+function renderNoise(){
+
+    if(Math.random()<.18){
+
+        ctx.fillStyle=
+            "rgba(255,255,255,.018)";
+
+        ctx.fillRect(
+            0,
+            Math.random()*H,
+            W,
+            1
+        );
+    }
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD(){
+
+    const minutes=
+        Math.floor(totalTime/60)
+        .toString()
+        .padStart(2,"0");
+
+    const seconds=
+        Math.floor(totalTime%60)
+        .toString()
+        .padStart(2,"0");
+
+    document.getElementById("timer")
+        .textContent=
+        minutes+":"+seconds;
+
+
+    let canInteract=
+        nearExit();
+
+    document.getElementById("hint")
+        .style.opacity=
+        canInteract?"1":"0";
+
+
+    /*
+       Threat warning.
+    */
+
+    if(entity.active){
+
+        const distance=
+            Math.hypot(
+                player.x-entity.x,
+                player.y-entity.y
+            );
+
+        if(distance<4){
+
+            const strength=
+                Math.max(
+                    0,
+                    1-distance/4
+                );
+
+            document.getElementById("warning")
+                .style.background=
+                `rgba(150,0,0,${strength*.18})`;
+
+        }else{
+
+            document.getElementById("warning")
+                .style.background=
+                "rgba(180,0,0,0)";
+        }
+    }
+}
+
+
+/* =========================================================
+   GAME CLOCK
+========================================================= */
+
+let gameClock=0;
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function loop(now){
+
+    const dt=
+        Math.min(
+            .05,
+            (now-last)/1000
+        );
+
+    last=now;
+
+    if(state==="playing"){
+
+        gameClock+=dt;
+
+        levelTime+=dt;
+        totalTime+=dt;
+
+        updatePlayer(dt);
+        updateEntity(dt);
+
+        updateHUD();
+
+        render();
+
+    }else if(state==="menu"){
+
+        renderMenu();
+
+    }
+
+    requestAnimationFrame(loop);
+}
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+function renderMenu(){
+
+    ctx.fillStyle="#050505";
+    ctx.fillRect(0,0,W,H);
+
+    /*
+       Endless corridor illusion.
+    */
+
+    for(let i=0;i<14;i++){
+
+        const y=
+            H*.5+
+            i*i*3.2;
+
+        ctx.fillStyle=
+            `rgba(220,190,60,${.025+i*.002})`;
+
+        ctx.fillRect(
+            0,
+            y,
+            W,
+            2
+        );
+    }
+
+    /*
+       Flickering fluorescent lines.
+    */
+
+    for(let i=0;i<8;i++){
+
+        ctx.fillStyle=
+            "rgba(255,255,220,.04)";
+
+        ctx.fillRect(
+            W*.15+i*W*.1,
+            H*.2+
+            Math.sin(gameClock+i)*2,
+            W*.05,
+            2
+        );
+    }
+}
+/* =========================================================
+   START LOOP
+========================================================= */
+
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+</html>

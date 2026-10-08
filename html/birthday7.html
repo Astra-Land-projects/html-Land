@@ -1,0 +1,399 @@
+html = '''<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>🎂 پروژه رندم تولد</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Vazirmatn', 'Vazir', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 40%, #4a1942 70%, #7a2048 100%);
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+  }
+  .star { position:fixed; background:#fff; border-radius:50%; z-index:0; animation:twinkle 2s infinite alternate; }
+  @keyframes twinkle { from { opacity:.15; } to { opacity:.9; } }
+  .confetti { position:fixed; top:-20px; z-index:9999; pointer-events:none; animation:fall linear infinite; opacity:.9; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  .hero { text-align:center; padding:50px 20px 10px; position:relative; z-index:1; }
+  .hero h1 {
+    font-size:clamp(28px,5vw,48px);
+    background:linear-gradient(90deg,#fcd34d,#f97316,#ef4444,#ec4899);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:12px;
+  }
+  .hero p { color:#e2e8f0; font-size:17px; max-width:660px; margin:0 auto; line-height:1.9; }
+  .ver { color:#94a3b8; font-size:13px; margin-top:16px; direction:ltr; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; max-width:1100px; margin:20px auto; padding:10px 20px; position:relative; z-index:1; }
+  .card { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:20px; padding:24px; backdrop-filter:blur(10px); box-shadow:0 8px 32px rgba(0,0,0,.35); }
+  .card h2 { font-size:20px; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .card p.sub { color:#cbd5e1; font-size:14px; line-height:1.9; margin-bottom:12px; }
+
+  .btn {
+    background:linear-gradient(135deg,#f59e0b,#ef4444);
+    border:none; color:#fff; font-family:inherit; font-size:16px; font-weight:bold;
+    padding:12px 22px; border-radius:999px; cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+    box-shadow:0 4px 15px rgba(245,158,11,.4);
+  }
+  .btn:hover { transform:translateY(-2px) scale(1.03); box-shadow:0 6px 20px rgba(245,158,11,.55); }
+  .btn:active { transform:scale(.97); }
+  .btn.green { background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 4px 15px rgba(16,185,129,.4); }
+  .btn.blue { background:linear-gradient(135deg,#3b82f6,#8b5cf6); box-shadow:0 4px 15px rgba(59,130,246,.4); }
+
+  .output { margin-top:16px; background:rgba(0,0,0,.28); border-radius:14px; padding:18px; min-height:70px; font-size:17px; line-height:1.9; border:1px dashed rgba(255,255,255,.15); }
+  .pop { animation:pop .45s ease; }
+  @keyframes pop { 0%{transform:scale(.7); opacity:0;} 60%{transform:scale(1.05);} 100%{transform:scale(1); opacity:1;} }
+
+  /* ---------- کیک ---------- */
+  .cake-stage { position:relative; text-align:center; padding-top:10px; }
+  .cake-stage::before { content:''; position:absolute; top:30px; left:50%; transform:translateX(-50%); width:220px; height:180px; background:radial-gradient(circle,rgba(255,180,60,.25),transparent 70%); pointer-events:none; }
+  .cake { position:relative; height:150px; width:240px; margin:0 auto; }
+  .layer { position:absolute; border-radius:10px; left:50%; transform:translateX(-50%); }
+  .l3 { bottom:0; width:200px; height:48px; background:linear-gradient(#f9a8d4,#ec4899); box-shadow:inset 0 -6px rgba(0,0,0,.12); }
+  .l2 { bottom:40px; width:160px; height:48px; background:linear-gradient(#93c5fd,#3b82f6); box-shadow:inset 0 -6px rgba(0,0,0,.12); }
+  .l1 { bottom:80px; width:120px; height:48px; background:linear-gradient(#fcd34d,#f59e0b); box-shadow:inset 0 -6px rgba(0,0,0,.12); }
+  .l1::after { content:''; position:absolute; top:10px; left:8px; right:8px; height:5px; background:rgba(255,255,255,.55); border-radius:999px; }
+  .candles { position:absolute; bottom:128px; left:50%; transform:translateX(-50%); display:flex; z-index:6; }
+  .candle { position:relative; width:12px; height:42px; margin:0 12px; background:repeating-linear-gradient(45deg,#f472b6 0 6px,#fff 6px 12px); border-radius:4px; }
+  .candle::after { content:''; position:absolute; top:-4px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:6px solid #b45309; }
+  .flame {
+    position:absolute; top:-26px; left:50%; width:16px; height:22px; cursor:pointer; z-index:7;
+    transform:translateX(-50%);
+    background:radial-gradient(circle at 50% 70%, #fff7ae 0%, #ffd54f 35%, #ff8f00 70%, #ff5722 100%);
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation:flicker .18s infinite alternate;
+    transition:all .25s;
+  }
+  .flame.out { animation:none; transform:translateX(-50%) scale(.4); opacity:.55; }
+  @keyframes flicker { from { transform:translateX(-50%) rotate(-5deg) scaleY(1); } to { transform:translateX(-50%) rotate(5deg) scaleY(1.2); } }
+  .plate { width:260px; height:16px; background:linear-gradient(#e2e8f0,#94a3b8); border-radius:50%; margin:2px auto 0; box-shadow:0 6px 12px rgba(0,0,0,.3); }
+  .hint { margin-top:14px; color:#cbd5e1; font-size:14px; }
+  .cake-msg { margin-top:10px; font-size:18px; font-weight:bold; color:#fcd34d; min-height:28px; }
+
+  /* ---------- شمارش معکوس ---------- */
+  input[type=date] { background:rgba(0,0,0,.3); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:8px 12px; font-family:inherit; font-size:15px; width:100%; color-scheme:dark; }
+  .cd-row { font-size:24px; font-weight:bold; color:#fcd34d; text-align:center; margin-top:14px; min-height:36px; line-height:1.7; }
+
+  /* ---------- بازی ---------- */
+  .game-ui { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .game-ui span { background:rgba(0,0,0,.3); padding:6px 14px; border-radius:999px; font-size:15px; }
+  canvas { width:100%; max-width:600px; border-radius:14px; background:linear-gradient(180deg,#1e1b4b,#4c1d95); display:block; margin:12px auto 0; cursor:crosshair; touch-action:none; }
+  #gameMsg { margin-top:10px; text-align:center; font-size:16px; color:#fcd34d; min-height:24px; font-weight:bold; }
+
+  footer { text-align:center; padding:30px 20px 40px; color:#94a3b8; position:relative; z-index:1; font-size:14px; line-height:2; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🎉 تولدت مبارک، داداش! 🎉</h1>
+  <p>این یه پروژه‌ی رندمِ مخصوص تولدته — هیچ کاربرد خاصی نداره، فقط برای خندیدن و حال کردنه 😄</p>
+  <p class="ver">project: birthday-random v1.0 &bull; built with ❤️ on 2026-08-11</p>
+</header>
+
+<main class="grid">
+
+  <section class="card">
+    <h2>🎂 کیک مجازی</h2>
+    <p class="sub">روی هر شعله کلیک کن تا شمع‌ها رو فوت کنی و بعدش یه آرزو بکن!</p>
+    <div class="cake-stage">
+      <div class="cake">
+        <div class="candles">
+          <div class="candle"><div class="flame"></div></div>
+          <div class="candle"><div class="flame"></div></div>
+          <div class="candle"><div class="flame"></div></div>
+        </div>
+        <div class="layer l3"></div>
+        <div class="layer l2"></div>
+        <div class="layer l1"></div>
+      </div>
+      <div class="plate"></div>
+      <p class="hint">🖱️ روی شعله‌ها کلیک کن</p>
+      <p class="cake-msg" id="cakeMsg"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🎁 آرزوی رندم</h2>
+    <p class="sub">یه دکمه، یه آرزو! هر بار کلیک کنی یه آرزوی تازه می‌گیری.</p>
+    <button class="btn" onclick="giveWish()">🎁 یه آرزو بگیر</button>
+    <div class="output" id="wishOut">این‌جا آرزوت ظاهر می‌شه...</div>
+  </section>
+
+  <section class="card">
+    <h2>🔮 فال سال جدیدت</h2>
+    <p class="sub">رندم‌ترین فال ممکن برای رندم‌ترین سال زندگیت.</p>
+    <button class="btn green" onclick="giveFortune()">🔮 فالم رو بگیر</button>
+    <div class="output" id="fortuneOut">این‌جا فالت ظاهر می‌شه...</div>
+  </section>
+
+  <section class="card">
+    <h2>⏳ شمارش معکوس تولد</h2>
+    <p class="sub">تاریخ تولدت رو انتخاب کن تا ببینی چقدر مونده!</p>
+    <input type="date" id="bdDate">
+    <div class="cd-row" id="cd">در حال محاسبه...</div>
+  </section>
+
+  <section class="card">
+    <h2>🧠 حقیقت رندم</h2>
+    <p class="sub">یه حقیقت جالب و بی‌فایده که می‌تونی سر مهمونی بهش افتخار کنی.</p>
+    <button class="btn blue" onclick="giveFact()">🧠 یه حقیقت بگو</button>
+    <div class="output" id="factOut">این‌جا حقیقت ظاهر می‌شه...</div>
+  </section>
+
+  <section class="card">
+    <h2>🕹️ بازی: کادوها رو بگیر!</h2>
+    <p class="sub">با کلیدهای جهت‌دار یا ماوس، سبد رو ببر زیر کادوها. مواظب بمب‌ها باش! 💣</p>
+    <canvas id="game" width="600" height="400"></canvas>
+    <div class="game-ui">
+      <span>🏆 امتیاز: <b id="score">0</b></span>
+      <span>❤️ جان: <b id="lives">3</b></span>
+      <button class="btn" id="startBtn" onclick="startGame()">▶️ شروع بازی</button>
+    </div>
+    <p id="gameMsg"></p>
+  </section>
+
+</main>
+
+<footer>
+  ساخته شده با ❤️ مخصوص تولدت — دستیار هوشمندت 🎁<br>
+  نکته: کلید F12 رو بزن، یه سورپرایز توی کنسول هست 😉
+</footer>
+
+<script>
+/* ================= ستاره‌ها و کانفتی ================= */
+const colors = ['#ffd700','#ff6b6b','#4ecdc4','#a78bfa','#f9ca24','#ff8a5c'];
+function spawnConfetti(n){
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');
+    el.className='confetti';
+    el.style.left=Math.random()*100+'vw';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration=(3+Math.random()*4)+'s';
+    el.style.animationDelay=(Math.random()*3)+'s';
+    el.style.width=(6+Math.random()*8)+'px';
+    el.style.height=(10+Math.random()*10)+'px';
+    el.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    document.body.appendChild(el);
+  }
+}
+for(let i=0;i<60;i++){
+  const s=document.createElement('div');
+  s.className='star';
+  s.style.left=Math.random()*100+'%';
+  s.style.top=Math.random()*100+'%';
+  s.style.animationDelay=(Math.random()*3)+'s';
+  s.style.width=s.style.height=(1+Math.random()*2)+'px';
+  document.body.appendChild(s);
+}
+spawnConfetti(80);
+
+/* ================= صدا ================= */
+function beep(freq,dur,type='square'){
+  try{
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.05, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+
+/* ================= خروجی‌ها ================= */
+function showOutput(elId, text){
+  const el=document.getElementById(elId);
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  el.textContent=text;
+}
+
+/* ================= آرزوها ================= */
+const wishes=[
+  'امیدوارم سال جدیدت پر از کد بدون باگ باشه 🐞🚫',
+  'تولدت مبارک! امیدوارم کافئینت هیچ‌وقت تموم نشه ☕',
+  'امیدوارم فقط چیزایی که دوست داری توی فیدت بیاد 📱',
+  'امیدوارم وای‌فای زندگیت همیشه پرسرعت باشه 📶',
+  'امیدوارم باتری انرژیت هیچ‌وقت زیر ۲۰٪ نره 🔋',
+  'امیدوارم همه‌ی پروژه‌هات بدون کراش تموم شن 🚀',
+  'امیدوارم خوابهات شیرین‌تر از چیزبرگر باشه 🍔',
+  'امیدوارم کیف پولت همیشه به اندازه‌ی قلبت بزرگ باشه 💸',
+  'امیدوارم سفرهای زندگیت همیشه پنجره‌ی کنار صندلی باشه ✈️',
+  'امیدوارم هیچ‌وقت پیام «متن باز نشد» نگیری 😂',
+  'امیدوارم همیشه آخرین نفر صف نباشی 🎡',
+  'امیدوارم پیتزات هیچ‌وقت سرد نشه 🍕',
+  'امیدوارم آدمای دورت همیشه تو رو بخندونن 😄',
+  'امیدوارم ۳۶۵ روز بعدی، بهترین سال عمرت باشه 🌟',
+  'امیدوارم آرزوهات سریع‌تر از اینترنت 5G برآورده شن 🚀'
+];
+function giveWish(){ showOutput('wishOut', wishes[Math.floor(Math.random()*wishes.length)]); }
+
+/* ================= فال ================= */
+const fortunes=[
+  'امروز یه خبر خوب بهت می‌رسه؛ احتمالاً از طرف یه آدم باحال 📨',
+  'یه فرصت طلایی جلوی پاتئه؛ فقط کافیه بهش «بله» بگی 🗝️',
+  'امروز یه آدم جدید وارد زندگیت می‌شه که کلی چیز یادت می‌ده 🤝',
+  'یه پول غیرمنتظره بهت می‌رسه؛ خرجش نکن! 😎',
+  'امروز وقتشه اون کاری که دیر کردی رو بالاخره شروع کنی ⏰',
+  'یه تصمیم کوچیک امروز، یه تغییر بزرگ فردا می‌سازه 🌱',
+  'مواظب باش؛ امروز ممکنه سر یه سوپرمارکت یه چیزی بخری که بهش نیاز نداشتی 🛒',
+  'یه پیام از یه آدم قدیمی می‌گیری که حالت رو عوض می‌کنه 💬',
+  'امروز انرژی مثبتت بالاست؛ ازش استفاده کن! ⚡',
+  'نگران نباش؛ اون چیزی که منتظرشی، نزدیکه 🔮',
+  'امروز یه چیز جدید یاد می‌گیری که کلی به کارت میاد 🧠',
+  'شب یه خواب عجیب می‌بینی که صبح کلی بهش می‌خندی 😴'
+];
+function giveFortune(){ showOutput('fortuneOut', fortunes[Math.floor(Math.random()*fortunes.length)]); }
+
+/* ================= حقایق ================= */
+const facts=[
+  'زنبورها می‌تونن ساعت رو تشخیص بدن 🐝',
+  'قلب میگو توی سرشه 🦐',
+  'اختاپوس سه تا قلبه 🐙',
+  'عسل هیچ‌وقت خراب نمی‌شه 🍯',
+  'فلامینگوها فقط با سر پایین می‌تونن غذا بخورن 🦩',
+  'نوزاد کانگورو به اندازه‌ی یه لوبیاست 🦘',
+  'موزها کمی رادیواکتیون 🍌',
+  'سگ‌ها می‌تونن بیماری رو بو بکشن 🐶',
+  'بارون روی مشتری از الماس ساخته می‌شه 💎',
+  'فیل‌ها تنها حیووناییان که نمی‌تونن بپرن 🐘',
+  'طول رگ‌های بدن یه آدم بالغ حدود ۱۰۰٬۰۰۰ کیلومتره 🫀',
+  'چشم شترمرغ از مغزش بزرگ‌تره 🪶'
+];
+function giveFact(){ showOutput('factOut', facts[Math.floor(Math.random()*facts.length)]); }
+
+/* ================= کیک و شمع ================= */
+let blown=0;
+document.querySelectorAll('.flame').forEach(f=>{
+  f.addEventListener('click',()=>{
+    if(f.classList.contains('out')) return;
+    f.classList.add('out');
+    f.textContent='💨';
+    blown++;
+    beep(600,0.12);
+    if(blown===3){
+      document.getElementById('cakeMsg').textContent='🎉 هورااا! یه آرزو کن! 🎉';
+      spawnConfetti(25);
+      giveWish();
+      beep(880,0.15); setTimeout(()=>beep(1100,0.2),150);
+    }
+  });
+});
+
+/* ================= شمارش معکوس ================= */
+function getTomorrow(){
+  const d=new Date();
+  d.setDate(d.getDate()+1);
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+m+'-'+day;
+}
+const bdInput=document.getElementById('bdDate');
+bdInput.value=getTomorrow();
+let target=new Date(bdInput.value+'T00:00:00');
+bdInput.addEventListener('change',()=>{ target=new Date(bdInput.value+'T00:00:00'); });
+setInterval(()=>{
+  const diff=target-new Date();
+  if(diff<0){ document.getElementById('cd').innerHTML='🎉 امروز روز توئه! تولدت مبارک! 🎉'; return; }
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor(diff%86400000/3600000);
+  const m=Math.floor(diff%3600000/60000);
+  const s=Math.floor(diff%60000/1000);
+  document.getElementById('cd').innerHTML=d+' روز و '+h+' ساعت و '+m+' دقیقه و '+s+' ثانیه';
+},1000);
+
+/* ================= بازی کادو ================= */
+const cv=document.getElementById('game');
+const ctx=cv.getContext('2d');
+let gameOn=false, score=0, lives=3, gifts=[], lastSpawn=0, basketX=300;
+const EMOJIS=['🎁','🎈','🍬','🧁','💎'];
+const BOMB='💣';
+
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('lives').textContent=lives;
+}
+function spawnGift(){
+  const isBomb=Math.random()<0.22;
+  gifts.push({
+    x:Math.random()*560+20,
+    y:-30,
+    vy:(isBomb?2.2:1.4)+Math.random()*2,
+    type:isBomb?BOMB:EMOJIS[Math.floor(Math.random()*EMOJIS.length)]
+  });
+}
+function loop(t){
+  if(!gameOn) return;
+  ctx.clearRect(0,0,600,400);
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fillRect(0,355,600,45);
+  ctx.font='14px serif'; ctx.textAlign='center'; ctx.fillStyle='#a5b4fc';
+  ctx.fillText('— اینجا خط بگیر —',300,390);
+  if(t-lastSpawn>650){ spawnGift(); lastSpawn=t; }
+  for(let i=gifts.length-1;i>=0;i--){
+    const g=gifts[i];
+    g.y+=g.vy;
+    ctx.font='28px serif'; ctx.textAlign='center';
+    ctx.fillText(g.type,g.x,g.y);
+    if(g.y>=350 && Math.abs(g.x-basketX)<45){
+      if(g.type===BOMB){ lives--; beep(120,0.3,'sawtooth'); }
+      else { score++; beep(880,0.12); }
+      gifts.splice(i,1);
+      updateHUD();
+      if(lives<=0){ gameOver(); return; }
+      continue;
+    }
+    if(g.y>410){ gifts.splice(i,1); }
+  }
+  ctx.font='40px serif';
+  ctx.fillText('🧺',basketX,378);
+  requestAnimationFrame(loop);
+}
+function startGame(){
+  score=0; lives=3; gifts=[]; gameOn=true;
+  updateHUD();
+  document.getElementById('startBtn').textContent='🔄 دوباره';
+  document.getElementById('gameMsg').textContent='';
+  beep(700,0.1);
+  requestAnimationFrame(loop);
+}
+function gameOver(){
+  gameOn=false;
+  document.getElementById('gameMsg').textContent='💥 بازی تموم شد! امتیاز نهایی: '+score+' — دفعه‌ی بعد بیشتر بگیر!';
+  beep(200,0.4,'sawtooth');
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') basketX=Math.max(20,basketX-25);
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') basketX=Math.min(580,basketX+25);
+});
+cv.addEventListener('mousemove',e=>{
+  const r=cv.getBoundingClientRect();
+  basketX=((e.clientX-r.left)/r.width)*600;
+});
+cv.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  const r=cv.getBoundingClientRect();
+  basketX=((t.clientX-r.left)/r.width)*600;
+  e.preventDefault();
+},{passive:false});
+
+/* ================= ایستر اگ ================= */
+console.log('%c🎂 تولدت مبارک داداش! 🎂','font-size:26px; color:#f59e0b; font-weight:bold;');
+console.log('%cاین پروژه‌ی رندم فقط برای تو ساخته شده 😎','font-size:14px; color:#a78bfa;');
+console.log('پ.ن: اگه کیک رو فوت نکردی، برگرد و فوتش کن 🕯️');
+</script>
+</body>
+</html>
+'''
+
+with open('/mnt/data/birthday_random_project.html','w',encoding='utf-8') as f:
+    f.write(html)
+
+import os
+print('OK — size:', os.path.getsize('/mnt/data/birthday_random_project.html'), 'bytes')

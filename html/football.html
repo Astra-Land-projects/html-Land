@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra AI Football</title>
+<style>
+body{margin:0;background:#07140c;color:white;font-family:Arial;text-align:center}
+#game{width:min(950px,96vw);margin:20px auto}
+canvas{width:100%;background:#24783b;border:3px solid white;border-radius:12px}
+button{padding:10px 18px;margin:5px;border-radius:8px;border:0}
+</style>
+</head>
+<body>
+<div id="game">
+<h1>⚽ ASTRA AI FOOTBALL</h1>
+<div>🔵 <b id="a">0</b> — <b id="b">0</b> 🔴 | ⏱️ <b id="time">90</b></div>
+<canvas id="c" width="950" height="520"></canvas>
+<button onclick="restart()">🔄 Restart</button>
+<p>WASD / Arrows = Move | SPACE = Kick</p>
+</div>
+
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d");
+const W=950,H=520;
+
+let keys={},scoreA=0,scoreB=0,time=90,over=false,last=0;
+
+let me,ball,players;
+
+function restart(){
+scoreA=scoreB=0;time=90;over=false;
+me={x:260,y:260};
+ball={x:475,y:260,vx:0,vy:0};
+players=[
+  {x:260,y:260,team:0,user:true},
+  {x:330,y:160,team:0},
+  {x:330,y:360,team:0},
+  {x:650,y:180,team:1},
+  {x:650,y:340,team:1},
+  {x:720,y:260,team:1}
+];
+}
+onkeydown=e=>keys[e.key.toLowerCase()]=true;
+onkeyup=e=>keys[e.key.toLowerCase()]=false;
+
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function move(p,tx,ty,s){
+let dx=tx-p.x,dy=ty-p.y,l=Math.hypot(dx,dy)||1;
+p.x+=dx/l*s;p.y+=dy/l*s;
+p.x=Math.max(25,Math.min(W-25,p.x));
+p.y=Math.max(35,Math.min(H-35,p.y));
+}
+function kick(){
+if(dist(me,ball)<55){
+  let dx=ball.x-me.x,dy=ball.y-me.y,l=Math.hypot(dx,dy)||1;
+  ball.vx=dx/l*9;ball.vy=dy/l*9;
+}
+}
+function update(){
+if(over)return;
+
+if(keys.w||keys.arrowup)me.y-=4;
+if(keys.s||keys.arrowdown)me.y+=4;
+if(keys.a||keys.arrowleft)me.x-=4;
+if(keys.d||keys.arrowright)me.x+=4;
+
+me.x=Math.max(25,Math.min(W-25,me.x));
+me.y=Math.max(35,Math.min(H-35,me.y));
+
+players[0].x=me.x;players[0].y=me.y;
+
+if(keys[" "]||keys.space)kick();
+
+let nearest=players.reduce((p,q)=>
+  dist(q,ball)<dist(p,ball)?q:p);
+
+players.forEach(p=>{
+  if(p.user)return;
+
+  if(p.team===1){
+   // AI opponent follows ball
+   move(p,ball.x,ball.y,1.6);
+   if(dist(p,ball)<35){
+    let targetX=p.team?0:W;
+    ball.vx+=(targetX-ball.x>0?2:-2);
+    ball.vy+=(260-ball.y)*.01;
+   }
+  }else{
+   // AI teammate supports attack
+   move(p,ball.x-50+(p.y<260?0:20),p.y,1.1);
+  }
+});
+
+ball.x+=ball.vx;ball.y+=ball.vy;
+ball.vx*=.985;ball.vy*=.985;
+
+if(ball.y<25||ball.y>495)ball.vy*=-1;
+
+// steal
+players.forEach(p=>{
+  if(!p.user&&dist(p,ball)<25){
+   ball.x+=p.team?1:-1;
+  }
+});
+
+if(ball.x<0){
+  scoreB++;resetBall();
+}
+if(ball.x>W){
+  scoreA++;resetBall();
+}
+
+time-=1/60;
+if(time<=0){time=0;over=true}
+
+document.getElementById("a").textContent=scoreA;
+document.getElementById("b").textContent=scoreB;
+document.getElementById("time").textContent=time|0;
+}
+function resetBall(){
+ball={x:475,y:260,vx:0,vy:0};
+me.x=260;me.y=260;
+players[0].x=260;players[0].y=260;
+}
+
+function draw(){
+x.clearRect(0,0,W,H);
+
+x.strokeStyle="white";x.lineWidth=3;
+x.strokeRect(15,25,920,470);
+x.beginPath();x.moveTo(475,25);x.lineTo(475,495);x.stroke();
+x.beginPath();x.arc(475,260,70,0,Math.PI*2);x.stroke();
+
+// goals
+x.strokeRect(0,190,15,140);
+x.strokeRect(935,190,15,140);
+
+players.forEach(p=>{
+  x.fillStyle=p.team===0?"#2388ff":"#ed3f4f";
+  x.beginPath();x.arc(p.x,p.y,18,0,Math.PI*2);x.fill();
+  if(p.user){
+   x.strokeStyle="white";x.stroke();
+  }
+});
+
+x.font="30px Arial";x.fillText("⚽",ball.x-15,ball.y+10);
+
+if(over){
+  x.fillStyle="#0009";x.fillRect(0,0,W,H);
+  x.fillStyle="white";x.textAlign="center";
+  x.font="bold 42px Arial";
+  x.fillText(scoreA>scoreB?"YOU WIN!":scoreA<scoreB?"AI WINS!":"DRAW!",475,250);
+  x.textAlign="left";
+}
+}
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+restart();loop();
+</script>
+</body>
+</html>

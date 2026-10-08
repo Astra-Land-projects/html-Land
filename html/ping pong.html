@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Pong</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+body{margin:0;min-height:100vh;background:#080812;color:white;font-family:Arial;display:grid;place-items:center}
+#box{width:min(850px,96vw);text-align:center}
+h1{color:#b98cff}
+canvas{width:100%;background:#08080f;border:2px solid #7146a8;border-radius:14px}
+.info{font-size:18px;padding:8px}
+button{padding:11px 22px;margin:5px;background:#211537;color:white;border:1px solid #68429b;border-radius:8px;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="box">
+<h1>🏓 ASTRA PONG</h1>
+<div class="info">
+YOU <span id="you">0</span>
+&nbsp;&nbsp;—&nbsp;&nbsp;
+AI <span id="ai">0</span>
+</div>
+<canvas id="c" width="800" height="450"></canvas>
+<button onclick="restart()">🔄 Restart</button>
+<p>W/S یا ↑/↓ برای حرکت</p>
+</div>
+
+<script>
+const c=document.getElementById("c"),ctx=c.getContext("2d");
+const W=800,H=450;
+
+let keys={},game=true;
+let player={x:25,y:180,w:15,h:90,s:7};
+let cpu={x:760,y:180,w:15,h:90,s:4.5};
+let ball,scoreP=0,scoreC=0;
+
+function resetBall(dir=1){
+ball={
+  x:W/2,
+  y:H/2,
+  vx:dir*(5+Math.random()*2),
+  vy:(Math.random()-.5)*6,
+  r:9
+};
+}
+
+function restart(){
+scoreP=0;
+scoreC=0;
+player.y=180;
+cpu.y=180;
+game=true;
+resetBall(Math.random()>0.5?1:-1);
+}
+
+onkeydown=e=>keys[e.key.toLowerCase()]=true;
+onkeyup=e=>keys[e.key.toLowerCase()]=false;
+
+function collision(a,b){
+return a.x<a.x+a.w &&
+        ball.x+ball.r>b.x &&
+        ball.x-ball.r<b.x+b.w &&
+        ball.y+ball.r>b.y &&
+        ball.y-ball.r<b.y+b.h;
+}
+
+function update(){
+if(!game)return;
+
+if(keys.w||keys.arrowup)player.y-=player.s;
+if(keys.s||keys.arrowdown)player.y+=player.s;
+
+player.y=Math.max(0,Math.min(H-player.h,player.y));
+
+let target=ball.y-cpu.h/2;
+if(cpu.y<target)cpu.y+=cpu.s;
+if(cpu.y>target)cpu.y-=cpu.s;
+
+cpu.y=Math.max(0,Math.min(H-cpu.h,cpu.y));
+
+ball.x+=ball.vx;
+ball.y+=ball.vy;
+
+if(ball.y-ball.r<0||ball.y+ball.r>H)
+  ball.vy*=-1;
+
+if(
+  ball.x-ball.r<player.x+player.w &&
+  ball.x+ball.r>player.x &&
+  ball.y>player.y &&
+  ball.y<player.y+player.h &&
+  ball.vx<0
+){
+  ball.vx=Math.abs(ball.vx)+.2;
+  ball.vy+=(ball.y-(player.y+player.h/2))/15;
+}
+
+if(
+  ball.x+ball.r>cpu.x &&
+  ball.x-ball.r<cpu.x+cpu.w &&
+  ball.y>cpu.y &&
+  ball.y<cpu.y+cpu.h &&
+  ball.vx>0
+){
+  ball.vx=-Math.abs(ball.vx)-.2;
+  ball.vy+=(ball.y-(cpu.y+cpu.h/2))/15;
+}
+
+if(ball.x<0){
+  scoreC++;
+  resetBall(1);
+}
+
+if(ball.x>W){
+  scoreP++;
+  resetBall(-1);
+}
+
+if(scoreP>=10||scoreC>=10)
+  game=false;
+
+document.getElementById("you").textContent=scoreP;
+document.getElementById("ai").textContent=scoreC;
+}
+
+function draw(){
+ctx.fillStyle="#08080f";
+ctx.fillRect(0,0,W,H);
+
+ctx.strokeStyle="#332344";
+ctx.setLineDash([10,15]);
+ctx.beginPath();
+ctx.moveTo(W/2,0);
+ctx.lineTo(W/2,H);
+ctx.stroke();
+ctx.setLineDash([]);
+
+ctx.fillStyle="#b98cff";
+ctx.fillRect(player.x,player.y,player.w,player.h);
+
+ctx.fillStyle="#ff647c";
+ctx.fillRect(cpu.x,cpu.y,cpu.w,cpu.h);
+
+ctx.fillStyle="#fff";
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ctx.fill();
+
+if(!game){
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+  ctx.fillStyle="#fff";
+  ctx.font="bold 42px Arial";
+  ctx.fillText(
+   scoreP>scoreC?"YOU WIN!":"AI WINS!",
+   W/2,H/2
+  );
+
+  ctx.font="18px Arial";
+  ctx.fillText(
+   "Press Restart",
+   W/2,H/2+40
+  );
+}
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+</script>
+</body>
+</html>

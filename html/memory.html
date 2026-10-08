@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Memory</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+min-height:100vh;
+background:radial-gradient(circle,#251b3d,#08070d);
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center
+}
+
+#box{
+width:min(700px,95vw);
+text-align:center
+}
+
+h1{
+color:#c79aff
+}
+
+#info{
+margin:10px;
+}
+
+#board{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+}
+
+.card{
+aspect-ratio:1;
+border:1px solid #64498a;
+border-radius:12px;
+background:#171123;
+display:grid;
+place-items:center;
+font-size:35px;
+cursor:pointer;
+transition:.2s;
+}
+
+.card:hover{
+transform:scale(1.03);
+}
+
+.card.open{
+background:#39275a;
+}
+
+.card.matched{
+background:#24533d;
+}
+
+button{
+padding:11px 22px;
+margin:12px;
+border:0;
+border-radius:8px;
+background:#2a1c40;
+color:white;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="box">
+
+<h1>🧠 ASTRA MEMORY</h1>
+
+<div id="info">
+Moves: <span id="moves">0</span>
+&nbsp; | &nbsp;
+Pairs: <span id="pairs">0</span>/8
+</div>
+
+<div id="board"></div>
+
+<button onclick="restart()">🔄 Restart</button>
+
+</div>
+
+<script>
+
+const board=document.getElementById("board");
+
+const icons=[
+"🚀","🏎️","👾","🐉",
+"⚔️","🪐","🔥","💎"
+];
+
+let cards=[];
+let first=null;
+let second=null;
+let lock=false;
+let moves=0;
+let pairs=0;
+
+function shuffle(arr){
+return arr.sort(()=>Math.random()-.5);
+}
+
+function restart(){
+
+cards=[];
+first=null;
+second=null;
+lock=false;
+moves=0;
+pairs=0;
+
+const deck=
+shuffle([...icons,...icons]);
+
+deck.forEach(icon=>{
+
+  const card=document.createElement("div");
+
+  card.className="card";
+  card.dataset.icon=icon;
+
+  card.innerHTML="❓";
+
+  card.onclick=()=>flip(card);
+
+  board.appendChild(card);
+
+  cards.push(card);
+});
+
+updateUI();
+}
+
+function flip(card){
+
+if(
+  lock ||
+  card===first ||
+  card.classList.contains("matched")
+)return;
+
+card.classList.add("open");
+card.innerHTML=card.dataset.icon;
+
+if(!first){
+
+  first=card;
+  return;
+}
+
+second=card;
+lock=true;
+moves++;
+
+if(first.dataset.icon===second.dataset.icon){
+
+  first.classList.add("matched");
+  second.classList.add("matched");
+
+  pairs++;
+
+  resetTurn();
+
+}else{
+
+  setTimeout(()=>{
+
+   first.classList.remove("open");
+   second.classList.remove("open");
+
+   first.innerHTML="❓";
+   second.innerHTML="❓";
+
+   resetTurn();
+
+  },650);
+}
+
+updateUI();
+}
+
+function resetTurn(){
+
+first=null;
+second=null;
+lock=false;
+
+updateUI();
+}
+
+function updateUI(){
+
+document.getElementById("moves").textContent=moves;
+document.getElementById("pairs").textContent=pairs;
+
+if(pairs===8){
+
+  setTimeout(()=>{
+
+   alert(
+    `🎉 You Win!\nMoves: ${moves}`
+   );
+
+  },100);
+}
+}
+
+restart();
+
+</script>
+
+</body>
+</html>

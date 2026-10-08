@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Evolution World</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    background:#07111f;
+    color:#eaf4ff;
+    font-family:Arial,sans-serif;
+    overflow:hidden
+}
+header{
+    height:64px;
+    background:#0b1829;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    border-bottom:1px solid #20334d
+}
+h1{
+    margin:0;
+    font-size:21px;
+    letter-spacing:1px
+}
+button{
+    background:#162b44;
+    color:white;
+    border:1px solid #315274;
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer
+}
+button:hover{background:#204363}
+
+.main{
+    height:calc(100vh - 64px);
+    display:grid;
+    grid-template-columns:1fr 290px
+}
+.world{
+    position:relative;
+    background:#102b25;
+    overflow:hidden
+}
+canvas{
+    width:100%;
+    height:100%;
+    display:block
+}
+.panel{
+    background:#0b1829;
+    border-left:1px solid #20334d;
+    padding:18px;
+    overflow:auto
+}
+.stat{
+    background:#101f32;
+    padding:12px;
+    border-radius:9px;
+    margin-bottom:10px
+}
+.label{
+    color:#8ca4be;
+    font-size:12px
+}
+.value{
+    font-size:22px;
+    margin-top:4px
+}
+.controls{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:15px
+}
+canvas#chart{
+    background:#091522;
+    border-radius:8px;
+    width:100%;
+    height:150px
+}
+.legend{
+    font-size:12px;
+    color:#9eb1c6;
+    line-height:1.8
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🌍 EVOLUTION WORLD</h1>
+
+<div class="controls">
+<button onclick="toggle()">▶ / ⏸</button>
+<button onclick="resetWorld()">↻ Reset</button>
+<button onclick="speed(-1)">Speed −</button>
+<button onclick="speed(1)">Speed +</button>
+</div>
+</header>
+
+<div class="main">
+
+<div class="world">
+<canvas id="world"></canvas>
+</div>
+
+<div class="panel">
+
+<div class="stat">
+<div class="label">GENERATION</div>
+<div class="value" id="generation">1</div>
+</div>
+
+<div class="stat">
+<div class="label">POPULATION</div>
+<div class="value" id="population">0</div>
+</div>
+
+<div class="stat">
+<div class="label">FOOD</div>
+<div class="value" id="food">0</div>
+</div>
+
+<div class="stat">
+<div class="label">AVERAGE SPEED</div>
+<div class="value" id="avgSpeed">0</div>
+</div>
+
+<div class="stat">
+<div class="label">BEST FITNESS</div>
+<div class="value" id="fitness">0</div>
+</div>
+
+<h3>Population</h3>
+<canvas id="chart"></canvas>
+
+<h3>Species</h3>
+<div class="legend">
+🔵 Herbivores<br>
+🔴 Predators<br>
+🟢 Food<br>
+</div>
+
+</div>
+</div>
+
+<script>
+
+const canvas=document.getElementById("world");
+const ctx=canvas.getContext("2d");
+
+const chart=document.getElementById("chart");
+const cctx=chart.getContext("2d");
+
+let W,H;
+let running=true;
+let speedValue=1;
+let generation=1;
+let populationHistory=[];
+
+let creatures=[];
+let foods=[];
+
+function resize(){
+    W=canvas.width=canvas.clientWidth*devicePixelRatio;
+    H=canvas.height=canvas.clientHeight*devicePixelRatio;
+
+    chart.width=chart.clientWidth*devicePixelRatio;
+    chart.height=chart.clientHeight*devicePixelRatio;
+}
+
+window.addEventListener("resize",resize);
+resize();
+
+class Creature{
+
+    constructor(x,y,parent=null,predator=false){
+
+        this.x=x;
+        this.y=y;
+
+        this.predator=predator;
+
+        this.age=0;
+        this.energy=parent ? parent.energy*0.5 : 70;
+
+        this.speed=parent
+            ? Math.max(.5,parent.speed+(Math.random()-.5)*.5)
+            : .8+Math.random()*1.5;
+
+        this.size=parent
+            ? Math.max(3,parent.size+(Math.random()-.5)*1)
+            : 4+Math.random()*3;
+
+        this.sense=parent
+            ? Math.max(20,parent.sense+(Math.random()-.5)*10)
+            : 50+Math.random()*50;
+
+        this.fitness=0;
+    }
+
+    update(){
+
+        this.age++;
+        this.energy-=0.035*this.speed;
+
+        let target=null;
+        let best=Infinity;
+
+        if(this.predator){
+
+            for(const c of creatures){
+
+                if(c===this || c.predator) continue;
+
+                const d=dist(this,c);
+
+                if(d<this.sense && d<best){
+                    best=d;
+                    target=c;
+                }
+            }
+
+        }else{
+
+            for(const f of foods){
+
+                const d=dist(this,f);
+
+                if(d<this.sense && d<best){
+                    best=d;
+                    target=f;
+                }
+            }
+        }
+
+        if(target){
+
+            let dx=target.x-this.x;
+            let dy=target.y-this.y;
+            let d=Math.hypot(dx,dy);
+
+            if(d>0){
+                this.x+=(dx/d)*this.speed*speedValue;
+                this.y+=(dy/d)*this.speed*speedValue;
+            }
+
+        }else{
+
+            this.x+=(Math.random()-.5)*this.speed*speedValue;
+            this.y+=(Math.random()-.5)*this.speed*speedValue;
+
+        }
+
+        if(this.x<0)this.x=W;
+        if(this.x>W)this.x=0;
+        if(this.y<0)this.y=H;
+        if(this.y>H)this.y=0;
+
+        this.fitness=this.age+this.energy;
+
+    }
+
+}
+
+function dist(a,b){
+    return Math.hypot(a.x-b.x,a.y-b.y);
+}
+
+function spawnFood(){
+
+    for(let i=0;i<2*speedValue;i++){
+
+        foods.push({
+            x:Math.random()*W,
+            y:Math.random()*H,
+            size:2+Math.random()*2
+        });
+
+    }
+}
+
+function init(){
+
+    creatures=[];
+    foods=[];
+
+    for(let i=0;i<70;i++)
+        creatures.push(new Creature(Math.random()*W,Math.random()*H));
+
+    for(let i=0;i<200;i++)
+        spawnFood();
+
+}
+
+function update(){
+
+    if(!running)return;
+
+    for(let n=0;n<speedValue;n++){
+
+        spawnFood();
+
+        for(const c of creatures)c.update();
+
+        // eat food
+        for(const c of creatures){
+
+            if(c.predator)continue;
+
+            for(let i=foods.length-1;i>=0;i--){
+
+                if(dist(c,foods[i])<c.size+foods[i].size){
+
+                    c.energy+=25;
+                    foods.splice(i,1);
+                    break;
+
+                }
+            }
+
+        }
+
+        // predators hunt
+        for(const p of creatures){
+
+            if(!p.predator)continue;
+
+            for(let i=creatures.length-1;i>=0;i--){
+
+                const prey=creatures[i];
+
+                if(prey===p || prey.predator)continue;
+
+                if(dist(p,prey)<p.size+prey.size){
+
+                    p.energy+=50;
+                    creatures.splice(i,1);
+                    break;
+
+                }
+
+            }
+
+        }
+
+        // reproduction
+        const newborn=[];
+
+        for(const c of creatures){
+
+            if(c.energy>130 && Math.random()<0.004){
+
+                c.energy*=0.5;
+
+                newborn.push(
+                    new Creature(
+                        c.x+Math.random()*10-5,
+                        c.y+Math.random()*10-5,
+                        c,
+                        c.predator
+                    )
+                );
+
+            }
+
+        }
+
+        creatures.push(...newborn);
+
+        // occasional predators
+        if(Math.random()<0.001 && creatures.length>20){
+
+            const c=creatures[Math.floor(Math.random()*creatures.length)];
+
+            if(!c.predator){
+                c.predator=true;
+                c.speed*=1.25;
+                c.size*=1.3;
+            }
+
+        }
+
+        creatures=creatures.filter(c=>c.energy>0 && c.age<2500);
+
+        if(creatures.length===0){
+            init();
+            generation++;
+        }
+
+    }
+
+    if(Math.random()<0.02){
+
+        generation++;
+        populationHistory.push(creatures.length);
+
+        if(populationHistory.length>100)
+            populationHistory.shift();
+
+    }
+
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,W,H);
+
+    // grass-like background
+    ctx.fillStyle="#102b25";
+    ctx.fillRect(0,0,W,H);
+
+    // food
+    for(const f of foods){
+
+        ctx.fillStyle="#39d98a";
+        ctx.beginPath();
+        ctx.arc(f.x,f.y,f.size,0,Math.PI*2);
+        ctx.fill();
+
+    }
+
+    // creatures
+    for(const c of creatures){
+
+        ctx.fillStyle=c.predator?"#ff4f5e":"#4ca6ff";
+
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,c.size,0,Math.PI*2);
+        ctx.fill();
+
+        if(c.energy>110){
+
+            ctx.strokeStyle="rgba(255,255,255,.25)";
+            ctx.beginPath();
+            ctx.arc(c.x,c.y,c.size+3,0,Math.PI*2);
+            ctx.stroke();
+
+        }
+
+    }
+
+    drawChart();
+
+    document.getElementById("generation").textContent=generation;
+    document.getElementById("population").textContent=creatures.length;
+    document.getElementById("food").textContent=foods.length;
+
+    let avg=creatures.reduce((a,c)=>a+c.speed,0)/(creatures.length||1);
+
+    document.getElementById("avgSpeed").textContent=avg.toFixed(2);
+
+    let best=Math.max(...creatures.map(c=>c.fitness),0);
+
+    document.getElementById("fitness").textContent=Math.round(best);
+
+}
+
+function drawChart(){
+
+    const w=chart.width;
+    const h=chart.height;
+
+    cctx.clearRect(0,0,w,h);
+
+    if(populationHistory.length<2)return;
+
+    cctx.beginPath();
+
+    populationHistory.forEach((v,i)=>{
+
+        const x=i/(populationHistory.length-1)*w;
+
+        const max=Math.max(...populationHistory,100);
+
+        const y=h-(v/max)*h;
+
+        if(i===0)cctx.moveTo(x,y);
+        else cctx.lineTo(x,y);
+
+    });
+
+    cctx.strokeStyle="#4ca6ff";
+    cctx.lineWidth=2;
+    cctx.stroke();
+
+}
+
+function loop(){
+
+    update();
+    draw();
+
+    requestAnimationFrame(loop);
+
+}
+
+function toggle(){
+    running=!running;
+}
+
+function speed(v){
+
+    speedValue=Math.max(1,Math.min(10,speedValue+v));
+
+}
+
+function resetWorld(){
+
+    generation=1;
+    populationHistory=[];
+    init();
+
+}
+
+init();
+loop();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STICKER LIVE</title>
+<style>
+*{box-sizing:border-box}body{margin:0;height:100vh;overflow:hidden;font-family:system-ui,Tahoma;background:radial-gradient(circle,#273653,#090d18 70%);color:#fff}
+header{height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;background:#080c17dd;border-bottom:1px solid #ffffff18}
+.logo{font-size:22px;font-weight:900;letter-spacing:2px}.logo b{color:#8c9cff}.hint{font-size:12px;color:#aab4ca}
+.stage{height:calc(100vh - 190px);min-height:300px;display:grid;place-items:center;position:relative}
+.ring{position:absolute;width:310px;height:310px;border:1px solid #ffffff12;border-radius:50%}
+#emoji{font-size:180px;line-height:1;filter:drop-shadow(0 18px 28px #0009);user-select:none;transition:font-size .2s}
+.panel{height:126px;padding:12px 16px;background:#070b14f5;border-top:1px solid #ffffff14}
+.label{text-align:right;font-size:12px;color:#aeb8cc;margin-bottom:8px}
+.picker{display:flex;gap:8px;overflow-x:auto;direction:ltr;padding-bottom:5px}
+.picker::-webkit-scrollbar{height:5px}.picker::-webkit-scrollbar-thumb{background:#ffffff25;border-radius:9px}
+.btn{flex:0 0 52px;height:52px;border:1px solid #ffffff15;border-radius:14px;background:#ffffff0c;font-size:28px;cursor:pointer}
+.btn:hover{background:#ffffff20;transform:translateY(-2px)}.btn.active{background:#5267d9aa;border-color:#9aa6ff;box-shadow:0 0 18px #5267d955}
+#name{text-align:center;font-size:11px;color:#b9c2d5;margin-top:4px}
+@media(max-width:600px){header{height:55px}.hint{display:none}.stage{height:calc(100vh - 175px)}#emoji{font-size:125px}.ring{width:225px;height:225px}.panel{height:120px}.btn{flex-basis:48px;height:48px;font-size:25px}}
+</style>
+</head>
+<body>
+<header><div class="logo">STICKER <b>LIVE</b></div><div class="hint">یک ایموجی انتخاب کن ✨</div></header>
+<main class="stage"><div class="ring"></div><div id="emoji">❤️</div></main>
+<section class="panel"><div class="label">ایموجی را انتخاب کن</div><div class="picker" id="picker"></div><div id="name">قلب — ضربان</div></section>
+<script>
+const data=[
+["❤️","قلب","heart"],["😂","خنده","laugh"],["🤣","خنده شدید","laugh"],["😍","عاشق","heart"],["😘","بوسه","kiss"],["🥰","ذوق","cute"],["😭","گریه","sad"],["😢","غمگین","sad"],["😡","عصبانی","angry"],["😱","ترس","shock"],["😎","باحال","cool"],["🤔","فکر","think"],["🙄","چشم‌غره","eye"],["😴","خواب","sleep"],["🤯","انفجار ذهن","mind"],["🤩","هیجان","star"],["🥳","جشن","party"],["😇","فرشته","angel"],["🤪","دیوانه","crazy"],["😏","لبخند","smirk"],["😮","تعجب","shock"],["😐","بی‌تفاوت","neutral"],["😵","سرگیجه","dizzy"],["🤨","شک","sus"],["🗿","موآی","moai"],["👍","لایک","up"],["👎","دیس‌لایک","down"],["👏","دست زدن","clap"],["🙌","دست‌ها بالا","hands"],["🙏","دعا","pray"],["👋","سلام","wave"],["🤝","دست دادن","shake"],["💪","قدرت","muscle"],["✌️","پیروزی","peace"],["👌","اوکی","ok"],["👀","چشم‌ها","eyes"],["🔥","آتش","fire"],["⭐","ستاره","star"],["💯","صد","hundred"],["🎉","جشن","party"],["💔","قلب شکسته","broken"],["💩","پوپ","poop"],["🤡","دلقک","clown"],["👻","روح","ghost"]
+];
+const picker=document.getElementById("picker"),emoji=document.getElementById("emoji"),name=document.getElementById("name");
+let type="heart",t=0;
+data.forEach((d,i)=>{let b=document.createElement("button");b.className="btn"+(!i?" active":"");b.textContent=d[0];b.title=d[1];b.onclick=()=>{document.querySelectorAll(".btn").forEach(q=>q.classList.remove("active"));b.classList.add("active");emoji.textContent=d[0];name.textContent=d[1];type=d[2]};picker.appendChild(b)});
+function loop(){
+ t+=.045;let x=0,y=0,r=0,s=1;
+ const wave=(speed,amp)=>Math.sin(t*speed)*amp;
+ if(type==="heart"){s=1+.11*Math.sin(t*3);r=wave(3,2)}
+ else if(type==="laugh"){y=Math.abs(wave(7,6));r=wave(7,3);s=1+.04*Math.abs(Math.sin(t*7))}
+ else if(type==="kiss"){x=wave(4,7);y=-Math.abs(wave(2,4));r=wave(4,4)}
+ else if(type==="cute"){y=wave(3,4);s=1+.04*Math.sin(t*3)}
+ else if(type==="sad"){y=wave(2,5);r=wave(2,2)}
+ else if(type==="angry"){x=wave(13,5);r=wave(13,3)}
+ else if(type==="shock"||type==="mind"){s=1+.08*Math.sin(t*5);r=wave(5,4)}
+ else if(type==="cool"){x=wave(2,4);r=wave(2,5)}
+ else if(type==="think"||type==="smirk"||type==="sus"){x=wave(2,5);r=wave(2,4)}
+ else if(type==="eye"||type==="eyes"){x=wave(2,10)}
+ else if(type==="sleep"){y=wave(1.7,5);s=1+.025*Math.sin(t*1.7)}
+ else if(type==="star"){s=1+.12*Math.sin(t*4);r=wave(4,8)}
+ else if(type==="party"||type==="clap"){y=Math.abs(wave(6,7));r=wave(6,7);s=1+.04*Math.sin(t*6)}
+ else if(type==="angel"||type==="hands"){y=-Math.abs(wave(2.5,7));r=wave(2.5,3)}
+ else if(type==="crazy"){x=wave(8,9);r=wave(8,8)}
+ else if(type==="dizzy"){r=t*30;s=1+.025*Math.sin(t*5)}
+ else if(type==="moai"||type==="neutral"){y=wave(1.5,2)}
+ else if(type==="up"||type==="down"){y=type==="up"?-Math.abs(wave(3,5)):Math.abs(wave(3,5));r=wave(3,3)}
+ else if(type==="pray"){y=wave(2,3);s=1+.035*Math.sin(t*2)}
+ else if(type==="wave"){r=wave(8,14);x=wave(4,3)}
+ else if(type==="shake"){x=wave(12,8);r=wave(12,3)}
+ else if(type==="muscle"||type==="ok"){s=1+.06*Math.sin(t*3)}
+ else if(type==="peace"){y=wave(3,3);r=wave(3,5)}
+ else if(type==="fire"){y=-Math.abs(wave(7,8));r=wave(7,3);s=1+.08*Math.sin(t*7)}
+ else if(type==="hundred"){y=wave(3,4);r=wave(3,5)}
+ else if(type==="broken"||type==="clown"){s=1+.05*Math.sin(t*4);r=wave(4,3)}
+ else if(type==="poop"){y=wave(3,5);r=wave(3,4)}
+ else if(type==="ghost"){y=-Math.abs(wave(2.2,7));x=wave(2.2,5);r=wave(2.2,3)}
+ emoji.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+ requestAnimationFrame(loop);
+}loop();
+</script>
+</body>
+</html>

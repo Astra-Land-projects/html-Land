@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Happy Birthday, Nazanin 🎉</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #05040a; }
+  #app-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  #loading-screen {
+    position: fixed; inset: 0;
+    background: #05040a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #f2e9dc;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    z-index: 20;
+    transition: opacity 0.6s ease;
+  }
+  #loading-screen .spinner {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid rgba(242, 233, 220, 0.2);
+    border-top-color: #f2a65a;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-screen p { font-size: 14px; letter-spacing: 0.03em; opacity: 0.85; }
+  #loading-screen.hidden { opacity: 0; pointer-events: none; }
+  #loading-screen.error .spinner { display: none; }
+  #loading-screen.error p { color: #ff9a8b; max-width: 280px; text-align: center; line-height: 1.5; }
+
+  #hint {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    color: #f2e9dc; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px; letter-spacing: 0.02em;
+    background: rgba(10, 8, 16, 0.55);
+    padding: 9px 16px; border-radius: 999px;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    transition: opacity 0.8s ease;
+    white-space: nowrap;
+  }
+  #hint.hidden { opacity: 0; }
+
+  #read-hint {
+    position: fixed; left: 50%; top: 22px; transform: translateX(-50%);
+    color: #f2e9dc; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px; letter-spacing: 0.02em;
+    background: rgba(10, 8, 16, 0.55);
+    padding: 9px 16px; border-radius: 999px;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    white-space: nowrap;
+  }
+  #read-hint.visible { opacity: 1; }
+
+  #read-card-btn {
+    position: fixed; right: 14px; bottom: 14px;
+    color: #f7efe1; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px; letter-spacing: 0.02em;
+    background: rgba(91, 31, 58, 0.75);
+    border: 1px solid rgba(217, 181, 106, 0.5);
+    padding: 10px 16px; border-radius: 999px;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #read-card-btn:active { background: rgba(91, 31, 58, 0.95); }
+
+  #credit {
+    position: fixed; left: 14px; bottom: 14px;
+    color: rgba(242, 233, 220, 0.55);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 11px; letter-spacing: 0.02em;
+    z-index: 10;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p id="loading-text">Setting up the room...</p>
+  </div>
+
+  <canvas id="app-canvas"></canvas>
+  <div id="hint">Drag to look around · Scroll or pinch to zoom · Tap the card to read it · Tap the candle for confetti</div>
+  <div id="read-hint">Tap anywhere to go back</div>
+  <button id="read-card-btn">📖 Read the card</button>
+  <div id="credit">A little room for Nazanin 🎉 — made with Three.js by Arya</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__threeFailed = true;"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    // ---------------------------------------------------------------
+    // Bail out gracefully if the Three.js CDN failed to load
+    // ---------------------------------------------------------------
+    if (window.__threeFailed || typeof THREE === "undefined") {
+      var el = document.getElementById("loading-screen");
+      el.classList.add("error");
+      document.getElementById("loading-text").textContent =
+        "Couldn't load the 3D library. Please check your internet connection and reload the page.";
+      return;
+    }
+
+    try {
+      init();
+    } catch (err) {
+      var el2 = document.getElementById("loading-screen");
+      el2.classList.remove("hidden");
+      el2.classList.add("error");
+      document.getElementById("loading-text").textContent =
+        "Something went wrong while building the room: " + (err && err.message ? err.message : err);
+      console.error(err);
+    }
+
+    function init() {
+      // ---------------------------------------------------------------
+      // Basic setup
+      // ---------------------------------------------------------------
+      var canvas = document.getElementById("app-canvas");
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x05040a);
+      scene.fog = new THREE.Fog(0x05040a, 4, 11);
+
+      var camera = new THREE.PerspectiveCamera(
+        58,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+      );
+
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // ---------------------------------------------------------------
+      // Room dimensions
+      // ---------------------------------------------------------------
+      var ROOM_W = 8;
+      var ROOM_H = 3.4;
+      var ROOM_D = 8;
+      var halfW = ROOM_W / 2;
+      var halfD = ROOM_D / 2;
+
+      // ---------------------------------------------------------------
+      // Helper: build a soft vertical-gradient canvas texture (used for walls)
+      // ---------------------------------------------------------------
+      function makeGradientTexture(colorTop, colorBottom) {
+        var c = document.createElement("canvas");
+        c.width = 8;
+        c.height = 256;
+        var ctx = c.getContext("2d");
+        var grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0, colorTop);
+        grad.addColorStop(1, colorBottom);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 8, 256);
+        var tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        return tex;
+      }
+
+      // ---------------------------------------------------------------
+      // Helper: build a text texture for signs / the birthday card
+      // ---------------------------------------------------------------
+      function makeTextTexture(options) {
+        var scale = 2; // supersample for crisp text
+        var w = options.width * scale;
+        var h = options.height * scale;
+        var c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        var ctx = c.getContext("2d");
+
+        // background
+        ctx.fillStyle = options.background;
+        roundRect(ctx, 0, 0, w, h, 22 * scale);
+        ctx.fill();
+
+        // border
+        ctx.strokeStyle = options.border || "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 3 * scale;
+        roundRect(ctx, ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth, 20 * scale);
+        ctx.stroke();
+
+        // text
+        ctx.fillStyle = options.color;
+        ctx.textAlign = options.align || "center";
+        ctx.textBaseline = "middle";
+
+        var lines = [];
+        options.blocks.forEach(function (block) {
+          var fontSize = block.size * scale;
+          ctx.font = (block.weight || "400") + " " + fontSize + "px " + (block.font || "'Segoe UI', system-ui, sans-serif");
+          var wrapped = wrapText(ctx, block.text, w - options.padding * 2 * scale);
+          wrapped.forEach(function (line) {
+            lines.push({ text: line, size: fontSize, font: block.font, weight: block.weight, color: block.color || options.color, lineGap: block.lineGap || 1.3 });
+          });
+          lines.push({ spacer: block.gapAfter ? block.gapAfter * scale : 6 * scale });
+        });
+
+        var totalHeight = lines.reduce(function (sum, l) {
+          return sum + (l.spacer !== undefined ? l.spacer : l.size * l.lineGap);
+        }, 0);
+
+        var y = h / 2 - totalHeight / 2;
+        var x = options.align === "left" ? options.padding * scale : w / 2;
+
+        lines.forEach(function (l) {
+          if (l.spacer !== undefined) {
+            y += l.spacer;
+            return;
+          }
+          ctx.font = (l.weight || "400") + " " + l.size + "px " + (l.font || "'Segoe UI', system-ui, sans-serif");
+          ctx.fillStyle = l.color;
+          y += (l.size * l.lineGap) / 2;
+          ctx.fillText(l.text, x, y);
+          y += (l.size * l.lineGap) / 2;
+        });
+
+        var tex = new THREE.CanvasTexture(c);
+        tex.anisotropy = 4;
+        return tex;
+      }
+
+      function roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + width, y, x + width, y + height, radius);
+        ctx.arcTo(x + width, y + height, x, y + height, radius);
+        ctx.arcTo(x, y + height, x, y, radius);
+        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.closePath();
+      }
+
+      function wrapText(ctx, text, maxWidth) {
+        var words = text.split(" ");
+        var lines = [];
+        var current = "";
+        for (var i = 0; i < words.length; i++) {
+          var test = current ? current + " " + words[i] : words[i];
+          if (ctx.measureText(test).width > maxWidth && current) {
+            lines.push(current);
+            current = words[i];
+          } else {
+            current = test;
+          }
+        }
+        if (current) lines.push(current);
+        return lines;
+      }
+
+      // ---------------------------------------------------------------
+      // Floor
+      // ---------------------------------------------------------------
+      var floorGeo = new THREE.PlaneGeometry(ROOM_W, ROOM_D);
+      var floorMat = new THREE.MeshStandardMaterial({
+        color: 0x2a1b22,
+        roughness: 0.55,
+        metalness: 0.15,
+      });
+      var floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      // ---------------------------------------------------------------
+      // Walls (double-sided so orientation mistakes never cause invisible faces)
+      // ---------------------------------------------------------------
+      var wallTexture = makeGradientTexture("#241a30", "#160f1c");
+      var wallMat = new THREE.MeshStandardMaterial({
+        map: wallTexture,
+        roughness: 0.95,
+        metalness: 0,
+        side: THREE.DoubleSide,
+      });
+
+      function addWall(w, h, x, y, z, rotY) {
+        var geo = new THREE.PlaneGeometry(w, h);
+        var mesh = new THREE.Mesh(geo, wallMat);
+        mesh.position.set(x, y, z);
+        mesh.rotation.y = rotY || 0;
+        scene.add(mesh);
+        return mesh;
+      }
+
+      addWall(ROOM_W, ROOM_H, 0, ROOM_H / 2, -halfD, 0);              // back wall
+      addWall(ROOM_W, ROOM_H, 0, ROOM_H / 2, halfD, Math.PI);         // front wall (has the door)
+      addWall(ROOM_D, ROOM_H, -halfW, ROOM_H / 2, 0, Math.PI / 2);    // left wall
+      addWall(ROOM_D, ROOM_H, halfW, ROOM_H / 2, 0, -Math.PI / 2);    // right wall
+
+      // ceiling
+      var ceilMat = new THREE.MeshStandardMaterial({ color: 0x120c17, roughness: 1, side: THREE.DoubleSide });
+      var ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_W, ROOM_D), ceilMat);
+      ceiling.position.set(0, ROOM_H, 0);
+      ceiling.rotation.x = Math.PI / 2;
+      scene.add(ceiling);
+
+      // ---------------------------------------------------------------
+      // Door (purely decorative — it never opens)
+      // ---------------------------------------------------------------
+      var doorGroup = new THREE.Group();
+      var doorZ = halfD - 0.04;
+
+      var doorMat = new THREE.MeshStandardMaterial({ color: 0x3b2a1e, roughness: 0.7 });
+      var door = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.05, 0.06), doorMat);
+      door.position.set(0, 1.03, doorZ);
+      doorGroup.add(door);
+
+      var frameMat = new THREE.MeshStandardMaterial({ color: 0x5a4230, roughness: 0.6 });
+      var frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.08), frameMat);
+      frameTop.position.set(0, 2.1, doorZ);
+      doorGroup.add(frameTop);
+      var frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.15, 0.08), frameMat);
+      frameLeft.position.set(-0.55, 1.05, doorZ);
+      doorGroup.add(frameLeft);
+      var frameRight = frameLeft.clone();
+      frameRight.position.x = 0.55;
+      doorGroup.add(frameRight);
+
+      var handleMat = new THREE.MeshStandardMaterial({ color: 0xd9b56a, metalness: 0.8, roughness: 0.3 });
+      var handle = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), handleMat);
+      handle.position.set(0.38, 1.0, doorZ - 0.06);
+      doorGroup.add(handle);
+
+      scene.add(doorGroup);
+
+      // Sign above the door
+      var signTexture = makeTextTexture({
+        width: 280,
+        height: 110,
+        background: "#f2e9dc",
+        border: "rgba(90,66,48,0.4)",
+        color: "#3b2a1e",
+        padding: 14,
+        blocks: [{ text: "Nazanin", size: 40, weight: "600", font: "Georgia, 'Times New Roman', serif" }],
+      });
+      var signMat = new THREE.MeshBasicMaterial({ map: signTexture, transparent: true, side: THREE.DoubleSide });
+      var sign = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.34), signMat);
+      sign.position.set(0, 2.45, doorZ - 0.02);
+      sign.rotation.y = Math.PI; // face into the room, like the front wall itself does
+      scene.add(sign);
+
+      // ---------------------------------------------------------------
+      // Table
+      // ---------------------------------------------------------------
+      var tableGroup = new THREE.Group();
+      tableGroup.position.set(0, 0, 0.2);
+
+      var clothMat = new THREE.MeshStandardMaterial({ color: 0x5b1f3a, roughness: 0.6, metalness: 0.1 });
+      var tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.07, 32), clothMat);
+      tableTop.position.y = 0.75;
+      tableGroup.add(tableTop);
+
+      var goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xd9b56a, metalness: 0.6, roughness: 0.3 });
+      var tableTrim = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.02, 8, 32), goldTrimMat);
+      tableTrim.rotation.x = Math.PI / 2;
+      tableTrim.position.y = 0.72;
+      tableGroup.add(tableTrim);
+
+      var legMat = new THREE.MeshStandardMaterial({ color: 0x2a1c22, roughness: 0.7 });
+      var tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.72, 20), legMat);
+      tableLeg.position.y = 0.36;
+      tableGroup.add(tableLeg);
+      var tableBase = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 24), legMat);
+      tableBase.position.y = 0.02;
+      tableGroup.add(tableBase);
+
+      scene.add(tableGroup);
+
+      // ---------------------------------------------------------------
+      // Cake + candle
+      // ---------------------------------------------------------------
+      var cakeGroup = new THREE.Group();
+      cakeGroup.position.set(-0.18, 0.785, 0.2);
+
+      var icingMat = new THREE.MeshStandardMaterial({ color: 0xf6e2d8, roughness: 0.5 });
+      var icingMat2 = new THREE.MeshStandardMaterial({ color: 0xf29fb2, roughness: 0.5 });
+
+      var tierBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.2, 28), icingMat);
+      tierBottom.position.y = 0.1;
+      cakeGroup.add(tierBottom);
+
+      var tierTop = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.18, 0.15, 28), icingMat2);
+      tierTop.position.y = 0.275;
+      cakeGroup.add(tierTop);
+
+      // little frosting dots around the base
+      var dotMat = new THREE.MeshStandardMaterial({ color: 0xf29fb2, roughness: 0.5 });
+      var dotCount = 14;
+      for (var d = 0; d < dotCount; d++) {
+        var ang = (d / dotCount) * Math.PI * 2;
+        var dot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), dotMat);
+        dot.position.set(Math.cos(ang) * 0.27, 0.2, Math.sin(ang) * 0.27);
+        cakeGroup.add(dot);
+      }
+
+      var candleMat = new THREE.MeshStandardMaterial({ color: 0xfaf6ee, roughness: 0.4 });
+      var candle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 12), candleMat);
+      candle.position.y = 0.435;
+      cakeGroup.add(candle);
+
+      var flameMat = new THREE.MeshBasicMaterial({ color: 0xffb454 });
+      var flame = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.07, 10), flameMat);
+      flame.position.y = 0.545;
+      cakeGroup.add(flame);
+
+      var candleLight = new THREE.PointLight(0xffb454, 1.1, 2.2, 2);
+      candleLight.position.y = 0.58;
+      cakeGroup.add(candleLight);
+
+      scene.add(cakeGroup);
+
+      // ---------------------------------------------------------------
+      // Birthday card (a small standing "tent card" so it reads from the front)
+      // ---------------------------------------------------------------
+      var cardTexture = makeTextTexture({
+        width: 300,
+        height: 340,
+        background: "#f7efe1",
+        border: "rgba(91,31,58,0.25)",
+        color: "#3a2a30",
+        padding: 22,
+        align: "left",
+        blocks: [
+          { text: "Happy birthday🎈🎂.", size: 21, weight: "700", gapAfter: 10 },
+          { text: "Hi my cousin, I hope you are fine.", size: 15, gapAfter: 8 },
+          { text: "I hope you can live in Iran and always be healthy(IDC(just kidding 😂)).", size: 15, gapAfter: 8 },
+          { text: "Just this, I love you so much and I hope you enjoy this little gift.", size: 15, gapAfter: 14 },
+          { text: "Goodbye my cousin.", size: 15, gapAfter: 2 },
+          { text: "Arya.", size: 15, weight: "700" },
+        ],
+      });
+      var cardFrontMat = new THREE.MeshBasicMaterial({ map: cardTexture, transparent: true });
+      var cardBackMat = new THREE.MeshBasicMaterial({ color: 0xf7efe1 });
+
+      var cardGroup = new THREE.Group();
+      var cardFront = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.36), cardFrontMat);
+      var cardBack = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.36), cardBackMat);
+      cardBack.rotation.y = Math.PI;
+      cardBack.position.z = -0.002;
+      cardGroup.add(cardFront);
+      cardGroup.add(cardBack);
+      cardGroup.position.set(0.42, 0.79 + 0.18, 0.15);
+      cardGroup.rotation.y = -0.5;
+      cardGroup.rotation.x = -0.12;
+
+      // invisible, generously-sized hit box so the card is easy to tap accurately
+      var cardHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.46, 0.5, 0.12),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      cardGroup.add(cardHitBox);
+
+      scene.add(cardGroup);
+
+      // ---------------------------------------------------------------
+      // Disco ball (signature element)
+      // ---------------------------------------------------------------
+      var discoString = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.006, 0.006, 0.5, 6),
+        new THREE.MeshBasicMaterial({ color: 0x1a1420 })
+      );
+      discoString.position.set(0, ROOM_H - 0.25, 0.1);
+      scene.add(discoString);
+
+      var discoBall = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.22, 1),
+        new THREE.MeshStandardMaterial({ color: 0xd7dee6, metalness: 1, roughness: 0.2, flatShading: true })
+      );
+      discoBall.position.set(0, ROOM_H - 0.5 - 0.22, 0.1);
+      scene.add(discoBall);
+
+      // ---------------------------------------------------------------
+      // Balloons (simple, a handful for atmosphere)
+      // ---------------------------------------------------------------
+      var balloonColors = [0xe85d75, 0xf2a65a, 0x5aa9e6, 0x8ee6a1, 0xd583e0];
+      var balloons = [];
+      var balloonSpots = [
+        { x: -2.9, z: -2.6 },
+        { x: 2.8, z: -2.7 },
+        { x: -3.1, z: 1.8 },
+        { x: 3.0, z: 2.0 },
+        { x: -2.5, z: 3.0 },
+        { x: 2.6, z: -0.6 },
+      ];
+      balloonSpots.forEach(function (spot, i) {
+        var group = new THREE.Group();
+        var color = balloonColors[i % balloonColors.length];
+        var mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.35, metalness: 0.05 });
+        var body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), mat);
+        body.scale.set(1, 1.2, 1);
+        var floatHeight = 1.5 + (i % 3) * 0.25;
+        body.position.y = floatHeight;
+        group.add(body);
+
+        var knot = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.06, 8), mat);
+        knot.position.y = floatHeight - 0.27;
+        group.add(knot);
+
+        // simple string down to the floor
+        var stringGeo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, floatHeight - 0.3, 0),
+          new THREE.Vector3(0, 0.02, 0),
+        ]);
+        var stringMat = new THREE.LineBasicMaterial({ color: 0x3a3040 });
+        var line = new THREE.Line(stringGeo, stringMat);
+        group.add(line);
+
+        group.position.set(spot.x, 0, spot.z);
+        group.userData.bobOffset = i * 1.3;
+        scene.add(group);
+        balloons.push(group);
+      });
+
+      // ---------------------------------------------------------------
+      // Party lights (color-cycling point lights + visible little bulbs)
+      // ---------------------------------------------------------------
+      var partyLights = [];
+      var lightCount = 5;
+      var lightRadius = 2.6;
+      for (var i = 0; i < lightCount; i++) {
+        var angle = (i / lightCount) * Math.PI * 2;
+        var lx = Math.cos(angle) * lightRadius;
+        var lz = Math.sin(angle) * lightRadius;
+        var ly = ROOM_H - 0.35;
+
+        var pLight = new THREE.PointLight(0xffffff, 1.2, 6.5, 2);
+        pLight.position.set(lx, ly, lz);
+        scene.add(pLight);
+
+        var bulbMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), bulbMat);
+        bulb.position.copy(pLight.position);
+        scene.add(bulb);
+
+        partyLights.push({
+          light: pLight,
+          bulb: bulb,
+          baseY: ly,
+          hueOffset: (360 / lightCount) * i,
+          phase: i,
+          baseAngle: angle,
+          orbitDir: i % 2 === 0 ? 1 : -1,
+        });
+      }
+
+      // ---------------------------------------------------------------
+      // Ambient / fill light so the room is never pitch black
+      // ---------------------------------------------------------------
+      var hemi = new THREE.HemisphereLight(0x4a3a66, 0x0e0a12, 0.4);
+      scene.add(hemi);
+      var ambient = new THREE.AmbientLight(0x221a2c, 0.25);
+      scene.add(ambient);
+
+      // ---------------------------------------------------------------
+      // Confetti (lightweight, instanced)
+      // ---------------------------------------------------------------
+      var CONFETTI_COUNT = 40;
+      var confettiGeo = new THREE.PlaneGeometry(0.05, 0.05);
+      var confettiMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+      var confetti = new THREE.InstancedMesh(confettiGeo, confettiMat, CONFETTI_COUNT);
+      var confettiData = [];
+      var dummy = new THREE.Object3D();
+      var confettiPalette = [0xe85d75, 0xf2a65a, 0x5aa9e6, 0x8ee6a1, 0xd583e0, 0xffe07a];
+
+      for (var ci = 0; ci < CONFETTI_COUNT; ci++) {
+        var cx = (Math.random() - 0.5) * (ROOM_W - 1);
+        var cz = (Math.random() - 0.5) * (ROOM_D - 1);
+        var cy = Math.random() * ROOM_H;
+        confettiData.push({
+          x: cx,
+          z: cz,
+          y: cy,
+          speed: 0.25 + Math.random() * 0.35,
+          rotSpeed: (Math.random() - 0.5) * 2,
+          rot: Math.random() * Math.PI,
+          swayPhase: Math.random() * Math.PI * 2,
+        });
+        dummy.position.set(cx, cy, cz);
+        dummy.rotation.z = confettiData[ci].rot;
+        dummy.updateMatrix();
+        confetti.setMatrixAt(ci, dummy.matrix);
+        confetti.setColorAt(ci, new THREE.Color(confettiPalette[ci % confettiPalette.length]));
+      }
+      scene.add(confetti);
+
+      // ---------------------------------------------------------------
+      // Confetti burst pool — triggered by tapping the candle
+      // ---------------------------------------------------------------
+      var BURST_COUNT = 55;
+      var burstGeo = new THREE.PlaneGeometry(0.045, 0.045);
+      var burstMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+      var burstMesh = new THREE.InstancedMesh(burstGeo, burstMat, BURST_COUNT);
+      var burstData = [];
+      for (var bi = 0; bi < BURST_COUNT; bi++) {
+        burstData.push({ vx: 0, vy: 0, vz: 0, rotX: 0, rotY: 0, active: false });
+        dummy.position.set(0, -5, 0); // parked out of sight until triggered
+        dummy.scale.set(0, 0, 0);
+        dummy.updateMatrix();
+        burstMesh.setMatrixAt(bi, dummy.matrix);
+        burstMesh.setColorAt(bi, new THREE.Color(confettiPalette[bi % confettiPalette.length]));
+      }
+      scene.add(burstMesh);
+
+      var burstActive = false;
+      var burstStartTime = 0;
+      var burstOrigin = new THREE.Vector3();
+      var BURST_DURATION = 2.2;
+
+      function triggerConfettiBurst() {
+        burstActive = true;
+        burstStartTime = clock.getElapsedTime();
+        burstOrigin.copy(cakeGroup.position);
+        burstOrigin.y += 0.55;
+        for (var k = 0; k < BURST_COUNT; k++) {
+          var bAngle = Math.random() * Math.PI * 2;
+          var bSpeed = 1.1 + Math.random() * 1.6;
+          var upSpeed = 1.6 + Math.random() * 1.4;
+          burstData[k].vx = Math.cos(bAngle) * bSpeed;
+          burstData[k].vz = Math.sin(bAngle) * bSpeed;
+          burstData[k].vy = upSpeed;
+          burstData[k].rotX = (Math.random() - 0.5) * 6;
+          burstData[k].rotY = (Math.random() - 0.5) * 6;
+          burstData[k].active = true;
+        }
+      }
+
+      // ---------------------------------------------------------------
+      // Camera controls — unified pointer events work for mouse AND touch,
+      // plus wheel (desktop) and pinch (mobile) for zoom.
+      // ---------------------------------------------------------------
+      var target = new THREE.Vector3(0, 1.1, 0.1);
+      var radius = 4.4;
+      var theta = 0.6;   // horizontal angle
+      var phi = 1.15;    // vertical angle (from +Y axis)
+      var minRadius = 2.0, maxRadius = 4.6;
+      var minPhi = 0.55, maxPhi = 1.5;
+
+      var pointers = new Map();
+      var downInfo = new Map();
+      var isDragging = false;
+      var lastSingle = { x: 0, y: 0 };
+      var lastPinchDist = null;
+      var hintEl = document.getElementById("hint");
+      var readHintEl = document.getElementById("read-hint");
+      var readCardBtn = document.getElementById("read-card-btn");
+      var hintHidden = false;
+
+      // ---------------------------------------------------------------
+      // Click / tap interactions (card zoom + candle confetti burst)
+      // ---------------------------------------------------------------
+      var raycaster = new THREE.Raycaster();
+      var pointerNDC = new THREE.Vector2();
+      // Raycast against the whole card and the whole cake+table group, recursively,
+      // so a tap anywhere on either object registers — not just a tiny precise spot.
+      var clickTargets = [cardGroup, cakeGroup];
+
+      function isDescendantOf(obj, ancestor) {
+        var o = obj;
+        while (o) {
+          if (o === ancestor) return true;
+          o = o.parent;
+        }
+        return false;
+      }
+
+      // camera reading-mode state machine: "orbit" | "toReading" | "reading" | "toOrbit"
+      var viewMode = "orbit";
+      var transitionT = 0;
+      var TRANSITION_TIME = 0.9;
+      var camStart = new THREE.Vector3();
+      var camEnd = new THREE.Vector3();
+      var lookStart = new THREE.Vector3();
+      var lookEnd = new THREE.Vector3();
+      var currentLook = new THREE.Vector3();
+      var savedOrbitPos = new THREE.Vector3();
+
+      function easeInOut(x) {
+        return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+      }
+
+      function enterReadingMode() {
+        if (viewMode !== "orbit") return;
+        camStart.copy(camera.position);
+        lookStart.copy(currentLook);
+
+        var cardWorldPos = new THREE.Vector3();
+        cardGroup.getWorldPosition(cardWorldPos);
+        var cardForward = new THREE.Vector3(0, 0, 1).applyQuaternion(cardGroup.quaternion);
+        camEnd.copy(cardWorldPos).addScaledVector(cardForward, 0.42);
+        camEnd.y = cardWorldPos.y + 0.02;
+        lookEnd.copy(cardWorldPos);
+
+        transitionT = 0;
+        viewMode = "toReading";
+        readHintEl.classList.add("visible");
+        readCardBtn.textContent = "✕ Close card";
+        hideHint();
+      }
+
+      function exitReadingMode() {
+        if (viewMode !== "reading") return;
+        camStart.copy(camera.position);
+        lookStart.copy(currentLook);
+
+        // destination = wherever the free orbit (theta/phi/radius) currently points,
+        // since those values are untouched while reading
+        var sinPhi = Math.sin(phi);
+        camEnd.set(
+          target.x + radius * sinPhi * Math.sin(theta),
+          target.y + radius * Math.cos(phi),
+          target.z + radius * sinPhi * Math.cos(theta)
+        );
+        camEnd.x = clamp(camEnd.x, -halfW + safeMargin, halfW - safeMargin);
+        camEnd.z = clamp(camEnd.z, -halfD + safeMargin, halfD - safeMargin);
+        camEnd.y = clamp(camEnd.y, 0.25, ROOM_H - 0.15);
+        lookEnd.copy(target);
+
+        transitionT = 0;
+        viewMode = "toOrbit";
+        readHintEl.classList.remove("visible");
+        readCardBtn.textContent = "📖 Read the card";
+      }
+
+      function handleTap(clientX, clientY) {
+        // Ignore taps entirely while a transition is already in flight — this
+        // prevents a stray duplicate tap event from cancelling the zoom-in
+        // before it's ever visible.
+        if (viewMode === "toReading" || viewMode === "toOrbit") return;
+        if (viewMode === "reading") {
+          exitReadingMode();
+          return;
+        }
+        pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+        pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointerNDC, camera);
+        var hits = raycaster.intersectObjects(clickTargets, true);
+        if (hits.length === 0) return;
+        var hitObj = hits[0].object;
+        if (isDescendantOf(hitObj, cardGroup)) {
+          enterReadingMode();
+        } else if (isDescendantOf(hitObj, cakeGroup)) {
+          triggerConfettiBurst();
+        }
+      }
+
+      function hideHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        hintEl.classList.add("hidden");
+      }
+
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+
+      canvas.style.touchAction = "none";
+
+      canvas.addEventListener("pointerdown", function (e) {
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        downInfo.set(e.pointerId, { x: e.clientX, y: e.clientY, time: performance.now(), wasAlone: pointers.size === 1 });
+        canvas.setPointerCapture(e.pointerId);
+        if (pointers.size === 1) {
+          isDragging = viewMode === "orbit";
+          lastSingle.x = e.clientX;
+          lastSingle.y = e.clientY;
+        } else if (pointers.size === 2) {
+          lastPinchDist = null;
+        }
+        hideHint();
+      });
+
+      canvas.addEventListener("pointermove", function (e) {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size === 1 && isDragging) {
+          var dx = e.clientX - lastSingle.x;
+          var dy = e.clientY - lastSingle.y;
+          theta -= dx * 0.006;
+          phi = clamp(phi - dy * 0.006, minPhi, maxPhi);
+          lastSingle.x = e.clientX;
+          lastSingle.y = e.clientY;
+        } else if (pointers.size === 2 && viewMode === "orbit") {
+          var pts = Array.from(pointers.values());
+          var dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (lastPinchDist !== null) {
+            var delta = dist - lastPinchDist;
+            radius = clamp(radius - delta * 0.01, minRadius, maxRadius);
+          }
+          lastPinchDist = dist;
+        }
+      });
+
+      function releasePointer(e) {
+        var info = downInfo.get(e.pointerId);
+        var wasSinglePointer = pointers.size === 1;
+        pointers.delete(e.pointerId);
+        downInfo.delete(e.pointerId);
+        if (pointers.size < 2) lastPinchDist = null;
+        if (pointers.size === 0) {
+          isDragging = false;
+        } else {
+          var remaining = Array.from(pointers.values())[0];
+          lastSingle.x = remaining.x;
+          lastSingle.y = remaining.y;
+          isDragging = viewMode === "orbit";
+        }
+
+        // A "tap" is a short, nearly-stationary single-pointer press —
+        // used to distinguish clicks on the card/candle from camera drags.
+        if (info && wasSinglePointer) {
+          var dist = Math.hypot(e.clientX - info.x, e.clientY - info.y);
+          var duration = performance.now() - info.time;
+          if (dist < 8 && duration < 400) {
+            handleTap(e.clientX, e.clientY);
+          }
+        }
+      }
+      canvas.addEventListener("pointerup", releasePointer);
+      canvas.addEventListener("pointercancel", releasePointer);
+      canvas.addEventListener("pointerleave", function (e) {
+        if (pointers.size === 1) releasePointer(e);
+      });
+
+      // A plain HTML button as a guaranteed-reliable way to read the card,
+      // independent of 3D tap/raycast behavior which can vary across devices.
+      readCardBtn.addEventListener("click", function () {
+        if (viewMode === "orbit") {
+          enterReadingMode();
+        } else if (viewMode === "reading") {
+          exitReadingMode();
+        }
+      });
+
+      canvas.addEventListener(
+        "wheel",
+        function (e) {
+          e.preventDefault();
+          radius = clamp(radius + e.deltaY * 0.0035, minRadius, maxRadius);
+          hideHint();
+        },
+        { passive: false }
+      );
+
+      // ---------------------------------------------------------------
+      // Resize handling
+      // ---------------------------------------------------------------
+      window.addEventListener("resize", function () {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // ---------------------------------------------------------------
+      // Animation loop
+      // ---------------------------------------------------------------
+      var clock = new THREE.Clock();
+      var tmpColor = new THREE.Color();
+      var safeMargin = 0.35;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        var t = clock.getElapsedTime();
+        var delta = Math.min(clock.getDelta(), 0.05);
+
+        // party lights: color cycle + orbiting motion + gentle bob
+        partyLights.forEach(function (pl) {
+          var hue = (t * 22 + pl.hueOffset) % 360;
+          tmpColor.setHSL(hue / 360, 0.75, 0.55);
+          pl.light.color.copy(tmpColor);
+          pl.bulb.material.color.copy(tmpColor);
+
+          var currentAngle = pl.baseAngle + t * 0.35 * pl.orbitDir;
+          var pulseRadius = lightRadius + Math.sin(t * 0.6 + pl.phase) * 0.35;
+          var bx = Math.cos(currentAngle) * pulseRadius;
+          var bz = Math.sin(currentAngle) * pulseRadius;
+          var by = pl.baseY + Math.sin(t * 1.4 + pl.phase) * 0.18;
+
+          pl.light.position.set(bx, by, bz);
+          pl.bulb.position.set(bx, by, bz);
+        });
+
+        // candle flicker
+        flame.scale.y = 1 + Math.sin(t * 12) * 0.12 + (Math.random() - 0.5) * 0.06;
+        candleLight.intensity = 1.1 + Math.sin(t * 9) * 0.15 + (Math.random() - 0.5) * 0.08;
+
+        // disco ball spin
+        discoBall.rotation.y += delta * 0.5;
+
+        // balloons gentle float
+        balloons.forEach(function (b) {
+          b.position.y = Math.sin(t * 0.8 + b.userData.bobOffset) * 0.06;
+        });
+
+        // confetti fall + gentle sway + tumble, looping from the ceiling
+        for (var i = 0; i < CONFETTI_COUNT; i++) {
+          var cd = confettiData[i];
+          cd.y -= cd.speed * delta;
+          cd.rot += cd.rotSpeed * delta;
+          if (cd.y < 0) {
+            cd.y = ROOM_H - 0.05;
+            cd.x = (Math.random() - 0.5) * (ROOM_W - 1);
+            cd.z = (Math.random() - 0.5) * (ROOM_D - 1);
+            cd.swayPhase = Math.random() * Math.PI * 2;
+          }
+          var sx = cd.x + Math.sin(t * 1.6 + cd.swayPhase) * 0.18;
+          var sz = cd.z + Math.cos(t * 1.1 + cd.swayPhase) * 0.18;
+          dummy.position.set(sx, cd.y, sz);
+          dummy.rotation.set(t * cd.rotSpeed * 0.6, t * cd.rotSpeed * 0.4, cd.rot);
+          dummy.scale.set(1, 1, 1);
+          dummy.updateMatrix();
+          confetti.setMatrixAt(i, dummy.matrix);
+        }
+        confetti.instanceMatrix.needsUpdate = true;
+
+        // confetti burst (triggered by tapping the candle)
+        if (burstActive) {
+          var bt = t - burstStartTime;
+          if (bt > BURST_DURATION) {
+            burstActive = false;
+            for (var p = 0; p < BURST_COUNT; p++) {
+              dummy.position.set(0, -5, 0);
+              dummy.scale.set(0, 0, 0);
+              dummy.updateMatrix();
+              burstMesh.setMatrixAt(p, dummy.matrix);
+            }
+          } else {
+            var fade = 1 - easeInOut(clamp(bt / BURST_DURATION, 0, 1));
+            for (var q = 0; q < BURST_COUNT; q++) {
+              var bd = burstData[q];
+              var gravity = -2.6;
+              var px = burstOrigin.x + bd.vx * bt;
+              var pz = burstOrigin.z + bd.vz * bt;
+              var py = burstOrigin.y + bd.vy * bt + 0.5 * gravity * bt * bt;
+              if (py < 0.02) py = 0.02;
+              dummy.position.set(px, py, pz);
+              dummy.rotation.set(bd.rotX * bt, bd.rotY * bt, bt * 2);
+              dummy.scale.set(fade, fade, fade);
+              dummy.updateMatrix();
+              burstMesh.setMatrixAt(q, dummy.matrix);
+            }
+          }
+          burstMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // camera: normal free orbit, or a scripted transition into/out of "reading" the card
+        if (viewMode === "orbit") {
+          var sinPhi = Math.sin(phi);
+          var camX = target.x + radius * sinPhi * Math.sin(theta);
+          var camY = target.y + radius * Math.cos(phi);
+          var camZ = target.z + radius * sinPhi * Math.cos(theta);
+
+          // safety clamp: guarantees the camera can never end up outside the room,
+          // regardless of the radius/phi/theta combination
+          camX = clamp(camX, -halfW + safeMargin, halfW - safeMargin);
+          camZ = clamp(camZ, -halfD + safeMargin, halfD - safeMargin);
+          camY = clamp(camY, 0.25, ROOM_H - 0.15);
+
+          camera.position.set(camX, camY, camZ);
+          currentLook.copy(target);
+          camera.lookAt(currentLook);
+        } else if (viewMode === "toReading" || viewMode === "toOrbit") {
+          transitionT += delta / TRANSITION_TIME;
+          var te = easeInOut(clamp(transitionT, 0, 1));
+          camera.position.lerpVectors(camStart, camEnd, te);
+          currentLook.lerpVectors(lookStart, lookEnd, te);
+          camera.lookAt(currentLook);
+          if (transitionT >= 1) {
+            viewMode = viewMode === "toReading" ? "reading" : "orbit";
+          }
+        } else if (viewMode === "reading") {
+          camera.position.copy(camEnd);
+          currentLook.copy(lookEnd);
+          camera.lookAt(currentLook);
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      // ---------------------------------------------------------------
+      // Kick things off
+      // ---------------------------------------------------------------
+      var loadingEl = document.getElementById("loading-screen");
+      loadingEl.classList.add("hidden");
+      setTimeout(function () {
+        loadingEl.style.display = "none";
+      }, 700);
+
+      // fade the hint automatically after a while even without interaction
+      setTimeout(hideHint, 6000);
+
+      animate();
+    }
+  })();
+  </script>
+</body>
+</html>

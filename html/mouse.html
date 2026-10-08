@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouse Escape</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow: hidden;
+            background: #080b12;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        canvas {
+            display: block;
+            cursor: none;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        #gameOver {
+            position: fixed;
+            inset: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 20;
+        }
+
+        #gameOver h1 {
+            font-size: 55px;
+            margin-bottom: 15px;
+        }
+
+        #gameOver p {
+            font-size: 22px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #080b12;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        #startScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: #080b12;
+        }
+
+        #startScreen h1 {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        #startScreen p {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="startScreen">
+        <h1>Mouse Escape</h1>
+        <p>Move your mouse and survive as long as you can.</p>
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="ui">
+        Time: <span id="score">0.0</span>s
+    </div>
+
+    <div id="gameOver">
+        <h1>GAME OVER</h1>
+        <p>You survived <span id="finalScore">0</span> seconds.</p>
+        <button onclick="restartGame()">PLAY AGAIN</button>
+    </div>
+
+    <canvas id="game"></canvas>
+
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        const scoreElement = document.getElementById("score");
+        const finalScoreElement = document.getElementById("finalScore");
+        const startScreen = document.getElementById("startScreen");
+        const gameOverScreen = document.getElementById("gameOver");
+
+        let width;
+        let height;
+
+        let gameRunning = false;
+        let startTime = 0;
+        let score = 0;
+
+        const player = {
+            x: 200,
+            y: 200,
+            radius: 9
+        };
+
+        const mouse = {
+            x: 200,
+            y: 200
+        };
+
+        let enemies = [];
+
+        const walls = [
+            {
+                x: 150,
+                y: 120,
+                width: 300,
+                height: 25
+            },
+            {
+                x: 550,
+                y: 100,
+                width: 25,
+                height: 280
+            },
+            {
+                x: 250,
+                y: 350,
+                width: 350,
+                height: 25
+            },
+            {
+                x: 100,
+                y: 500,
+                width: 25,
+                height: 250
+            },
+            {
+                x: 400,
+                y: 550,
+                width: 300,
+                height: 25
+            }
+        ];
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+
+        resizeCanvas();
+
+
+        // Mouse movement
+        window.addEventListener("mousemove", (event) => {
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+
+            if (gameRunning) {
+                player.x = mouse.x;
+                player.y = mouse.y;
+            }
+        });
+
+
+        // Create enemy
+        function createEnemy(x, y, speed) {
+            return {
+                x: x,
+                y: y,
+                radius: 13,
+                speed: speed
+            };
+        }
+
+
+        function createEnemies() {
+            enemies = [
+                createEnemy(50, 50, 1.4),
+                createEnemy(width - 50, 50, 1.7),
+                createEnemy(50, height - 50, 1.5),
+                createEnemy(width - 50, height - 50, 1.8)
+            ];
+        }
+
+
+        // Distance
+        function distance(x1, y1, x2, y2) {
+            return Math.sqrt(
+                (x2 - x1) ** 2 +
+                (y2 - y1) ** 2
+            );
+        }
+
+
+        // Circle vs rectangle collision
+        function circleRectCollision(circle, rect) {
+
+            const closestX = Math.max(
+                rect.x,
+                Math.min(circle.x, rect.x + rect.width)
+            );
+
+            const closestY = Math.max(
+                rect.y,
+                Math.min(circle.y, rect.y + rect.height)
+            );
+
+            const dx = circle.x - closestX;
+            const dy = circle.y - closestY;
+
+            return (dx * dx + dy * dy) <
+                   (circle.radius * circle.radius);
+        }
+
+
+        // Check whether enemy can move
+        function canMove(enemy, newX, newY) {
+
+            const testEnemy = {
+                x: newX,
+                y: newY,
+                radius: enemy.radius
+            };
+
+            for (const wall of walls) {
+                if (circleRectCollision(testEnemy, wall)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
+        // Enemy AI
+        function updateEnemies() {
+
+            for (const enemy of enemies) {
+
+                let dx = player.x - enemy.x;
+                let dy = player.y - enemy.y;
+
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist === 0) continue;
+
+                dx /= dist;
+                dy /= dist;
+
+                const moveX = dx * enemy.speed;
+                const moveY = dy * enemy.speed;
+
+                // Try normal movement
+                if (canMove(enemy, enemy.x + moveX, enemy.y)) {
+                    enemy.x += moveX;
+                } else {
+
+                    // Try vertical movement
+                    if (canMove(enemy, enemy.x, enemy.y + moveY)) {
+                        enemy.y += moveY;
+                    }
+                }
+
+                if (canMove(enemy, enemy.x, enemy.y + moveY)) {
+                    enemy.y += moveY;
+                }
+
+
+                // Keep enemy inside screen
+                enemy.x = Math.max(
+                    enemy.radius,
+                    Math.min(width - enemy.radius, enemy.x)
+                );
+
+                enemy.y = Math.max(
+                    enemy.radius,
+                    Math.min(height - enemy.radius, enemy.y)
+                );
+
+
+                // Collision with player
+                const playerDistance =
+                    distance(
+                        player.x,
+                        player.y,
+                        enemy.x,
+                        enemy.y
+                    );
+
+                if (
+                    playerDistance <
+                    player.radius + enemy.radius
+                ) {
+                    endGame();
+                }
+            }
+        }
+
+
+        // Draw background
+        function drawBackground() {
+
+            ctx.fillStyle = "#080b12";
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid
+            ctx.strokeStyle = "#111722";
+            ctx.lineWidth = 1;
+
+            const gridSize = 40;
+
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+
+        // Draw walls
+        function drawWalls() {
+
+            for (const wall of walls) {
+
+                ctx.fillStyle = "#394150";
+
+                ctx.fillRect(
+                    wall.x,
+                    wall.y,
+                    wall.width,
+                    wall.height
+                );
+
+                ctx.strokeStyle = "#687386";
+                ctx.lineWidth = 2;
+
+                ctx.strokeRect(
+                    wall.x,
+                    wall.y,
+                    wall.width,
+                    wall.height
+                );
+            }
+        }
+
+
+        // Draw player
+        function drawPlayer() {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                player.x,
+                player.y,
+                player.radius,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+
+            // Glow
+            ctx.beginPath();
+
+            ctx.arc(
+                player.x,
+                player.y,
+                player.radius + 7,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.strokeStyle = "rgba(255,255,255,0.25)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+
+        // Draw enemies
+        function drawEnemies() {
+
+            for (const enemy of enemies) {
+
+                ctx.beginPath();
+
+                ctx.arc(
+                    enemy.x,
+                    enemy.y,
+                    enemy.radius,
+                    0,
+                    Math.PI * 2
+                );
+
+                ctx.fillStyle = "#ff3b3b";
+                ctx.fill();
+
+                // Enemy eyes
+                ctx.fillStyle = "#080b12";
+
+                ctx.beginPath();
+                ctx.arc(
+                    enemy.x - 4,
+                    enemy.y - 3,
+                    2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(
+                    enemy.x + 4,
+                    enemy.y - 3,
+                    2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+
+        function updateScore() {
+
+            score = (Date.now() - startTime) / 1000;
+
+            scoreElement.textContent =
+                score.toFixed(1);
+        }
+
+
+        function gameLoop() {
+
+            if (!gameRunning) return;
+
+            drawBackground();
+            drawWalls();
+
+            updateEnemies();
+
+            drawEnemies();
+            drawPlayer();
+
+            updateScore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+
+        function startGame() {
+
+            startScreen.style.display = "none";
+            gameOverScreen.style.display = "none";
+
+            player.x = width / 2;
+            player.y = height / 2;
+
+            mouse.x = player.x;
+            mouse.y = player.y;
+
+            createEnemies();
+
+            startTime = Date.now();
+            score = 0;
+
+            gameRunning = true;
+
+            gameLoop();
+        }
+
+
+        function endGame() {
+
+            if (!gameRunning) return;
+
+            gameRunning = false;
+
+            finalScoreElement.textContent =
+                score.toFixed(1);
+
+            gameOverScreen.style.display = "flex";
+        }
+
+
+        function restartGame() {
+            startGame();
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ASTRA FACTORY TIME</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#050505;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
+}
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    cursor:crosshair;
+}
+#menu,#ending,#pause,#message{
+    position:fixed;
+    inset:0;
+    z-index:20;
+}
+#menu,#ending,#pause{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    background:
+        radial-gradient(circle at center,#202020,#030303 70%);
+}
+.panel{
+    width:min(720px,90vw);
+    padding:35px;
+}
+.logo{
+    font-size:clamp(42px,9vw,90px);
+    letter-spacing:10px;
+    font-weight:900;
+    margin:0;
+}
+.gold{color:#d5aa3a}
+.sub{
+    letter-spacing:5px;
+    color:#aaa;
+    margin:12px 0 35px;
+}
+button{
+    background:#d5aa3a;
+    color:#111;
+    border:0;
+    padding:15px 35px;
+    font-weight:bold;
+    letter-spacing:2px;
+    cursor:pointer;
+}
+button:hover{background:#f1ce69}
+.small{
+    color:#888;
+    font-size:12px;
+    line-height:1.8;
+}
+#hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:10;
+}
+#top{
+    position:absolute;
+    top:18px;
+    left:20px;
+    font-size:12px;
+    letter-spacing:3px;
+    text-shadow:0 2px 5px #000;
+}
+#objective{
+    margin-top:7px;
+    color:#bbb;
+    letter-spacing:1px;
+}
+#record{
+    position:absolute;
+    top:18px;
+    right:20px;
+    font-size:12px;
+    letter-spacing:2px;
+}
+#cross{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:7px;
+    height:7px;
+    border:1px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    opacity:.65;
+}
+#message{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:clamp(18px,4vw,34px);
+    letter-spacing:5px;
+    font-weight:bold;
+    text-shadow:0 3px 12px #000;
+    opacity:0;
+    transition:opacity .25s;
+    pointer-events:none;
+}
+#status{
+    position:absolute;
+    left:20px;
+    bottom:20px;
+    width:210px;
+    font-size:11px;
+    letter-spacing:1px;
+}
+.bar{
+    width:100%;
+    height:7px;
+    background:#222;
+    margin:4px 0 9px;
+    border:1px solid #555;
+}
+.fill{height:100%;width:100%}
+#stamina{background:#bbb}
+#battery{background:#d5aa3a}
+#interaction{
+    position:absolute;
+    bottom:75px;
+    width:100%;
+    text-align:center;
+    font-size:13px;
+    letter-spacing:2px;
+    opacity:0;
+}
+#vhs{
+    position:fixed;
+    inset:0;
+    z-index:30;
+    pointer-events:none;
+    opacity:.16;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,.04) 0px,
+        rgba(255,255,255,.04) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+}
+#vhs:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.04),
+        transparent
+      );
+    animation:scan 4s linear infinite;
+}
+@keyframes scan{
+    from{transform:translateX(-100%)}
+    to{transform:translateX(100%)}
+}
+#mobile{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:15;
+    pointer-events:none;
+}
+.mbtn{
+    position:absolute;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    border:1px solid #aaa;
+    background:#1119;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    pointer-events:auto;
+}
+#up{left:75px;bottom:135px}
+#down{left:75px;bottom:20px}
+#left{left:10px;bottom:78px}
+#right{left:140px;bottom:78px}
+#run{right:20px;bottom:20px}
+#flash{right:100px;bottom:20px}
+@media(pointer:coarse){
+    #mobile{display:block}
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="menu">
+    <div class="panel">
+        <h1 class="logo">ASTRA</h1>
+        <h1 class="logo gold">FACTORY TIME</h1>
+        <div class="sub">AFTER HOURS</div>
+
+        <p>
+            The factory closed years ago.<br>
+            Tonight, someone turned the power back on.
+        </p>
+
+        <button id="start">START GAME</button>
+
+        <p class="small">
+            WASD — MOVE<br>
+            MOUSE — LOOK<br>
+            SHIFT — RUN<br>
+            E — INTERACT<br>
+            F — FLASHLIGHT
+        </p>
+    </div>
+</div>
+
+<div id="ending" style="display:none">
+    <div class="panel">
+        <h1 class="logo gold">ESCAPED</h1>
+        <div class="sub">ASTRA FACTORY TIME</div>
+        <p>
+            You reached the emergency exit.<br>
+            But something followed you.
+        </p>
+        <p class="small">
+            RECORDING TERMINATED
+        </p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+</div>
+
+<div id="pause" style="display:none">
+    <div class="panel">
+        <h1 class="logo">PAUSED</h1>
+        <button onclick="resumeGame()">RESUME</button>
+    </div>
+</div>
+
+<div id="hud">
+    <div id="top">
+        ASTRA FACTORY
+        <div id="objective">Find the security room.</div>
+    </div>
+
+    <div id="record">● REC 00:00</div>
+
+    <div id="cross"></div>
+
+    <div id="interaction">
+        PRESS E
+    </div>
+
+    <div id="status">
+        STAMINA
+        <div class="bar">
+            <div id="stamina" class="fill"></div>
+        </div>
+
+        BATTERY
+        <div class="bar">
+            <div id="battery" class="fill"></div>
+        </div>
+    </div>
+</div>
+
+<div id="message"></div>
+<div id="vhs"></div>
+
+<div id="mobile">
+    <div class="mbtn" id="up">▲</div>
+    <div class="mbtn" id="down">▼</div>
+    <div class="mbtn" id="left">◀</div>
+    <div class="mbtn" id="right">▶</div>
+    <div class="mbtn" id="run">RUN</div>
+    <div class="mbtn" id="flash">☼</div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let W=innerWidth;
+let H=innerHeight;
+let DPR=Math.min(devicePixelRatio||1,2);
+
+function resize(){
+    W=innerWidth;
+    H=innerHeight;
+    DPR=Math.min(devicePixelRatio||1,2);
+
+    canvas.width=W*DPR;
+    canvas.height=H*DPR;
+
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener("resize",resize);
+resize();
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio=null;
+let master=null;
+
+function initAudio(){
+    try{
+        audio=new(window.AudioContext||window.webkitAudioContext)();
+        master=audio.createGain();
+        master.gain.value=.32;
+        master.connect(audio.destination);
+    }catch(e){}
+}
+
+function sound(freq=300,duration=.15,type="sine",volume=.08){
+    if(!audio)return;
+
+    const o=audio.createOscillator();
+    const g=audio.createGain();
+
+    o.type=type;
+    o.frequency.value=freq;
+
+    g.gain.setValueAtTime(volume,audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(
+        .001,
+        audio.currentTime+duration
+    );
+
+    o.connect(g);
+    g.connect(master);
+
+    o.start();
+    o.stop(audio.currentTime+duration);
+}
+
+function noise(duration=.2,volume=.03){
+    if(!audio)return;
+
+    const buffer=audio.createBuffer(
+        1,
+        audio.sampleRate*duration,
+        audio.sampleRate
+    );
+
+    const data=buffer.getChannelData(0);
+
+    for(let i=0;i<data.length;i++){
+        data[i]=(Math.random()*2-1)*.5;
+    }
+
+    const src=audio.createBufferSource();
+    const g=audio.createGain();
+
+    src.buffer=buffer;
+    g.gain.value=volume;
+
+    src.connect(g);
+    g.connect(master);
+
+    src.start();
+}
+
+let hum=null;
+
+function startHum(){
+    if(!audio)return;
+
+    hum=audio.createOscillator();
+
+    const g=audio.createGain();
+
+    hum.type="sine";
+    hum.frequency.value=52;
+    g.gain.value=.015;
+
+    hum.connect(g);
+    g.connect(master);
+
+    hum.start();
+}
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let state="menu";
+let gameTime=0;
+
+let power=false;
+let toolFound=false;
+let doorOpen=false;
+let chase=false;
+let escaped=false;
+
+let flashlight=true;
+
+let keys={};
+
+let mobile={
+    up:false,
+    down:false,
+    left:false,
+    right:false,
+    run:false
+};
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+const player={
+    x:2.5,
+    y:2.5,
+    angle:0,
+    stamina:100,
+    battery:100
+};
+
+
+/* =========================================================
+   FACTORY MAP
+========================================================= */
+
+const MAP=[
+"111111111111111111111111111111111",
+"100000000000000100000000000000001",
+"101111111111110111111111111111101",
+"101000000000010100000000000000101",
+"101011111111010101111111111110101",
+"101010000001010101000000000010101",
+"101010111101010101011111111010101",
+"101010100001000001010000001010101",
+"101010101111111111010111101010101",
+"101000101000000000010100001010101",
+"101110101011111111110101111010101",
+"100000101000000000000101000010001",
+"111110101111111111111101011111101",
+"100010100000000000000001010000001",
+"101010111111111111111111010111101",
+"101010000000000000000000010100001",
+"101011111111111111111111110101101",
+"101000000000000000000000000101001",
+"101111111111111111111111111101101",
+"100000000000000000000000000001001",
+"101111111111111111111111111111101",
+"100000000000000000000000000000001",
+"111111111111111111111111111111111"
+];
+
+const MW=MAP[0].length;
+const MH=MAP.length;
+
+function wall(x,y){
+    if(x<0||y<0||x>=MW||y>=MH)return true;
+    return MAP[Math.floor(y)][Math.floor(x)]==="1";
+}
+
+function blocked(x,y){
+    const r=.18;
+
+    return(
+        wall(x-r,y-r)||
+        wall(x+r,y-r)||
+        wall(x-r,y+r)||
+        wall(x+r,y+r)
+    );
+}
+
+
+/* =========================================================
+   INTERACTABLE LOCATIONS
+========================================================= */
+
+const security={
+    x:4.5,
+    y:3.5
+};
+
+const tool={
+    x:28.5,
+    y:3.5
+};
+
+const powerBox={
+    x:26.5,
+    y:19.5
+};
+
+const exitDoor={
+    x:29.5,
+    y:21.5
+};
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+let messageTimer=null;
+
+function showMessage(text,time=1.5){
+
+    const el=document.getElementById("message");
+
+    el.textContent=text;
+    el.style.opacity="1";
+
+    clearTimeout(messageTimer);
+
+    messageTimer=setTimeout(()=>{
+        el.style.opacity="0";
+    },time*1000);
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.getElementById("start").onclick=async()=>{
+
+    initAudio();
+
+    if(audio){
+        try{
+            await audio.resume();
+        }catch(e){}
+    }
+
+    startHum();
+
+    document.getElementById("menu").style.display="none";
+
+    state="playing";
+
+    player.x=2.5;
+    player.y=1.5;
+    player.angle=0;
+
+    showMessage("WELCOME TO ASTRA FACTORY",2);
+
+    setTimeout(()=>{
+        showMessage("FIND THE SECURITY ROOM",2);
+    },2300);
+};
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+addEventListener("keydown",e=>{
+
+    const key=e.key.toLowerCase();
+
+    keys[key]=true;
+
+    if(
+        ["w","a","s","d","shift"," "].includes(key)
+    )
+        e.preventDefault();
+
+    if(key==="f" && state==="playing"){
+        flashlight=!flashlight;
+        sound(flashlight?650:180,.12,"square",.04);
+    }
+
+    if(key==="e" && state==="playing"){
+        interact();
+    }
+
+    if(key==="escape" && state==="playing"){
+        pauseGame();
+    }
+});
+
+addEventListener("keyup",e=>{
+    keys[e.key.toLowerCase()]=false;
+});
+
+
+/* =========================================================
+   MOUSE LOOK
+========================================================= */
+
+let locked=false;
+
+canvas.addEventListener("click",()=>{
+
+    if(state==="playing"){
+        if(canvas.requestPointerLock)
+            canvas.requestPointerLock();
+    }
+
+});
+
+document.addEventListener("pointerlockchange",()=>{
+    locked=document.pointerLockElement===canvas;
+});
+
+addEventListener("mousemove",e=>{
+
+    if(locked && state==="playing"){
+        player.angle+=e.movementX*.0024;
+    }
+
+});
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+function bindButton(id,key){
+
+    const el=document.getElementById(id);
+
+    el.addEventListener("touchstart",e=>{
+        e.preventDefault();
+        mobile[key]=true;
+    },{passive:false});
+
+    el.addEventListener("touchend",e=>{
+        e.preventDefault();
+        mobile[key]=false;
+    },{passive:false});
+
+    el.addEventListener("touchcancel",()=>{
+        mobile[key]=false;
+    });
+}
+
+bindButton("up","up");
+bindButton("down","down");
+bindButton("left","left");
+bindButton("right","right");
+bindButton("run","run");
+
+document.getElementById("flash").onclick=()=>{
+    if(state==="playing"){
+        flashlight=!flashlight;
+    }
+};
+
+
+/* =========================================================
+   INTERACTION
+========================================================= */
+
+function near(a,b,d=.9){
+
+    return Math.hypot(
+        player.x-a,
+        player.y-b
+    )<d;
+}
+
+function interact(){
+
+    if(!power && near(security.x,security.y)){
+
+        power=true;
+
+        showMessage("SECURITY SYSTEM ONLINE",2);
+
+        document.getElementById("objective").textContent=
+        "Find the maintenance tool.";
+
+        sound(550,.2,"square",.07);
+        sound(850,.3,"sine",.04);
+
+        return;
+    }
+
+
+    if(power && !toolFound && near(tool.x,tool.y)){
+
+        toolFound=true;
+
+        showMessage("TOOL ACQUIRED",1.5);
+
+        document.getElementById("objective").textContent=
+        "Restore power to the main door.";
+
+        sound(700,.2,"square",.07);
+
+        return;
+    }
+
+
+    if(toolFound && !doorOpen && near(powerBox.x,powerBox.y)){
+
+        doorOpen=true;
+
+        showMessage("MAIN POWER RESTORED",2);
+
+        document.getElementById("objective").textContent=
+        "Go to the emergency exit.";
+
+        sound(150,.4,"sawtooth",.06);
+
+        setTimeout(()=>{
+            showMessage("SOMETHING IS MOVING...",2);
+            startChase();
+        },2500);
+
+        return;
+    }
+
+
+    if(doorOpen && near(exitDoor.x,exitDoor.y)){
+
+        escaped=true;
+        state="ending";
+
+        document.getElementById("ending").style.display="flex";
+
+        if(document.exitPointerLock)
+            document.exitPointerLock();
+
+        sound(900,.5,"sine",.08);
+
+        return;
+    }
+}
+
+
+/* =========================================================
+   PAUSE
+========================================================= */
+
+function pauseGame(){
+
+    state="pause";
+    document.getElementById("pause").style.display="flex";
+
+    if(document.exitPointerLock)
+        document.exitPointerLock();
+}
+
+function resumeGame(){
+
+    state="playing";
+    document.getElementById("pause").style.display="none";
+}
+
+
+/* =========================================================
+   MOVEMENT
+========================================================= */
+
+function updatePlayer(dt){
+
+    let forward=
+        (keys["w"]||mobile.up?1:0)-
+        (keys["s"]||mobile.down?1:0);
+
+    let side=
+        (keys["d"]||mobile.right?1:0)-
+        (keys["a"]||mobile.left?1:0);
+
+    const sprint=
+        (keys["shift"]||mobile.run) &&
+        player.stamina>0 &&
+        forward>0;
+
+    if(forward||side){
+
+        const len=Math.hypot(forward,side);
+
+        forward/=len;
+        side/=len;
+
+        const speed=(sprint?3.4:1.8)*dt;
+
+        const dx=
+            (
+                Math.cos(player.angle)*forward-
+                Math.sin(player.angle)*side
+            )*speed;
+
+        const dy=
+            (
+                Math.sin(player.angle)*forward+
+                Math.cos(player.angle)*side
+            )*speed;
+
+        if(!blocked(player.x+dx,player.y))
+            player.x+=dx;
+
+        if(!blocked(player.x,player.y+dy))
+            player.y+=dy;
+
+        if(sprint)
+            player.stamina-=35*dt;
+        else
+            player.stamina+=18*dt;
+
+    }else{
+
+        player.stamina+=25*dt;
+    }
+
+    player.stamina=
+        Math.max(0,Math.min(100,player.stamina));
+
+    if(flashlight){
+
+        player.battery-=.7*dt;
+
+        if(player.battery<=0){
+
+            player.battery=0;
+            flashlight=false;
+
+            showMessage("FLASHLIGHT EMPTY",1.5);
+        }
+    }
+}
+
+
+/* =========================================================
+   CHASE
+========================================================= */
+
+const momo={
+    active:false,
+    x:18.5,
+    y:17.5,
+    angle:0,
+    speed:.75
+};
+
+function startChase(){
+
+    chase=true;
+
+    momo.active=true;
+
+    momo.x=20.5;
+    momo.y=19.5;
+
+    document.getElementById("objective").textContent=
+    "RUN TO THE EMERGENCY EXIT";
+
+    showMessage("RUN.",1);
+}
+
+
+function updateMomo(dt){
+
+    if(!momo.active)
+        return;
+
+    const dx=player.x-momo.x;
+    const dy=player.y-momo.y;
+
+    const distance=Math.hypot(dx,dy);
+
+    momo.angle=Math.atan2(dy,dx);
+
+    const speed=
+        (distance<5?1.45:1.0)*dt;
+
+    const nx=momo.x+Math.cos(momo.angle)*speed;
+    const ny=momo.y+Math.sin(momo.angle)*speed;
+
+    if(!blocked(nx,momo.y))
+        momo.x=nx;
+
+    if(!blocked(momo.x,ny))
+        momo.y=ny;
+
+    if(distance<.65){
+
+        momo.active=false;
+
+        showMessage("MOMO FOUND YOU",1);
+
+        player.x=2.5;
+        player.y=1.5;
+
+        setTimeout(()=>{
+            momo.active=true;
+            showMessage("RUN.",.8);
+        },1200);
+    }
+}
+
+
+/* =========================================================
+   RAYCASTING
+========================================================= */
+
+function castRay(angle){
+
+    let x=player.x;
+    let y=player.y;
+
+    const step=.035;
+    let distance=0;
+
+    while(distance<30){
+
+        x+=Math.cos(angle)*step;
+        y+=Math.sin(angle)*step;
+        distance+=step;
+
+        if(wall(x,y))
+            break;
+    }
+
+    return distance;
+}
+
+
+/* =========================================================
+   RENDER FACTORY
+========================================================= */
+
+function renderFactory(){
+
+    /*
+       CEILING
+    */
+
+    ctx.fillStyle="#252525";
+    ctx.fillRect(0,0,W,H/2);
+
+    /*
+       FLOOR
+    */
+
+    ctx.fillStyle="#191714";
+    ctx.fillRect(0,H/2,W,H/2);
+
+
+    const FOV=Math.PI/3;
+    const rays=Math.ceil(W/2);
+
+    for(let i=0;i<rays;i++){
+
+        const angle=
+            player.angle-FOV/2+
+            FOV*i/rays;
+
+        let distance=castRay(angle);
+
+        distance*=
+            Math.cos(angle-player.angle);
+
+        const height=
+            Math.min(
+                H*2,
+                H/(Math.max(.05,distance)*.65)
+            );
+
+        const top=(H-height)/2;
+
+        let shade=
+            Math.max(
+                .08,
+                Math.min(1,1-distance/17)
+            );
+
+
+        /*
+           FACTORY WALL COLOR
+        */
+
+        let r=105*shade;
+        let g=105*shade;
+        let b=100*shade;
+
+        /*
+           Power changes atmosphere.
+        */
+
+        if(power){
+
+            r+=8*shade;
+            g+=8*shade;
+            b+=5*shade;
+        }
+
+
+        ctx.fillStyle=
+            `rgb(${r|0},${g|0},${b|0})`;
+
+        ctx.fillRect(i*2,top,3,height);
+
+
+        /*
+           Vertical panel seams.
+        */
+
+        if(i%18===0){
+
+            ctx.fillStyle=
+                "rgba(0,0,0,.25)";
+
+            ctx.fillRect(
+                i*2,
+                top,
+                1,
+                height
+            );
+        }
+    }
+
+
+    /*
+       FLOOR GRADIENT
+    */
+
+    const floor=ctx.createLinearGradient(
+        0,H/2,
+        0,H
+    );
+
+    floor.addColorStop(
+        0,
+        "rgba(20,20,20,0)"
+    );
+
+    floor.addColorStop(
+        1,
+        "rgba(0,0,0,.8)"
+    );
+
+    ctx.fillStyle=floor;
+
+    ctx.fillRect(
+        0,H/2,
+        W,H/2
+    );
+
+
+    /*
+       CEILING LIGHTS
+    */
+
+    const flicker=
+        .82+
+        Math.sin(gameTime*8)*.06+
+        Math.sin(gameTime*29)*.025;
+
+    ctx.fillStyle=
+        `rgba(240,240,220,${.10*flicker})`;
+
+    ctx.fillRect(
+        W*.25,
+        H*.05,
+        W*.5,
+        3
+    );
+
+
+    /*
+       Flashlight.
+    */
+
+    if(flashlight){
+
+        const light=
+            ctx.createRadialGradient(
+                W/2,
+                H/2,
+                20,
+                W/2,
+                H/2,
+                Math.min(W,H)*.72
+            );
+
+        light.addColorStop(
+            0,
+            "rgba(255,255,245,.16)"
+        );
+
+        light.addColorStop(
+            .35,
+            "rgba(255,255,240,.04)"
+        );
+
+        light.addColorStop(
+            1,
+            "rgba(0,0,0,.72)"
+        );
+
+        ctx.fillStyle=light;
+
+        ctx.fillRect(
+            0,0,W,H
+        );
+    }
+
+
+    /*
+       Momo visual.
+    */
+
+    if(momo.active){
+
+        renderMomo();
+    }
+}
+
+
+/* =========================================================
+   MOMO
+========================================================= */
+
+function renderMomo(){
+
+    const dx=momo.x-player.x;
+    const dy=momo.y-player.y;
+
+    const distance=Math.hypot(dx,dy);
+
+    let angle=
+        Math.atan2(dy,dx)-player.angle;
+
+    while(angle>Math.PI)
+        angle-=Math.PI*2;
+
+    while(angle<-Math.PI)
+        angle+=Math.PI*2;
+
+    const FOV=Math.PI/3;
+
+    if(
+        Math.abs(angle)>FOV/2+.2 ||
+        distance>18
+    )
+        return;
+
+    const screenX=
+        W/2+
+        angle/(FOV/2)*(W/2);
+
+    const size=
+        Math.min(
+            H*1.5,
+            H/(distance*.7)
+        );
+
+    const y=H/2;
+
+    /*
+       Dark silhouette.
+    */
+
+    ctx.save();
+
+    ctx.translate(screenX,y);
+
+    ctx.globalAlpha=
+        Math.max(
+            .2,
+            Math.min(1,1-distance/14)
+        );
+
+    /*
+       Body.
+    */
+
+    ctx.fillStyle="#080808";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        size*.18,
+        size*.22,
+        size*.55,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Head.
+    */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        -size*.35,
+        size*.25,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Long arms.
+    */
+
+    ctx.lineWidth=
+        Math.max(3,size*.07);
+
+    ctx.strokeStyle="#050505";
+
+    ctx.beginPath();
+
+    ctx.moveTo(-size*.14,-size*.02);
+    ctx.lineTo(-size*.40,size*.55);
+
+    ctx.moveTo(size*.14,-size*.02);
+    ctx.lineTo(size*.40,size*.55);
+
+    ctx.stroke();
+
+
+    /*
+       Smile.
+    */
+
+    ctx.strokeStyle="#ddd";
+
+    ctx.lineWidth=
+        Math.max(1,size*.025);
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        -size*.30,
+        size*.11,
+        0,
+        Math.PI
+    );
+
+    ctx.stroke();
+
+
+    /*
+       Eyes.
+    */
+
+    ctx.fillStyle="#ddd";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        -size*.09,
+        -size*.39,
+        size*.025,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        size*.09,
+        -size*.39,
+        size*.025,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   WORLD MARKERS
+========================================================= */
+
+function marker(x,y,type){
+
+    const dx=x-player.x;
+    const dy=y-player.y;
+
+    const distance=Math.hypot(dx,dy);
+
+    let angle=
+        Math.atan2(dy,dx)-player.angle;
+
+    while(angle>Math.PI)
+        angle-=Math.PI*2;
+
+    while(angle<-Math.PI)
+        angle+=Math.PI*2;
+
+    const FOV=Math.PI/3;
+
+    if(
+        Math.abs(angle)>FOV/2 ||
+        distance>15
+    )
+        return;
+
+    const sx=
+        W/2+
+        angle/(FOV/2)*(W/2);
+
+    const sy=
+        H/2;
+
+    const size=
+        Math.max(
+            5,
+            Math.min(
+                80,
+                H/(distance*1.5)
+            )
+        );
+
+    ctx.save();
+
+    ctx.translate(sx,sy);
+
+    ctx.globalAlpha=
+        Math.max(
+            .15,
+            1-distance/15
+        );
+
+    if(type==="power"){
+
+        ctx.strokeStyle="#d5aa3a";
+
+        ctx.strokeRect(
+            -size/2,
+            -size/2,
+            size,
+            size
+        );
+
+    }else if(type==="exit"){
+
+        ctx.fillStyle="#bbb";
+
+        ctx.fillRect(
+            -size/2,
+            -size/2,
+            size,
+            size*1.5
+        );
+
+    }
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   UPDATE HUD
+========================================================= */
+
+function updateHUD(){
+
+    document.getElementById("stamina").style.width=
+        player.stamina+"%";
+
+    document.getElementById("battery").style.width=
+        player.battery+"%";
+
+
+    const seconds=Math.floor(gameTime);
+
+    const min=
+        String(Math.floor(seconds/60))
+        .padStart(2,"0");
+
+    const sec=
+        String(seconds%60)
+        .padStart(2,"0");
+
+    document.getElementById("record").textContent=
+        `● REC ${min}:${sec}`;
+
+
+    let interact=false;
+
+    if(
+        !power &&
+        near(security.x,security.y)
+    )
+        interact=true;
+
+    if(
+        power &&
+        !toolFound &&
+        near(tool.x,tool.y)
+    )
+        interact=true;
+
+    if(
+        toolFound &&
+        !doorOpen &&
+        near(powerBox.x,powerBox.y)
+    )
+        interact=true;
+
+    if(
+        doorOpen &&
+        near(exitDoor.x,exitDoor.y)
+    )
+        interact=true;
+
+    document.getElementById("interaction").style.opacity=
+        interact?"1":"0";
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+let last=performance.now();
+
+function loop(now){
+
+    const dt=
+        Math.min(
+            .05,
+            (now-last)/1000
+        );
+
+    last=now;
+
+
+    if(state==="playing"){
+
+        gameTime+=dt;
+
+        updatePlayer(dt);
+
+        updateMomo(dt);
+
+        updateHUD();
+
+        renderFactory();
+
+        /*
+           Markers.
+        */
+
+        if(!power)
+            marker(
+                security.x,
+                security.y,
+                "power"
+            );
+
+        if(power && !toolFound)
+            marker(
+                tool.x,
+                tool.y,
+                "power"
+            );
+
+        if(toolFound && !doorOpen)
+            marker(
+                powerBox.x,
+                powerBox.y,
+                "power"
+            );
+
+        if(doorOpen)
+            marker(
+                exitDoor.x,
+                exitDoor.y,
+                "exit"
+            );
+
+    }else if(state==="menu"){
+
+        renderMenuBackground();
+
+    }
+
+
+    requestAnimationFrame(loop);
+}
+
+
+/* =========================================================
+   MENU BACKGROUND
+========================================================= */
+
+function renderMenuBackground(){
+
+    ctx.fillStyle="#050505";
+    ctx.fillRect(0,0,W,H);
+
+    for(let i=0;i<12;i++){
+
+        ctx.fillStyle=
+            `rgba(210,170,60,${.025+i*.002})`;
+
+        ctx.fillRect(
+            0,
+            H*.45+i*5,
+            W,
+            2
+        );
+    }
+
+    for(let i=0;i<35;i++){
+
+        ctx.fillStyle=
+            "rgba(255,255,255,.015)";
+
+        ctx.fillRect(
+            Math.random()*W,
+            Math.random()*H,
+            Math.random()*120,
+            1
+        );
+    }
+}
+
+
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+</html>

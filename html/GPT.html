@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ASTRA — AI Research HQ</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020307;font-family:Arial,Helvetica,sans-serif}
+canvas{display:block}
+#crosshair{
+position:fixed;left:50%;top:50%;width:8px;height:8px;
+transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.7);
+border-radius:50%;z-index:10;pointer-events:none
+}
+#hud{
+position:fixed;left:20px;top:20px;color:#fff;z-index:20;
+pointer-events:none;text-shadow:0 0 10px #000
+}
+.logo{
+font-size:25px;font-weight:800;letter-spacing:5px;
+color:#fff
+}
+.subtitle{
+font-size:10px;letter-spacing:3px;color:#8ea5c7;margin-top:5px
+}
+#status{
+margin-top:18px;padding:10px 13px;
+background:rgba(4,8,18,.65);border-left:2px solid #79a9ff;
+backdrop-filter:blur(8px);font-size:11px;line-height:1.7
+}
+#chat{
+position:fixed;right:22px;bottom:22px;width:330px;
+color:#fff;background:rgba(3,7,16,.82);
+border:1px solid rgba(125,164,255,.35);
+box-shadow:0 0 35px rgba(40,100,255,.12);
+padding:17px;z-index:30;display:none;
+backdrop-filter:blur(12px)
+}
+.chat-name{color:#8fb8ff;font-weight:bold;margin-bottom:7px}
+.chat-text{font-size:13px;line-height:1.55;color:#dce5f5}
+#prompt{
+position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
+color:#cbd7ea;font-size:12px;background:rgba(0,0,0,.55);
+padding:9px 15px;border:1px solid rgba(255,255,255,.12);
+z-index:20
+}
+#intro{
+position:fixed;inset:0;z-index:100;background:#020307;
+display:flex;align-items:center;justify-content:center;
+color:white;text-align:center;cursor:pointer
+}
+.intro-inner{max-width:650px;padding:30px}
+.intro-title{
+font-size:clamp(38px,7vw,85px);font-weight:900;
+letter-spacing:8px
+}
+.intro-title span{color:#7daaff}
+.intro-sub{
+margin-top:14px;color:#8798b5;letter-spacing:4px;font-size:12px
+}
+.enter{
+margin-top:45px;display:inline-block;padding:14px 28px;
+border:1px solid #719cff;color:#a8c5ff;
+letter-spacing:3px;font-size:12px;
+box-shadow:0 0 25px rgba(70,120,255,.18)
+}
+#fade{
+position:fixed;inset:0;background:#000;z-index:90;
+pointer-events:none;opacity:0;transition:opacity 1s
+}
+</style>
+</head>
+
+<body>
+
+<div id="intro">
+<div class="intro-inner">
+   <div class="intro-title">AI<span>HQ</span></div>
+   <div class="intro-sub">ASTRA // ARTIFICIAL INTELLIGENCE RESEARCH FACILITY</div>
+   <div class="enter">ENTER FACILITY</div>
+</div>
+</div>
+
+<div id="fade"></div>
+<div id="crosshair"></div>
+
+<div id="hud">
+<div class="logo">ASTRA</div>
+<div class="subtitle">AI RESEARCH HQ // SIMULATION</div>
+<div id="status">
+   LOCATION: MAIN FACILITY<br>
+   SYSTEM: ONLINE<br>
+   AI CORE: STABLE<br>
+   SECTOR: <span id="sector">LOBBY</span>
+</div>
+</div>
+
+<div id="chat">
+<div class="chat-name">CHATGPT // AI CORE</div>
+<div class="chat-text" id="chatText"></div>
+</div>
+
+<div id="prompt">
+WASD / ARROWS — MOVE &nbsp; • &nbsp; MOUSE — LOOK &nbsp; • &nbsp; SHIFT — BOOST &nbsp; • &nbsp; E — INTERACT
+</div>
+
+<script type="importmap">
+{
+"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+}
+}
+</script>
+
+<script type="module">
+
+import * as THREE from "three";
+import {PointerLockControls} from "three/addons/controls/PointerLockControls.js";
+import {EffectComposer} from "three/addons/postprocessing/EffectComposer.js";
+import {RenderPass} from "three/addons/postprocessing/RenderPass.js";
+import {UnrealBloomPass} from "three/addons/postprocessing/UnrealBloomPass.js";
+
+/* =========================================================
+   CORE
+========================================================= */
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020307);
+scene.fog = new THREE.FogExp2(0x030611,0.009);
+
+const camera = new THREE.PerspectiveCamera(
+72, innerWidth/innerHeight, .1, 1000
+);
+camera.position.set(0,2.2,20);
+
+const renderer = new THREE.WebGLRenderer({
+antialias:true,
+powerPreference:"high-performance"
+});
+
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+document.body.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+
+const bloom = new UnrealBloomPass(
+new THREE.Vector2(innerWidth,innerHeight),
+.8,.65,.15
+);
+composer.addPass(bloom);
+
+/* =========================================================
+   LIGHTING
+========================================================= */
+
+scene.add(new THREE.HemisphereLight(0x6688bb,0x050509,1.2));
+
+const mainLight = new THREE.DirectionalLight(0x9bbcff,2.5);
+mainLight.position.set(20,30,15);
+mainLight.castShadow=true;
+mainLight.shadow.mapSize.set(2048,2048);
+scene.add(mainLight);
+
+const blueLight = new THREE.PointLight(0x397dff,12,55);
+blueLight.position.set(0,8,-12);
+scene.add(blueLight);
+
+const cyanLight = new THREE.PointLight(0x20d8ff,8,35);
+cyanLight.position.set(-18,5,0);
+scene.add(cyanLight);
+
+/* =========================================================
+   MATERIAL HELPERS
+========================================================= */
+
+function mat(color,rough=.5,metal=.1,emissive=0x000000){
+return new THREE.MeshStandardMaterial({
+   color,
+   roughness:rough,
+   metalness:metal,
+   emissive,
+   emissiveIntensity:emissive?2:0
+});
+}
+
+function box(w,h,d,color,metal=.1){
+const m=new THREE.Mesh(
+   new THREE.BoxGeometry(w,h,d),
+   mat(color,.55,metal)
+);
+m.castShadow=true;
+m.receiveShadow=true;
+return m;
+}
+
+/* =========================================================
+   FLOOR
+========================================================= */
+
+const floorMat=new THREE.MeshStandardMaterial({
+color:0x070a12,
+roughness:.3,
+metalness:.65
+});
+
+const floor=new THREE.Mesh(
+new THREE.PlaneGeometry(180,180),
+floorMat
+);
+
+floor.rotation.x=-Math.PI/2;
+floor.receiveShadow=true;
+scene.add(floor);
+
+/* GRID */
+
+const grid=new THREE.GridHelper(180,90,0x1c3155,0x0b1628);
+grid.position.y=.01;
+scene.add(grid);
+
+/* =========================================================
+   WALLS
+========================================================= */
+
+function wall(x,y,z,w,h,d){
+const m=box(w,h,d,0x090d18,.45);
+m.position.set(x,y,z);
+scene.add(m);
+return m;
+}
+
+wall(0,8,-34,70,16,1);
+wall(-34,8,0,1,16,70);
+wall(34,8,0,1,16,70);
+wall(0,8,34,70,16,1);
+
+/* CEILING */
+
+const ceiling=box(70,.6,70,0x05070d,.3);
+ceiling.position.y=16;
+scene.add(ceiling);
+
+/* =========================================================
+   NEON STRIPS
+========================================================= */
+
+function neon(x,y,z,w,d,color=0x4e8cff){
+const mesh=new THREE.Mesh(
+   new THREE.BoxGeometry(w,.08,d),
+   new THREE.MeshBasicMaterial({
+     color,
+     toneMapped:false
+   })
+);
+mesh.position.set(x,y,z);
+scene.add(mesh);
+return mesh;
+}
+
+for(let x=-30;x<=30;x+=10){
+neon(x,14.8,0,5,.08);
+neon(x,14.8,-18,5,.08);
+neon(x,14.8,18,5,.08);
+}
+
+for(let z=-28;z<=28;z+=10){
+neon(-30,14.8,z,.08,5,0x28d9ff);
+neon(30,14.8,z,.08,5,0x28d9ff);
+}
+
+/* =========================================================
+   GLASS PARTITIONS
+========================================================= */
+
+const glassMat=new THREE.MeshPhysicalMaterial({
+color:0x17253c,
+transparent:true,
+opacity:.28,
+roughness:.1,
+metalness:.15
+});
+
+function glass(x,y,z,w,h,d){
+const g=new THREE.Mesh(
+   new THREE.BoxGeometry(w,h,d),
+   glassMat
+);
+g.position.set(x,y,z);
+scene.add(g);
+}
+
+glass(-14,6,-10,.3,12,28);
+glass(14,6,-10,.3,12,28);
+glass(-14,6,12,28,12,.3);
+glass(14,6,12,28,12,.3);
+
+/* =========================================================
+   SERVER RACKS
+========================================================= */
+
+function serverRack(x,z){
+const rack=box(2.2,6,2.4,0x0b0e17,.65);
+rack.position.set(x,3,z);
+scene.add(rack);
+
+for(let y=1;y<5.7;y+=.65){
+   const led=neon(x-1.05,y,z-1.23,.15,.02,
+     Math.random()>.5?0x39a7ff:0x42ffd1);
+   led.scale.y=2;
+   led.rotation.x=0;
+}
+}
+
+for(let x=-26;x<=26;x+=5){
+serverRack(x,-25);
+}
+
+/* =========================================================
+   DESKS / COMPUTERS
+========================================================= */
+
+function workstation(x,z){
+const desk=box(4.5,1,2,0x111722,.55);
+desk.position.set(x,1,z);
+scene.add(desk);
+
+const monitor=box(2.5,1.5,.18,0x05070b,.7);
+monitor.position.set(x,2.2,z-.75);
+scene.add(monitor);
+
+const screen=new THREE.Mesh(
+   new THREE.PlaneGeometry(2.2,1.2),
+   new THREE.MeshBasicMaterial({
+     color:0x1e69ff,
+     emissive:0x1e69ff
+   })
+);
+screen.position.set(x,2.2,z-.85);
+screen.rotation.y=Math.PI;
+scene.add(screen);
+
+const keyboard=box(1.7,.08,.65,0x171d29,.4);
+keyboard.position.set(x,1.55,z-.4);
+scene.add(keyboard);
+}
+
+for(let x=-25;x<=25;x+=8){
+workstation(x,-12);
+workstation(x,8);
+}
+
+/* =========================================================
+   AI CORE ROOM
+========================================================= */
+
+const coreRoom=box(12,10,12,0x070b14,.7);
+coreRoom.position.set(0,5,-4);
+scene.add(coreRoom);
+
+const coreGlass=new THREE.Mesh(
+new THREE.BoxGeometry(10,9,10),
+new THREE.MeshPhysicalMaterial({
+  color:0x10203d,
+  transparent:true,
+  opacity:.2,
+  roughness:.05,
+  metalness:.5
+})
+);
+coreGlass.position.set(0,5,-4);
+scene.add(coreGlass);
+
+/* AI CORE */
+
+const coreGroup=new THREE.Group();
+coreGroup.position.set(0,5,-4);
+scene.add(coreGroup);
+
+const coreSphere=new THREE.Mesh(
+new THREE.IcosahedronGeometry(2.1,4),
+new THREE.MeshStandardMaterial({
+  color:0x163cff,
+  emissive:0x175cff,
+  emissiveIntensity:5,
+  roughness:.1,
+  metalness:.5
+})
+);
+coreGroup.add(coreSphere);
+
+const coreRing=new THREE.Mesh(
+new THREE.TorusGeometry(3,.055,12,160),
+new THREE.MeshBasicMaterial({
+  color:0x48bfff,
+  toneMapped:false
+})
+);
+coreGroup.add(coreRing);
+
+const coreRing2=coreRing.clone();
+coreRing2.rotation.x=Math.PI/2;
+coreGroup.add(coreRing2);
+
+const coreRing3=coreRing.clone();
+coreRing3.rotation.y=Math.PI/2;
+coreGroup.add(coreRing3);
+
+const coreLight=new THREE.PointLight(0x3d7cff,35,30);
+coreGroup.add(coreLight);
+
+/* =========================================================
+   HOLOGRAM CHATGPT
+========================================================= */
+
+const holo=new THREE.Group();
+holo.position.set(0,2,-28);
+scene.add(holo);
+
+const holoBody=new THREE.Mesh(
+new THREE.CylinderGeometry(1.1,1.4,3.5,32),
+new THREE.MeshBasicMaterial({
+  color:0x5aa8ff,
+  transparent:true,
+  opacity:.22,
+  wireframe:true
+})
+);
+holo.add(holoBody);
+
+const holoHead=new THREE.Mesh(
+new THREE.SphereGeometry(.85,32,32),
+new THREE.MeshBasicMaterial({
+  color:0x9dd4ff,
+  transparent:true,
+  opacity:.4,
+  wireframe:true
+})
+);
+holoHead.position.y=2.2;
+holo.add(holoHead);
+
+for(let i=0;i<8;i++){
+const r=new THREE.Mesh(
+   new THREE.TorusGeometry(1.5+i*.15,.025,8,80),
+   new THREE.MeshBasicMaterial({
+     color:i%2?0x4b8dff:0x32dfff,
+     transparent:true,
+     opacity:.7
+   })
+);
+r.rotation.x=Math.PI/2;
+r.position.y=.1;
+holo.add(r);
+}
+
+/* floating particles around AI */
+
+const hpGeo=new THREE.BufferGeometry();
+const hpCount=600;
+const hpPos=new Float32Array(hpCount*3);
+
+for(let i=0;i<hpCount;i++){
+const a=Math.random()*Math.PI*2;
+const r=1+Math.random()*3;
+hpPos[i*3]=Math.cos(a)*r;
+hpPos[i*3+1]=Math.random()*5-1;
+hpPos[i*3+2]=Math.sin(a)*r;
+}
+
+hpGeo.setAttribute("position",new THREE.BufferAttribute(hpPos,3));
+
+const hp=new THREE.Points(
+hpGeo,
+new THREE.PointsMaterial({
+  color:0x66bbff,
+  size:.025,
+  transparent:true,
+  opacity:.8
+})
+);
+
+holo.add(hp);
+
+/* =========================================================
+   STARS / PARTICLES OUTSIDE
+========================================================= */
+
+const starGeo=new THREE.BufferGeometry();
+const starCount=10000;
+const starPos=new Float32Array(starCount*3);
+
+for(let i=0;i<starCount;i++){
+const r=150+Math.random()*100;
+const a=Math.random()*Math.PI*2;
+const p=Math.acos(2*Math.random()-1);
+
+starPos[i*3]=Math.sin(p)*Math.cos(a)*r;
+starPos[i*3+1]=Math.cos(p)*r;
+starPos[i*3+2]=Math.sin(p)*Math.sin(a)*r;
+}
+
+starGeo.setAttribute("position",new THREE.BufferAttribute(starPos,3));
+
+const stars=new THREE.Points(
+starGeo,
+new THREE.PointsMaterial({
+  color:0xb8d3ff,
+  size:.12,
+  transparent:true,
+  opacity:.8
+})
+);
+scene.add(stars);
+
+/* =========================================================
+   CITY LIGHTS OUTSIDE
+========================================================= */
+
+for(let i=0;i<180;i++){
+const x=(Math.random()-.5)*120;
+const z=-45-Math.random()*35;
+const h=.5+Math.random()*4;
+
+const b=new THREE.Mesh(
+   new THREE.BoxGeometry(.35,h,.35),
+   new THREE.MeshBasicMaterial({
+    color:Math.random()>.5?0x2255ff:0x45cfff
+   })
+);
+
+b.position.set(x,h/2,z);
+scene.add(b);
+}
+
+/* =========================================================
+   FLOATING DATA PANELS
+========================================================= */
+
+function dataPanel(x,y,z,rotY=0){
+const group=new THREE.Group();
+group.position.set(x,y,z);
+group.rotation.y=rotY;
+scene.add(group);
+
+const frame=new THREE.Mesh(
+  new THREE.BoxGeometry(4,.04,2.4),
+  new THREE.MeshBasicMaterial({
+   color:0x438aff,
+   wireframe:true
+  })
+);
+group.add(frame);
+
+for(let i=0;i<14;i++){
+  const line=new THREE.Mesh(
+   new THREE.BoxGeometry(.06+Math.random()*.7,.02,.02),
+   new THREE.MeshBasicMaterial({
+    color:Math.random()>.5?0x55aaff:0x36e5d0
+   })
+  );
+  line.position.set(
+   -1.5+Math.random()*3,
+   .12+Math.random()*.5,
+   -.9+Math.random()*1.7
+  );
+  group.add(line);
+}
+
+return group;
+}
+
+const panels=[
+dataPanel(-9,5,-18,.15),
+dataPanel(9,5,-18,-.15),
+dataPanel(-27,5,7,Math.PI/2),
+dataPanel(27,5,7,-Math.PI/2)
+];
+
+/* =========================================================
+   DOORS
+========================================================= */
+
+function door(x,z,label){
+const frame=box(5,7,.3,0x101522,.6);
+frame.position.set(x,3.5,z);
+scene.add(frame);
+
+const inner=new THREE.Mesh(
+  new THREE.BoxGeometry(4.4,6.4,.08),
+  new THREE.MeshBasicMaterial({color:0x102449})
+);
+inner.position.set(x,3.5,z-.18);
+scene.add(inner);
+
+neon(x,7,z-.25,3,.05,0x48a0ff);
+}
+
+door(-25,-33,"LAB");
+door(25,-33,"LAB");
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+const controls=new PointerLockControls(camera,document.body);
+
+const keys={};
+let velocity=new THREE.Vector3();
+let direction=new THREE.Vector3();
+
+addEventListener("keydown",e=>{
+keys[e.code]=true;
+});
+
+addEventListener("keyup",e=>{
+keys[e.code]=false;
+});
+
+let canMove=false;
+
+document.getElementById("intro").addEventListener("click",()=>{
+document.getElementById("intro").style.display="none";
+controls.lock();
+canMove=true;
+});
+
+controls.addEventListener("unlock",()=>{
+canMove=false;
+});
+
+controls.addEventListener("lock",()=>{
+canMove=true;
+});
+
+/* =========================================================
+   INTERACTION
+========================================================= */
+
+const chat=document.getElementById("chat");
+const chatText=document.getElementById("chatText");
+
+let typing=false;
+
+function say(text){
+chat.style.display="block";
+chatText.textContent="";
+typing=true;
+
+let i=0;
+
+const timer=setInterval(()=>{
+   chatText.textContent+=text[i]||"";
+   i++;
+
+   if(i>=text.length){
+    clearInterval(timer);
+    typing=false;
+   }
+},18);
+
+setTimeout(()=>{
+   chat.style.display="none";
+},9000);
+}
+
+function interact(){
+if(typing)return;
+
+const dist=camera.position.distanceTo(holo.position);
+
+if(dist<9){
+   say(
+    "Hey Arya 👋 I’m ChatGPT. Welcome to the ASTRA AI Research HQ. "+
+    "The core is online, the systems are stable, and yes... "+
+    "you actually made it inside. 😂"
+   );
+   return;
+}
+
+const coreDist=camera.position.distanceTo(coreGroup.position);
+
+if(coreDist<10){
+   say(
+    "AI CORE STATUS: ONLINE. "+
+    "This is a visual simulation of an advanced artificial intelligence core."
+   );
+   return;
+}
+
+say("Nothing interactive detected here.");
+}
+
+addEventListener("keydown",e=>{
+if(e.code==="KeyE")interact();
+
+if(e.code==="Escape"){
+   controls.unlock();
+}
+});
+
+/* =========================================================
+   SECTOR DETECTION
+========================================================= */
+
+const sector=document.getElementById("sector");
+
+function updateSector(){
+const p=camera.position;
+
+if(p.z<-18) sector.textContent="AI CORE";
+else if(p.z>10) sector.textContent="RESEARCH FLOOR";
+else if(Math.abs(p.x)>20) sector.textContent="SERVER SECTOR";
+else sector.textContent="LOBBY";
+}
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+const clock=new THREE.Clock();
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+const dt=Math.min(clock.getDelta(),.05);
+
+/* AI CORE */
+
+coreSphere.rotation.x+=dt*.25;
+coreSphere.rotation.y+=dt*.5;
+
+coreRing.rotation.z+=dt*.7;
+coreRing2.rotation.z-=dt*.5;
+coreRing3.rotation.x+=dt*.35;
+
+coreLight.intensity=30+Math.sin(performance.now()*.003)*8;
+
+holo.rotation.y+=dt*.25;
+holo.position.y=2+Math.sin(performance.now()*.0015)*.15;
+
+hp.rotation.y+=dt*.1;
+
+/* floating panels */
+
+panels.forEach((p,i)=>{
+   p.rotation.z=Math.sin(performance.now()*.001+i)*.05;
+   p.position.y+=Math.sin(performance.now()*.001+i)*dt*.02;
+});
+
+/* stars */
+
+stars.rotation.y+=dt*.003;
+
+/* PLAYER */
+
+if(canMove){
+
+   const speed=keys["ShiftLeft"]||keys["ShiftRight"]?14:6;
+
+   direction.set(0,0,0);
+
+   if(keys["KeyW"]||keys["ArrowUp"])direction.z-=1;
+   if(keys["KeyS"]||keys["ArrowDown"])direction.z+=1;
+   if(keys["KeyA"]||keys["ArrowLeft"])direction.x-=1;
+   if(keys["KeyD"]||keys["ArrowRight"])direction.x+=1;
+
+   if(direction.length()>0){
+     direction.normalize();
+
+     const forward=new THREE.Vector3();
+     camera.getWorldDirection(forward);
+     forward.y=0;
+     forward.normalize();
+
+     const right=new THREE.Vector3()
+       .crossVectors(forward,camera.up)
+       .normalize();
+
+     const move=new THREE.Vector3();
+
+     move.addScaledVector(forward,-direction.z);
+     move.addScaledVector(right,direction.x);
+
+     move.normalize();
+
+     velocity.lerp(
+       move.multiplyScalar(speed),
+       Math.min(1,dt*8)
+     );
+
+     camera.position.addScaledVector(velocity,dt);
+   }else{
+     velocity.multiplyScalar(Math.pow(.001,dt));
+   }
+
+   /* boundaries */
+
+   camera.position.x=THREE.MathUtils.clamp(camera.position.x,-31,31);
+   camera.position.z=THREE.MathUtils.clamp(camera.position.z,-31,31);
+
+   camera.position.y=2.2;
+}
+
+updateSector();
+
+document.getElementById("status").innerHTML=
+`LOCATION: MAIN FACILITY<br>
+SYSTEM: ONLINE<br>
+AI CORE: STABLE<br>
+SECTOR: <span id="sector">${sector.textContent}</span>`;
+
+composer.render();
+}
+
+animate();
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+addEventListener("resize",()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+
+renderer.setSize(innerWidth,innerHeight);
+composer.setSize(innerWidth,innerHeight);
+bloom.resolution.set(innerWidth,innerHeight);
+});
+
+/* =========================================================
+   INITIAL CAMERA
+========================================================= */
+
+camera.lookAt(0,3,-20);
+
+</script>
+</body>
+</html>

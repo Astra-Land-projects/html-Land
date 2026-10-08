@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Earth Civilization Simulator</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    background:#070b13;
+    color:#eee;
+    font-family:Arial,sans-serif;
+    overflow:hidden
+}
+
+header{
+    height:62px;
+    background:#101725;
+    border-bottom:1px solid #27344a;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px
+}
+
+h1{
+    font-size:20px;
+    margin:0
+}
+
+button{
+    background:#17243a;
+    color:white;
+    border:1px solid #354967;
+    padding:8px 12px;
+    border-radius:7px;
+    cursor:pointer
+}
+
+button:hover{
+    background:#213654
+}
+
+.main{
+    height:calc(100vh - 62px);
+    display:grid;
+    grid-template-columns:1fr 330px
+}
+
+.map{
+    position:relative;
+    overflow:hidden;
+    background:#10251d
+}
+
+canvas{
+    width:100%;
+    height:100%;
+    display:block
+}
+
+.sidebar{
+    background:#0d1420;
+    border-left:1px solid #27344a;
+    padding:16px;
+    overflow:auto
+}
+
+.stat{
+    padding:11px;
+    margin-bottom:9px;
+    background:#121d2c;
+    border-radius:8px
+}
+
+.label{
+    font-size:11px;
+    color:#8294ab
+}
+
+.value{
+    font-size:20px;
+    margin-top:4px
+}
+
+.civ{
+    background:#111c2a;
+    margin:8px 0;
+    padding:10px;
+    border-radius:8px;
+    border-left:4px solid white
+}
+
+.civ b{
+    display:block;
+    margin-bottom:5px
+}
+
+.small{
+    color:#91a2b8;
+    font-size:12px;
+    line-height:1.6
+}
+
+.log{
+    height:160px;
+    overflow:auto;
+    background:#080d15;
+    padding:8px;
+    font-size:11px;
+    color:#aebbd0
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>🏛️ EARTH CIVILIZATION SIMULATOR</h1>
+
+<div>
+<button onclick="toggle()">▶ / ⏸</button>
+<button onclick="reset()">↻ Reset</button>
+<button onclick="changeSpeed(1)">Speed +</button>
+<button onclick="changeSpeed(-1)">Speed −</button>
+</div>
+
+</header>
+
+<div class="main">
+
+<div class="map">
+<canvas id="map"></canvas>
+</div>
+
+<div class="sidebar">
+
+<div class="stat">
+<div class="label">YEAR</div>
+<div class="value" id="year">1</div>
+</div>
+
+<div class="stat">
+<div class="label">WORLD POPULATION</div>
+<div class="value" id="worldPop">0</div>
+</div>
+
+<h3>🌎 Civilizations</h3>
+
+<div id="civilizations"></div>
+
+<h3>📜 World History</h3>
+
+<div class="log" id="log"></div>
+
+</div>
+</div>
+
+<script>
+
+const canvas=document.getElementById("map");
+const ctx=canvas.getContext("2d");
+
+let W,H;
+
+function resize(){
+
+    W=canvas.width=canvas.clientWidth;
+    H=canvas.height=canvas.clientHeight;
+
+}
+
+window.addEventListener("resize",resize);
+resize();
+
+let running=true;
+let speed=1;
+let year=1;
+
+const names=[
+    "Astra",
+    "Nova",
+    "Orion",
+    "Terra",
+    "Luna",
+    "Solaria"
+];
+
+const colors=[
+    "#ff6b6b",
+    "#4dabf7",
+    "#51cf66",
+    "#ffd43b",
+    "#cc5de8",
+    "#20c997"
+];
+
+let civs=[];
+
+class Civilization{
+
+    constructor(i){
+
+        this.id=i;
+
+        this.name=names[i];
+        this.color=colors[i];
+
+        this.x=100+Math.random()*(W-200);
+        this.y=100+Math.random()*(H-200);
+
+        this.population=500+Math.random()*1000;
+
+        this.food=1000;
+        this.resources=500;
+
+        this.tech=1+Math.random()*2;
+
+        this.military=50+Math.random()*50;
+
+        this.economy=50+Math.random()*50;
+
+        this.land=3000;
+
+        this.alive=true;
+
+        this.age=0;
+
+    }
+
+    update(){
+
+        this.age++;
+
+        const growth=
+            (this.food/1000)*
+            (this.economy/100)*
+            (this.tech/2);
+
+        this.population+=growth*speed;
+
+        this.food-=this.population*0.004*speed;
+
+        this.resources+=
+            (this.land/1000)*
+            this.tech*
+            .08*
+            speed;
+
+        this.tech+=
+            this.resources>1000
+            ?0.001*speed
+            :0;
+
+        this.economy+=
+            (Math.random()-.48)*.1*speed;
+
+        this.economy=Math.max(10,Math.min(200,this.economy));
+
+        if(this.food<0){
+
+            this.population*=.995;
+
+            if(Math.random()<.003)
+                log(this.name+" suffers a famine.");
+
+        }
+
+        if(this.population<20){
+
+            this.alive=false;
+
+            log(this.name+" civilization has collapsed.");
+
+        }
+
+    }
+
+}
+
+function create(){
+
+    civs=[];
+
+    for(let i=0;i<6;i++)
+        civs.push(new Civilization(i));
+
+}
+
+function distance(a,b){
+
+    return Math.hypot(a.x-b.x,a.y-b.y);
+
+}
+
+function diplomacy(){
+
+    for(let i=0;i<civs.length;i++){
+
+        for(let j=i+1;j<civs.length;j++){
+
+            const a=civs[i];
+            const b=civs[j];
+
+            if(!a.alive||!b.alive)continue;
+
+            if(distance(a,b)<180){
+
+                if(Math.random()<.002*speed){
+
+                    if(a.military>b.military){
+
+                        b.population*=.97;
+                        a.resources+=80;
+
+                        log(a.name+" defeated "+b.name+" in war.");
+
+                    }else{
+
+                        a.population*=.97;
+                        b.resources+=80;
+
+                        log(b.name+" defeated "+a.name+" in war.");
+
+                    }
+
+                }
+
+                if(Math.random()<.002*speed){
+
+                    const amount=Math.min(a.resources,50);
+
+                    a.resources-=amount;
+                    b.resources+=amount;
+
+                    log(a.name+" traded with "+b.name+".");
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
+function update(){
+
+    if(!running)return;
+
+    for(let s=0;s<speed;s++){
+
+        year++;
+
+        for(const c of civs){
+
+            if(c.alive)c.update();
+
+        }
+
+        diplomacy();
+
+        // Expansion
+        for(const c of civs){
+
+            if(!c.alive)continue;
+
+            if(c.military>100 && Math.random()<.002){
+
+                c.land+=50;
+                c.military*=.995;
+
+                log(c.name+" expanded its territory.");
+
+            }
+
+        }
+
+        // Discoveries
+        for(const c of civs){
+
+            if(Math.random()<.001){
+
+                c.tech+=.5;
+
+                log(c.name+" discovered a new technology.");
+
+            }
+
+        }
+
+    }
+
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,W,H);
+
+    // terrain
+    ctx.fillStyle="#173426";
+    ctx.fillRect(0,0,W,H);
+
+    // oceans / regions
+    ctx.fillStyle="rgba(30,90,110,.3)";
+
+    for(let i=0;i<12;i++){
+
+        ctx.beginPath();
+
+        ctx.arc(
+            Math.random()*W,
+            Math.random()*H,
+            80+Math.random()*150,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    }
+
+    for(const c of civs){
+
+        if(!c.alive)continue;
+
+        // territory
+        const radius=
+            Math.sqrt(c.land)*1.5;
+
+        ctx.globalAlpha=.18;
+        ctx.fillStyle=c.color;
+
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,radius,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.globalAlpha=1;
+
+        // city
+        ctx.fillStyle=c.color;
+
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,7+Math.sqrt(c.population)/15,0,Math.PI*2);
+        ctx.fill();
+
+        // name
+        ctx.fillStyle="#fff";
+        ctx.font="12px Arial";
+        ctx.textAlign="center";
+
+        ctx.fillText(c.name,c.x,c.y-15);
+
+    }
+
+    updateUI();
+
+}
+
+function updateUI(){
+
+    document.getElementById("year").textContent=year;
+
+    const pop=civs.reduce(
+        (sum,c)=>sum+(c.alive?c.population:0),
+        0
+    );
+
+    document.getElementById("worldPop").textContent=
+        Math.round(pop).toLocaleString();
+
+    const container=
+        document.getElementById("civilizations");
+
+    container.innerHTML="";
+
+    civs.forEach(c=>{
+
+        if(!c.alive)return;
+
+        const div=document.createElement("div");
+
+        div.className="civ";
+        div.style.borderLeftColor=c.color;
+
+        div.innerHTML=`
+            <b>${c.name}</b>
+            <div class="small">
+            👥 Population: ${Math.round(c.population).toLocaleString()}<br>
+            🌾 Food: ${Math.round(c.food)}<br>
+            ⚙️ Resources: ${Math.round(c.resources)}<br>
+            🧠 Technology: ${c.tech.toFixed(1)}<br>
+            ⚔️ Military: ${Math.round(c.military)}<br>
+            💰 Economy: ${Math.round(c.economy)}
+            </div>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+function log(text){
+
+    const el=document.getElementById("log");
+
+    const line=document.createElement("div");
+
+    line.textContent="Year "+year+": "+text;
+
+    el.prepend(line);
+
+    while(el.children.length>60)
+        el.lastChild.remove();
+
+}
+
+function toggle(){
+    running=!running;
+}
+
+function changeSpeed(v){
+
+    speed=Math.max(1,Math.min(10,speed+v));
+
+}
+
+function reset(){
+
+    year=1;
+    create();
+
+    document.getElementById("log").innerHTML="";
+
+    log("A new world has been created.");
+
+}
+
+create();
+
+function loop(){
+
+    update();
+    draw();
+
+    requestAnimationFrame(loop);
+
+}
+
+loop();
+
+</script>
+
+</body>
+</html>

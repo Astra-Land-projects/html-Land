@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Code Studio</title>
+
+<style>
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+height:100vh;
+background:#0d1117;
+color:#ddd;
+font-family:Arial;
+overflow:hidden;
+}
+
+.app{
+height:100vh;
+display:grid;
+grid-template-columns:210px 1fr;
+grid-template-rows:45px 1fr;
+}
+
+.top{
+grid-column:1/3;
+background:#161b22;
+border-bottom:1px solid #30363d;
+display:flex;
+align-items:center;
+padding:0 12px;
+gap:8px;
+}
+
+.logo{
+font-weight:bold;
+color:#79c0ff;
+margin-right:15px;
+}
+
+.top button{
+background:#21262d;
+border:1px solid #30363d;
+color:#ddd;
+padding:7px 12px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.sidebar{
+background:#0d1117;
+border-right:1px solid #30363d;
+padding:15px;
+}
+
+.sidebar h3{
+margin-top:0;
+color:#8b949e;
+}
+
+.file{
+padding:8px;
+border-radius:5px;
+cursor:pointer;
+}
+
+.file:hover,
+.file.active{
+background:#21262d;
+}
+
+.main{
+display:grid;
+grid-template-columns:1fr 1fr;
+min-width:0;
+}
+
+.editor{
+display:flex;
+flex-direction:column;
+min-width:0;
+border-right:1px solid #30363d;
+}
+
+.tabs{
+height:40px;
+background:#161b22;
+display:flex;
+align-items:center;
+padding-left:10px;
+}
+
+.tab{
+padding:10px 15px;
+background:#0d1117;
+border-right:1px solid #30363d;
+}
+
+textarea{
+flex:1;
+width:100%;
+resize:none;
+border:0;
+outline:0;
+background:#0d1117;
+color:#e6edf3;
+padding:20px;
+font-family:monospace;
+font-size:15px;
+line-height:1.6;
+}
+
+.preview{
+display:flex;
+flex-direction:column;
+min-width:0;
+}
+
+.previewTitle{
+height:40px;
+background:#161b22;
+padding:11px 15px;
+}
+
+iframe{
+flex:1;
+width:100%;
+border:0;
+background:white;
+}
+
+.console{
+height:130px;
+background:#080b0f;
+border-top:1px solid #30363d;
+padding:10px;
+overflow:auto;
+font-family:monospace;
+}
+
+.console div{
+margin:3px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="top">
+
+  <div class="logo">
+   ⚡ ASTRA CODE
+  </div>
+
+  <button onclick="newFile()">New</button>
+  <button onclick="save()">Save</button>
+  <button onclick="run()">▶ Run</button>
+  <button onclick="downloadFile()">⬇ Download</button>
+
+</div>
+
+<aside class="sidebar">
+
+  <h3>EXPLORER</h3>
+
+  <div id="files"></div>
+
+</aside>
+
+<main class="main">
+
+  <section class="editor">
+
+   <div class="tabs">
+
+    <div class="tab" id="tab">
+     index.html
+    </div>
+
+   </div>
+
+   <textarea
+    id="editor"
+    spellcheck="false">
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{
+background:#111;
+color:white;
+font-family:Arial;
+text-align:center;
+padding:50px;
+}
+button{
+padding:12px 20px;
+}
+</style>
+</head>
+
+<head>
+
+<h1>Hello Astra 🚀</h1>
+
+<p>Edit this code.</p>
+
+<button onclick="hello()">
+Click me
+</button>
+
+<script>
+function hello(){
+alert("Astra Code Studio!");
+}
+</script>
+
+<body>
+<html>
+    <textarea>
+
+   <div class="console" id="console">
+    <div>Console ready.</div>
+   </div>
+
+  </section>
+
+  <section class="preview">
+
+   <div class="previewTitle">
+    Live Preview
+   </div>
+
+   <iframe id="preview"></iframe>
+
+  </section>
+
+ <main>
+
+<div>
+
+</script>
+
+const editor=
+document.getElementById("editor");
+
+const preview=
+document.getElementById("preview");
+
+const filesEl=
+document.getElementById("files");
+
+const consoleEl=
+document.getElementById("console");
+
+let files=
+JSON.parse(
+  localStorage.getItem(
+   "astraCodeFiles"
+  )||"null"
+)||{
+  "index.html":editor.value,
+  "style.css":"",
+  "script.js":""
+};
+
+let current="index.html";
+
+function renderFiles(){
+
+filesEl.innerHTML="";
+
+Object.keys(files).forEach(name=>{
+
+  const div=
+   document.createElement("div");
+
+  div.className=
+   "file "+
+   (name===current?"active":"");
+
+  div.textContent=
+   "📄 "+name;
+
+  div.onclick=()=>{
+   openFile(name);
+  };
+
+  filesEl.appendChild(div);
+
+});
+}
+
+function openFile(name){
+
+saveCurrent();
+
+current=name;
+
+editor.value=
+  files[name]||"";
+
+document.getElementById("tab")
+  .textContent=name;
+
+renderFiles();
+}
+
+function saveCurrent(){
+
+files[current]=editor.value;
+
+localStorage.setItem(
+  "astraCodeFiles",
+  JSON.stringify(files)
+);
+}
+
+function save(){
+
+saveCurrent();
+
+log("✓ Project saved locally.");
+}
+
+function newFile(){
+
+const name=
+  prompt(
+   "File name:",
+   "new.html"
+  );
+
+if(!name)return;
+
+if(files[name]!==undefined){
+
+  alert("File already exists.");
+
+  return;
+}
+
+files[name]="";
+
+save();
+
+openFile(name);
+}
+
+function run(){
+
+saveCurrent();
+
+let html=
+  files["index.html"]||"";
+
+let css=
+  files["style.css"]||"";
+
+let js=
+  files["script.js"]||"";
+
+/*
+  Inject CSS/JS files into HTML.
+*/
+
+if(css){
+
+  html=html.replace(
+   "</head>",
+   `<style>(css)</style></head>`
+  )
+}
+
+if(js){
+
+  html=html.replace(
+   "</body>",
+   `<script>{js}</script></body>`
+  )
+}
+
+/*
+  Capture console.log inside preview.
+*/
+
+html=html.replace(
+  <head>
+  <head>
+   <script>
+    const oldLog=console.log;
+    console.log=function(...args){
+     parent.postMessage({
+      type:"console",
+      text:args.join(" ")
+     },"*");
+     oldLog(...args);
+    }
+   </script>`
+)
+
+preview.srcdoc=html;
+
+log("▶ Project running...");
+}
+
+function log(text){
+
+const div=
+  document.createElement("div");
+
+div.textContent=text;
+
+consoleEl.appendChild(div);
+
+consoleEl.scrollTop=
+  consoleEl.scrollHeight;
+}
+
+window.addEventListener(
+"message",
+e=>{
+
+  if(
+   e.data &&
+   e.data.type==="console"
+  ){
+
+   log(
+    "> "+e.data.text
+   );
+  }
+
+}
+);
+
+function downloadFile(){
+
+saveCurrent();
+
+const blob=
+  new Blob(
+   [files[current]],
+   {type:"text/plain"}
+  );
+
+const url=
+  URL.createObjectURL(blob);
+
+const a=
+  document.createElement("a");
+
+a.href=url;
+a.download=current;
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+log(
+  "⬇ Downloaded "+current
+);
+}
+
+editor.addEventListener(
+"keydown",
+e=>{
+
+  if(e.key==="Tab"){
+
+   e.preventDefault();
+
+   const start=
+    editor.selectionStart;
+
+   const end=
+    editor.selectionEnd;
+
+   editor.value=
+    editor.value.substring(0,start)+
+    "  "+
+    editor.value.substring(end);
+
+   editor.selectionStart=
+    editor.selectionEnd=
+    start+2;
+  }
+
+}
+);
+
+editor.addEventListener(
+"input",
+()=>{
+
+  files[current]=editor.value;
+
+}
+);
+
+renderFiles();
+run();
+
+</div>
+
+</body>
+</html>

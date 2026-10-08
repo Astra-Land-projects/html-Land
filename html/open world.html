@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Mini Open World</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+body{
+margin:0;
+min-height:100vh;
+background:#070b12;
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center
+}
+#game{width:min(900px,95vw);text-align:center}
+h1{color:#79d8ff}
+canvas{
+width:100%;
+background:#182c20;
+border:2px solid #45684d;
+border-radius:15px;
+}
+#stats{padding:8px}
+button{
+padding:10px 18px;
+margin:5px;
+border:1px solid #3f6c82;
+border-radius:8px;
+background:#102331;
+color:white
+}
+</style>
+</head>
+
+<body>
+<div id="game">
+<h1>🌌 ASTRA MINI OPEN WORLD</h1>
+
+<div id="stats">
+❤️ <span id="hp">100</span>
+&nbsp; | &nbsp;
+💰 <span id="gold">0</span>
+&nbsp; | &nbsp;
+⭐ <span id="xp">0</span>/100
+</div>
+
+<canvas id="c" width="850" height="500"></canvas>
+
+<button onclick="restart()">🔄 New World</button>
+
+<p>WASD / Arrow Keys = Move</p>
+</div>
+
+<script>
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+
+const W=850,H=500;
+
+let keys={};
+let hp=100,gold=0,xp=0;
+let game=true;
+
+const player={
+x:425,
+y:250,
+r:14,
+speed:4
+};
+
+let world=[];
+let gems=[];
+let enemies=[];
+
+onkeydown=e=>{
+keys[e.key.toLowerCase()]=true;
+};
+
+onkeyup=e=>{
+keys[e.key.toLowerCase()]=false;
+};
+
+function restart(){
+
+hp=100;
+gold=0;
+xp=0;
+game=true;
+
+player.x=425;
+player.y=250;
+
+gems=[];
+enemies=[];
+
+for(let i=0;i<25;i++){
+  gems.push({
+   x:30+Math.random()*790,
+   y:30+Math.random()*440
+  });
+}
+
+for(let i=0;i<8;i++){
+  enemies.push({
+   x:30+Math.random()*790,
+   y:30+Math.random()*440,
+   r:15
+  });
+}
+}
+
+function update(){
+
+if(!game)return;
+
+let dx=0,dy=0;
+
+if(keys.w||keys.arrowup)dy--;
+if(keys.s||keys.arrowdown)dy++;
+if(keys.a||keys.arrowleft)dx--;
+if(keys.d||keys.arrowright)dx++;
+
+const len=Math.hypot(dx,dy)||1;
+
+player.x+=dx/len*player.speed;
+player.y+=dy/len*player.speed;
+
+player.x=Math.max(15,Math.min(W-15,player.x));
+player.y=Math.max(15,Math.min(H-15,player.y));
+
+for(let i=gems.length-1;i>=0;i--){
+
+  if(
+   Math.hypot(
+    gems[i].x-player.x,
+    gems[i].y-player.y
+   )<25
+  ){
+
+   gold+=10;
+   xp+=10;
+
+   gems.splice(i,1);
+  }
+}
+
+enemies.forEach(e=>{
+
+  const a=Math.atan2(
+   player.y-e.y,
+   player.x-e.x
+  );
+
+  if(
+   Math.hypot(
+    player.x-e.x,
+    player.y-e.y
+   )<180
+  ){
+   e.x+=Math.cos(a)*.45;
+   e.y+=Math.sin(a)*.45;
+  }
+
+  if(
+   Math.hypot(
+    player.x-e.x,
+    player.y-e.y
+   )<28
+  ){
+   hp-=.25;
+  }
+});
+
+if(xp>=100){
+  xp=0;
+  hp=Math.min(100,hp+20);
+}
+
+if(hp<=0)
+  game=false;
+
+document.getElementById("hp").textContent=hp|0;
+document.getElementById("gold").textContent=gold;
+document.getElementById("xp").textContent=xp;
+}
+
+function draw(){
+
+ctx.fillStyle="#183321";
+ctx.fillRect(0,0,W,H);
+
+// paths
+ctx.strokeStyle="#31513a";
+ctx.lineWidth=40;
+
+ctx.beginPath();
+ctx.moveTo(0,100);
+ctx.lineTo(W,400);
+ctx.stroke();
+
+// trees
+for(let i=0;i<35;i++){
+
+  const x=(i*137)%W;
+  const y=(i*71)%H;
+
+  ctx.fillStyle="#4d3826";
+  ctx.fillRect(x-4,y,8,20);
+
+  ctx.fillStyle="#1c5b32";
+
+  ctx.beginPath();
+  ctx.arc(x,y,18,0,Math.PI*2);
+  ctx.fill();
+}
+
+// gems
+gems.forEach(g=>{
+
+  ctx.fillStyle="#58e5ff";
+
+  ctx.beginPath();
+  ctx.moveTo(g.x,g.y-8);
+  ctx.lineTo(g.x+7,g.y);
+  ctx.lineTo(g.x,g.y+8);
+  ctx.lineTo(g.x-7,g.y);
+  ctx.closePath();
+  ctx.fill();
+});
+
+// enemies
+enemies.forEach(e=>{
+
+  ctx.fillStyle="#d34d5d";
+
+  ctx.beginPath();
+  ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+  ctx.fill();
+});
+
+// player
+ctx.fillStyle="#73d8ff";
+
+ctx.beginPath();
+ctx.arc(
+  player.x,
+  player.y,
+  player.r,
+  0,
+  Math.PI*2
+);
+ctx.fill();
+
+if(!game){
+
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+  ctx.fillStyle="#ff5c67";
+  ctx.font="bold 44px Arial";
+  ctx.fillText("GAME OVER",W/2,230);
+}
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+</script>
+</body>
+</html>

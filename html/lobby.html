@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ASTRA ARCADE — Mini Games</title>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:#fff;font-family:system-ui,Tahoma,sans-serif;background:#070b14;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:-20%;z-index:-2;background:radial-gradient(circle at 15% 10%,#5c6cff33,transparent 28%),radial-gradient(circle at 85% 25%,#00d4ff20,transparent 25%),radial-gradient(circle at 50% 100%,#9b5cff18,transparent 30%);filter:blur(30px)}
+body:after{content:"";position:fixed;inset:0;z-index:-1;opacity:.16;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 75%)}
+.container{width:min(1120px,calc(100% - 32px));margin:auto}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12}
+.logo{font-size:22px;font-weight:950;letter-spacing:2px}.logo span{color:#8290ff}.badge{font-size:12px;padding:7px 12px;border:1px solid #ffffff18;border-radius:99px;background:#ffffff0a;color:#aeb8cf}
+.hero{text-align:center;padding:58px 10px 35px}.hero .icon{font-size:54px;filter:drop-shadow(0 10px 25px #5865f255)}h1{margin:8px 0 10px;font-size:clamp(36px,7vw,64px);letter-spacing:-2px}h1 span{background:linear-gradient(90deg,#fff,#8e9cff);-webkit-background-clip:text;color:transparent}.hero p{margin:auto;max-width:600px;color:#aab5ca;line-height:1.8;font-size:15px}
+.stats{display:flex;justify-content:center;gap:10px;margin-top:22px;flex-wrap:wrap}.stat{padding:9px 15px;background:#ffffff09;border:1px solid #ffffff12;border-radius:12px;color:#c7cee0;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-bottom:50px}
+.card{position:relative;min-height:285px;padding:20px;border:1px solid #ffffff13;border-radius:24px;background:linear-gradient(145deg,#ffffff0c,#ffffff04);box-shadow:0 20px 60px #0005;overflow:hidden;transition:.25s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-7px);border-color:#8895ff55;box-shadow:0 25px 70px #0008}.glow{position:absolute;width:160px;height:160px;border-radius:50%;filter:blur(55px);opacity:.3;right:-70px;top:-70px;background:#6575ff}
+.art{height:105px;border-radius:17px;background:#090e1c;border:1px solid #ffffff10;display:grid;place-items:center;font-size:62px;box-shadow:inset 0 0 30px #0007}
+.card h2{font-size:20px;margin:15px 0 5px}.card p{font-size:12px;color:#a9b3c8;line-height:1.7;margin:0 0 15px;flex:1}
+.play{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:0;border-radius:13px;background:linear-gradient(135deg,#6575ff,#8b5cf6);color:#fff;font-weight:850;font-size:14px;text-decoration:none;cursor:pointer;box-shadow:0 10px 25px #6575ff25;transition:.18s}
+.play:hover{filter:brightness(1.12);transform:scale(1.015)}.play:active{transform:scale(.98)}
+footer{text-align:center;color:#657087;font-size:11px;padding:20px;border-top:1px solid #ffffff0b}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:540px){.container{width:min(100% - 22px,1120px)}header{height:65px}.badge{display:none}.grid{grid-template-columns:1fr;gap:14px}.card{min-height:275px}.hero{padding-top:38px}}
+</style>
+</head>
+<body>
+<header class="container"><div class="logo">ASTRA <span>ARCADE</span></div><div class="badge">MINI GAME HUB • 2026</div></header>
+
+<section class="hero container">
+<div class="icon">🎮</div>
+<h1>Welcome to <span>Arcade</span></h1>
+<p>یک لابی مدرن برای تمام مینی‌گیم‌های ما. بازی مورد علاقه‌ات را انتخاب کن، روی Play بزن و مستقیم وارد بازی شو.</p>
+<div class="stats"><div class="stat">🎮 6 Games</div><div class="stat">⚡ Instant Play</div><div class="stat">📱 Mobile Ready</div></div>
+</section>
+
+<main class="container">
+<div class="grid">
+
+<article class="card"><div class="glow"></div><div class="art">🏃‍♂️</div><h2>ASTRA Runner</h2><p>یک پلتفرمر دوبعدی سریع؛ بپر، سکه جمع کن و خودت را به پرچم پایان برسان.</p><a class="play" href="astra_runner.html">▶ Play Game</a></article>
+
+<article class="card"><div class="glow"></div><div class="art">😎</div><h2>STICKER LIVE</h2><p>ایموجی مورد علاقه‌ات را انتخاب کن و انیمیشن زنده و جذابش را ببین.</p><a class="play" href="sticker_live.html">▶ Play Game</a></article>
+
+<article class="card"><div class="glow"></div><div class="art">✊</div><h2>Rock Paper Scissors</h2><p>سنگ، کاغذ، قیچی؛ یک دوئل سریع برای تست شانس و سرعت تصمیم‌گیری.</p><a class="play" href="#">▶ Play Game</a></article>
+
+<article class="card"><div class="glow"></div><div class="art">⭕</div><h2>Tic Tac Toe</h2><p>نبرد کلاسیک X و O با طراحی ساده و مدرن.</p><a class="play" href="#">▶ Play Game</a></article>
+
+<article class="card"><div class="glow"></div><div class="art">🎲</div><h2>ASTRA Dice</h2><p>تاس را بینداز و ببین شانس امروز چه عددی برایت دارد.</p><a class="play" href="#">▶ Play Game</a></article>
+
+<article class="card"><div class="glow"></div><div class="art">♟️</div><h2>ASTRA Chess</h2><p>یک شطرنج مینیمال برای یک مسابقه سریع و فکری.</p><a class="play" href="#">▶ Play Game</a></article>
+
+</div>
+</main>
+<footer>ASTRA ARCADE • Built as a single HTML lobby • Replace each href="#" with your game file</footer>
+</body>
+</html>

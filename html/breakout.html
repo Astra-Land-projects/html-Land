@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Breakout</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+body{margin:0;background:#080812;color:white;font-family:Arial;display:grid;place-items:center;min-height:100vh}
+#box{width:min(800px,95vw);text-align:center}
+canvas{width:100%;background:#090916;border:2px solid #a875ff;border-radius:12px}
+button{padding:12px 25px;margin:6px;background:#24183c;color:white;border:0;border-radius:8px}
+</style>
+</head>
+<body>
+<div id="box">
+<h1>🧱 ASTRA BREAKOUT</h1>
+<div id="info">❤️ 3 | 🧱 0</div>
+<canvas id="c" width="800" height="500"></canvas>
+<button onclick="restart()">🔄 Restart</button>
+<p>Mouse / Touch / A-D / ←→ = Paddle</p>
+</div>
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d"),W=800,H=500;
+let k={},bricks=[],score=0,lives=3,game=true;
+let ball={x:400,y:420,vx:4,vy:-5,r:8};
+let pad={x:350,y:465,w:100,h:14};
+onkeydown=e=>k[e.key.toLowerCase()]=true;
+onkeyup=e=>k[e.key.toLowerCase()]=false;
+c.onmousemove=e=>{let r=c.getBoundingClientRect();pad.x=(e.clientX-r.left)/r.width*W-pad.w/2};
+c.ontouchmove=e=>{let r=c.getBoundingClientRect(),q=e.touches[0];pad.x=(q.clientX-r.left)/r.width*W-pad.w/2};
+function restart(){
+bricks=[];score=0;lives=3;game=true;
+ball={x:400,y:420,vx:4,vy:-5,r:8};
+for(let row=0;row<5;row++)for(let col=0;col<10;col++)
+  bricks.push({x:25+col*76,y:45+row*30,w:68,h:20,on:true});
+}
+function update(){
+if(!game)return;
+if(k.a||k.arrowleft)pad.x-=7;if(k.d||k.arrowright)pad.x+=7;
+pad.x=Math.max(0,Math.min(W-pad.w,pad.x));
+ball.x+=ball.vx;ball.y+=ball.vy;
+if(ball.x<ball.r||ball.x>W-ball.r)ball.vx*=-1;
+if(ball.y<ball.r)ball.vy*=-1;
+if(ball.y+ball.r>pad.y&&ball.y<pad.y+pad.h&&ball.x>pad.x&&ball.x<pad.x+pad.w){
+  ball.vy=-Math.abs(ball.vy);
+  ball.vx+=(ball.x-(pad.x+pad.w/2))/20;
+}
+for(let b of bricks)if(b.on&&ball.x>b.x&&ball.x<b.x+b.w&&ball.y>b.y&&ball.y<b.y+b.h){
+  b.on=false;ball.vy*=-1;score++;break
+}
+if(ball.y>H){lives--;ball.x=400;ball.y=420;ball.vx=4;ball.vy=-5;if(lives<=0)game=false}
+info.textContent=`❤️ ${lives} | 🧱 ${score}`;
+}
+function draw(){
+x.fillStyle="#090916";x.fillRect(0,0,W,H);
+bricks.forEach((b,i)=>{if(b.on){x.fillStyle=`hsl(${i*8+260},70%,60%)`;x.fillRect(b.x,b.y,b.w,b.h)}});
+x.fillStyle="#6edbff";x.fillRect(pad.x,pad.y,pad.w,pad.h);
+x.fillStyle="#fff";x.beginPath();x.arc(ball.x,ball.y,ball.r,0,7);x.fill();
+if(score==50){game=false;x.fillStyle="#000b";x.fillRect(0,0,W,H);x.fillStyle="#ffd75e";x.font="bold 42px Arial";x.textAlign="center";x.fillText("YOU WIN!",400,240)}
+if(!game&&score<50){x.fillStyle="#000b";x.fillRect(0,0,W,H);x.fillStyle="#ff5268";x.font="bold 42px Arial";x.textAlign="center";x.fillText("GAME OVER",400,240)}
+}
+function loop(){update();draw();requestAnimationFrame(loop)}
+restart();loop();
+</script>
+</body>
+</html>

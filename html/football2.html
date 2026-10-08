@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra AI Penalty</title>
+<style>
+body{margin:0;background:#07120b;color:white;font-family:Arial;text-align:center}
+#game{width:min(850px,95vw);margin:20px auto}
+canvas{width:100%;background:#21813d;border:3px solid white;border-radius:12px}
+button{padding:12px 20px;margin:6px;border-radius:8px;border:0}
+</style>
+</head>
+<body>
+
+<div id="game">
+<h1>🥅 ASTRA AI PENALTY</h1>
+
+<div>
+🔵 You: <b id="you">0</b>
+&nbsp; — &nbsp;
+🔴 AI: <b id="ai">0</b>
+&nbsp; | &nbsp;
+Shot: <b id="shot">1</b>/10
+</div>
+
+<canvas id="c" width="850" height="500"></canvas>
+
+<div>
+<button onclick="shoot(-1,-1)">↖️</button>
+<button onclick="shoot(0,-1)">⬆️</button>
+<button onclick="shoot(1,-1)">↗️</button><br>
+<button onclick="shoot(-1,0)">⬅️</button>
+<button onclick="shoot(0,0)">🎯</button>
+<button onclick="shoot(1,0)">➡️</button>
+</div>
+
+<button onclick="restart()">🔄 Restart</button>
+
+<p>در هر ضربه جهت شوت را انتخاب کن. بعد AI پنالتی می‌زند.</p>
+</div>
+
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d");
+let you=0,ai=0,shot=1,turn="you",message="";
+let ball={x:425,y:410};
+let keeper={x:425,y:105};
+let anim=null;
+
+function restart(){
+you=ai=0;shot=1;turn="you";message="";
+keeper.x=425;
+update();
+}
+
+function shoot(dx,dy){
+
+if(turn!=="you"||anim)return;
+
+// AI goalkeeper prediction
+let guess=Math.floor(Math.random()*3)-1;
+
+animateShot(
+  425+dx*230,
+  100+dy*65,
+  guess*230+425,
+  "you"
+);
+}
+
+function aiShoot(){
+
+let dx=Math.floor(Math.random()*3)-1;
+let dy=Math.floor(Math.random()*3)-1;
+
+// Player goalkeeper has a small prediction window
+let saveGuess=Math.floor(Math.random()*3)-1;
+
+animateShot(
+  425+dx*230,
+  100+dy*65,
+  425+saveGuess*230,
+  "ai"
+);
+}
+
+function animateShot(tx,ty,kx,who){
+
+anim=true;
+
+let startX=425,startY=410;
+let progress=0;
+
+let timer=setInterval(()=>{
+
+  progress+=.08;
+
+  ball.x=startX+(tx-startX)*progress;
+  ball.y=startY+(ty-startY)*progress;
+
+  keeper.x=425+(kx-425)*Math.min(progress*1.4,1);
+
+  draw();
+
+  if(progress>=1){
+
+   clearInterval(timer);
+
+   let saved=Math.abs(kx-tx)<70;
+
+   if(!saved){
+    if(who==="you")you++;
+    else ai++;
+    message=who==="you"?"⚽ GOAL!":"🤖 AI SCORES!";
+   }else{
+    message=who==="you"?"🧤 SAVED!":"🧤 YOU SAVED IT!";
+   }
+
+   anim=false;
+   next();
+  }
+
+},25);
+}
+
+function next(){
+
+ball={x:425,y:410};
+
+if(shot>=10){
+  message+="  "+(you>ai?"🏆 YOU WIN!":you<ai?"🤖 AI WINS!":"🔥 DRAW!");
+  turn="done";
+}else{
+  shot++;
+  turn=turn==="you"?"ai":"you";
+
+  if(turn==="ai")
+   setTimeout(aiShoot,600);
+}
+
+update();
+}
+
+function update(){
+document.getElementById("you").textContent=you;
+document.getElementById("ai").textContent=ai;
+document.getElementById("shot").textContent=Math.min(shot,10);
+}
+
+function draw(){
+
+x.clearRect(0,0,850,500);
+
+// penalty area
+x.fillStyle="#176b32";
+x.fillRect(120,45,610,230);
+
+x.strokeStyle="white";
+x.lineWidth=3;
+x.strokeRect(120,45,610,230);
+
+// goal
+x.fillStyle="#ddd";
+x.fillRect(270,45,310,12);
+
+x.strokeStyle="white";
+x.strokeRect(270,45,310,125);
+
+// keeper
+x.fillStyle="#ffcc39";
+x.beginPath();
+x.arc(keeper.x,105,25,0,Math.PI*2);
+x.fill();
+
+// ball
+x.font="35px Arial";
+x.fillText("⚽",ball.x-18,ball.y+12);
+
+x.fillStyle="white";
+x.textAlign="center";
+x.font="bold 24px Arial";
+x.fillText(
+  turn==="you"?"YOUR TURN":"AI IS SHOOTING...",
+  425,350
+);
+
+x.font="20px Arial";
+x.fillText(message,425,390);
+
+x.textAlign="left";
+}
+
+function loop(){
+draw();
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+</script>
+
+</body>
+</html>

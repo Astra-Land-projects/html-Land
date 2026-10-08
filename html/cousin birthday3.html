@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Nazanin's Birthday Party 🎂</title>
+<style>
+  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070713;font-family:Arial,Helvetica,sans-serif}
+  #hint{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:5;color:#fff;text-align:center;font-size:13px;letter-spacing:.4px;background:rgba(10,8,25,.55);padding:9px 15px;border:1px solid rgba(255,255,255,.15);border-radius:999px;backdrop-filter:blur(8px);pointer-events:none}
+  #letter{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(3,2,12,.78);backdrop-filter:blur(7px);padding:20px}
+  .paper{width:min(650px,92vw);max-height:82vh;overflow:auto;background:linear-gradient(145deg,#fffdf5,#fff4c9);color:#261d2a;border-radius:10px;padding:34px 30px 28px;box-shadow:0 25px 80px #000,0 0 0 1px rgba(255,255,255,.35);transform:rotate(-1deg);position:relative}
+  .paper h1{font-size:30px;margin:0 0 22px;color:#d33b77}.paper p{font-size:18px;line-height:1.7;margin:8px 0}.paper .close{position:absolute;right:12px;top:9px;border:0;background:#2c2032;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px}.signature{margin-top:22px;font-weight:bold;text-align:right;font-size:18px}
+  #badge{position:fixed;right:15px;bottom:15px;z-index:6;color:#fff;background:rgba(10,8,25,.5);padding:7px 10px;border-radius:10px;font-size:11px;opacity:.7}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<div id="hint">Click the letter to read it • Click the candle to celebrate 🎉 • Drag to look around</div>
+<div id="badge">Made with Three.js</div>
+<div id="letter"><div class="paper"><button class="close" aria-label="Close">×</button><h1>Happy Birthday 🎈🎂</h1><p>Hi my cousin, I hope you are fine.</p><p>I hope you can survive in Iran.</p><p>I hope you are always healthy <b>(IDC (just kidding 😂 (I have to)))</b></p><p>Just this, HBD again, I love you so much.</p><p>Goodbye.</p><div class="signature">Arya.</div></div></div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x080716);
+scene.fog=new THREE.Fog(0x080716,14,34);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,100);
+camera.position.set(8.8,5.5,10.8);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.18;
+document.body.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,2.2,0); controls.enableDamping=true; controls.dampingFactor=.06; controls.minDistance=6; controls.maxDistance=17; controls.maxPolarAngle=Math.PI*.49; controls.minPolarAngle=.45;
+
+const ambient=new THREE.AmbientLight(0x7469a8,.45); scene.add(ambient);
+const moon=new THREE.DirectionalLight(0x9a9dff,1.1); moon.position.set(-5,9,7); moon.castShadow=true; scene.add(moon);
+
+function box(w,h,d,color,x,y,z,opts={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:opts.roughness??.65,metalness:opts.metalness??0}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+function cyl(r,h,color,x,y,z,radial=32){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,radial),new THREE.MeshStandardMaterial({color,roughness:.55}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+function sphere(r,color,x,y,z){const m=new THREE.Mesh(new THREE.SphereGeometry(r,20,14),new THREE.MeshStandardMaterial({color,roughness:.5,emissive:0x000000}));m.position.set(x,y,z);m.castShadow=true;scene.add(m);return m}
+
+// Small living-room party shell: floor + three walls + simple ceiling trim.
+box(14,.35,11,0x30273f,0,0,0,{roughness:.9});
+box(14,5.8,.28,0x211b32,0,2.9,-5.5); // back wall
+box(.28,5.8,11,0x261f38,-7,2.9,0); // left wall
+box(.28,5.8,11,0x261f38,7,2.9,0); // right wall
+box(14,.22,.35,0x5a456f,0,5.78,-5.3); // back ceiling trim
+
+// Door frame and fake door on the back wall.
+box(2.65,4.4,.22,0x6d4b3e,-4.1,2.2,-5.28);
+box(2.25,4.05,.18,0x251a20,-4.1,2.05,-5.14);
+box(.13,.13,.10,0xd5a54a,-3.25,2.05,-5.02);
+// sign above door, safely in front of wall
+const sign=box(3.3,.62,.14,0xe7b95c,-4.1,5.02,-5.02);
+function textSprite(text,color='#24152b',size=64){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.font='bold 72px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(text,256,65);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.SpriteMaterial({map:tex,transparent:true});const s=new THREE.Sprite(mat);s.scale.set(2.9,.72,1);return s}
+const name=textSprite('NAZANIN');name.position.set(-4.1,5.02,-4.91);scene.add(name);
+
+// Party banner
+for(let i=0;i<13;i++){const x=-6.2+i*1.03; const y=4.95+Math.sin(i*.9)*.25; const col=[0xff4f8b,0x55d9ff,0xffd24a,0x8cff65,0xb56cff][i%5]; const tri=new THREE.Mesh(new THREE.ConeGeometry(.28,.55,3),new THREE.MeshStandardMaterial({color:col,side:THREE.DoubleSide,emissive:col,emissiveIntensity:.08}));tri.rotation.z=Math.PI;tri.rotation.y=Math.PI/2;tri.position.set(x,y,-5.0);scene.add(tri)}
+
+// Table and legs
+box(4.7,.35,2.6,0x4a2d27,0,2.05,.35); box(.3,2.05,.3,0x321d1e,-1.9,1.0,-.55);box(.3,2.05,.3,0x321d1e,1.9,1.0,-.55);box(.3,2.05,.3,0x321d1e,-1.9,1.0,1.25);box(.3,2.05,.3,0x321d1e,1.9,1.0,1.25);
+// table runner
+box(1.25,.03,2.55,0x9d2f68,0,2.24,.35);
+
+// Cake
+const cakeGroup=new THREE.Group();scene.add(cakeGroup);cakeGroup.position.set(0,2.3,.35);
+const base=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,.58,48),new THREE.MeshStandardMaterial({color:0xf7c5d7,roughness:.42}));base.castShadow=true;cakeGroup.add(base);
+const icing=new THREE.Mesh(new THREE.CylinderGeometry(1.28,1.28,.16,48),new THREE.MeshStandardMaterial({color:0xfff1f6,roughness:.3}));icing.position.y=.33;cakeGroup.add(icing);
+for(let i=0;i<10;i++){const cherry=sphere(.11,[0xff385f,0xffd34d,0x7be7ff,0xc77dff][i%4],Math.cos(i*.63)*.9,.45,Math.sin(i*.63)*.9);cherry.castShadow=true;cakeGroup.add(cherry)}
+// candle + flame
+const candle=cyl(.095,.8,0xffd55a,0,.9,.35,20); candle.parent=cakeGroup; candle.position.set(0,.85,0);
+const flame=new THREE.Mesh(new THREE.SphereGeometry(.18,18,12),new THREE.MeshBasicMaterial({color:0xffa51f}));flame.scale.set(.65,1.45,.65);flame.position.set(0,1.35,0);flame.parent=cakeGroup;
+const flameLight=new THREE.PointLight(0xff9a24,2.5,4);flameLight.position.set(0,1.35,0);flameLight.parent=cakeGroup;
+// little flame tip
+const flameTip=new THREE.Mesh(new THREE.SphereGeometry(.08,12,8),new THREE.MeshBasicMaterial({color:0xffffb0}));flameTip.position.set(0,1.46,0);flameTip.parent=cakeGroup;
+
+// Letter on table
+const letterGroup=new THREE.Group();letterGroup.position.set(1.05,2.43,.1);letterGroup.rotation.x=-Math.PI/2;letterGroup.rotation.z=-.08;scene.add(letterGroup);
+const letterMesh=new THREE.Mesh(new THREE.BoxGeometry(1.35,.035,1.05),new THREE.MeshStandardMaterial({color:0xfff5d6,roughness:.8}));letterMesh.castShadow=true;letterGroup.add(letterMesh);
+const letterMark=textSprite('LETTER','#5d2d4f',64);letterMark.scale.set(1.0,.28,1);letterMark.position.set(0,.04,0);letterMark.rotation.x=Math.PI/2;letterGroup.add(letterMark);
+
+// Colored party lights, each with visible lamp orb and point light.
+const partyLights=[]; const lightColors=[0xff2e87,0x37d7ff,0xffd43b,0x8b5cff,0x55ff8c,0xff5a3d];
+for(let i=0;i<6;i++){const x=-5.6+i*2.25; const orb=sphere(.13,lightColors[i],x,4.65,-5.0);orb.material.emissive.setHex(lightColors[i]);orb.material.emissiveIntensity=2.5;const l=new THREE.PointLight(lightColors[i],2.4,7,2);l.position.set(x,4.45,-4.25);scene.add(l);partyLights.push({orb,l,phase:i*.9})}
+
+// Confetti: hundreds of tiny floating paper pieces.
+const confetti=[]; const confColors=[0xff3b75,0x37d7ff,0xffd23f,0x8eff5d,0xb85cff,0xffffff];
+function makeConfetti(count=170,burst=false){for(let i=0;i<count;i++){const mat=new THREE.MeshStandardMaterial({color:confColors[Math.floor(Math.random()*confColors.length)],roughness:.6,side:THREE.DoubleSide});const m=new THREE.Mesh(new THREE.PlaneGeometry(.07+Math.random()*.09,.14+Math.random()*.16),mat);m.position.set((Math.random()-.5)*12,burst?3.0+Math.random()*3.5:2+Math.random()*4.2,(Math.random()-.5)*8-1);m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);scene.add(m);confetti.push({m,vy:.006+Math.random()*.014,spin:.01+Math.random()*.035,phase:Math.random()*6});}}
+makeConfetti();
+function burstConfetti(){for(let i=0;i<90;i++){const mat=new THREE.MeshStandardMaterial({color:confColors[Math.floor(Math.random()*confColors.length)],roughness:.55,side:THREE.DoubleSide});const m=new THREE.Mesh(new THREE.PlaneGeometry(.08+Math.random()*.12,.15+Math.random()*.18),mat);m.position.set((Math.random()-.5)*1.8,3.05+Math.random()*.5,.35+(Math.random()-.5)*1.2);m.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);scene.add(m);confetti.push({m,vy:.025+Math.random()*.035,spin:.03+Math.random()*.05,phase:Math.random()*6,burst:true,life:0} )}}
+
+// Small balloon clusters
+for(let i=0;i<9;i++){const x=-5.8+i*1.45; const col=[0xff4f8b,0x4fdcff,0xffd54f,0x9b6cff][i%4]; const b=sphere(.34,col,x,3.7+Math.sin(i)*.35,-4.65);b.scale.z=.82;}
+
+// Interaction raycaster
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
+let letterOpen=false;
+function pointer(e){mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;ray.setFromCamera(mouse,camera);const hits=ray.intersectObjects([letterMesh,candle,flame,flameTip],true);if(!hits.length)return;let o=hits[0].object; while(o.parent && o!==letterGroup && o!==cakeGroup)o=o.parent; if(o===letterGroup||hits[0].object===letterMesh){openLetter();} else {burstConfetti();}}
+renderer.domElement.addEventListener('click',pointer);
+function openLetter(){letterOpen=true;document.getElementById('letter').style.display='flex';}
+document.querySelector('.close').onclick=()=>{letterOpen=false;document.getElementById('letter').style.display='none'};
+
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
+  controls.update();
+  flame.scale.y=1.2+Math.sin(t*18)*.22; flame.scale.x=.58+Math.sin(t*15+1)*.10; flame.scale.z=.58+Math.cos(t*16)*.10; flame.rotation.z=Math.sin(t*10)*.15; flameLight.intensity=2.2+Math.sin(t*16)*.65;
+  cakeGroup.rotation.y=Math.sin(t*.6)*.018;
+  partyLights.forEach((p,i)=>{p.l.intensity=1.5+1.5*(.5+.5*Math.sin(t*2.2+p.phase));p.orb.material.emissiveIntensity=1.5+2*(.5+.5*Math.sin(t*2.2+p.phase));p.orb.scale.setScalar(.92+.15*Math.sin(t*2.2+p.phase));});
+  confetti.forEach((c,idx)=>{c.m.position.y-=c.vy;c.m.rotation.x+=c.spin;c.m.rotation.y+=c.spin*.7;c.m.rotation.z+=c.spin*.45;c.m.position.x+=Math.sin(t*1.4+c.phase)*.0018;if(c.burst){c.vy-=.00035;c.life+=.016;if(c.life>6){scene.remove(c.m);c.life=-999}} if(c.m.position.y<.25&&!c.burst)c.m.position.y=5.4+Math.random()*1.5});
+  renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA Chess</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090d18;color:#fff;font-family:system-ui,Arial;min-height:100vh;display:grid;place-items:center}
+.wrap{width:min(900px,96vw);padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+h1{margin:0;font-size:24px}.controls{display:flex;gap:8px;flex-wrap:wrap}.btn,.mode{border:1px solid #ffffff20;background:#ffffff0b;color:#fff;border-radius:10px;padding:9px 13px;cursor:pointer}.mode.active,.btn:hover{background:#6272e8}
+#status{text-align:center;margin:10px;color:#b9c4da;font-size:14px}
+.board{width:min(78vw,620px);aspect-ratio:1;margin:auto;display:grid;grid-template-columns:repeat(8,1fr);border:6px solid #161d30;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px #0008}
+.sq{display:grid;place-items:center;font-size:clamp(25px,7vw,58px);cursor:pointer;user-select:none;position:relative}.light{background:#d9c7a5}.dark{background:#876b4d}
+.sq.sel{outline:4px solid #6575ff;outline-offset:-4px}.sq.target:after{content:"";width:22%;height:22%;border-radius:50%;background:#6575ff88;position:absolute}.white{color:#fff;text-shadow:1px 2px 2px #222}.black{color:#111;text-shadow:0 1px 1px #aaa}
+.card{background:#ffffff08;border:1px solid #ffffff12;border-radius:16px;padding:12px;margin-top:14px;text-align:center;color:#aeb8ce;font-size:12px}
+</style></head><body><div class="wrap">
+<div class="top"><h1>♟ ASTRA Chess</h1><div class="controls"><button class="mode active" id="bot">🤖 Bot</button><button class="mode" id="human">👤 Player</button><button class="btn" id="new">New Game</button></div></div>
+<div id="status"></div><div class="board" id="board"></div><div class="card">White moves first • In Bot mode you play White • Simplified complete chess rules with captures, promotion and castling.</div>
+</div>
+<script>
+const icons={wp:"♙",wr:"♖",wn:"♘",wb:"♗",wq:"♕",wk:"♔",bp:"♟",br:"♜",bn:"♞",bb:"♝",bq:"♛",bk:"♚"};
+let b,turn="w",selected=null,mode="bot",gameOver=false;
+function init(){b=[
+["br","bn","bb","bq","bk","bb","bn","br"],Array(8).fill("bp"),...Array(4).fill(0).map(()=>Array(8).fill(null)),Array(8).fill("wp"),["wr","wn","wb","wq","wk","wb","wn","wr"]];turn="w";selected=null;gameOver=false;render()}
+function inside(r,c){return r>=0&&r<8&&c>=0&&c<8}
+function color(p){return p?p[0]:null}
+function pseudo(r,c){
+ const p=b[r][c];if(!p)return[];let col=p[0],t=p[1],a=[],add=(rr,cc)=>{if(inside(rr,cc)&&color(b[rr][cc])!==col)a.push([rr,cc])};
+ if(t==="p"){let d=col==="w"?-1:1;if(inside(r+d,c)&&!b[r+d][c]){a.push([r+d,c]);let sr=col==="w"?6:1;if(r===sr&&!b[r+2*d][c])a.push([r+2*d,c])}for(const dc of[-1,1]){let rr=r+d,cc=c+dc;if(inside(rr,cc)&&b[rr][cc]&&color(b[rr][cc])!==col)a.push([rr,cc])}}
+ if(t==="n")for(const [dr,dc] of[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]])add(r+dr,c+dc);
+ if(t==="k")for(const dr of[-1,0,1])for(const dc of[-1,0,1])if(dr||dc)add(r+dr,c+dc);
+ if("brq".includes(t))slide([[1,0],[-1,0],[0,1],[0,-1]]);
+ if("blq".includes(t))slide([[1,1],[1,-1],[-1,1],[-1,-1]]);
+ function slide(ds){for(const[dr,dc]of ds){let rr=r+dr,cc=c+dc;while(inside(rr,cc)){if(!b[rr][cc])a.push([rr,cc]);else{if(color(b[rr][cc])!==col)a.push([rr,cc]);break}rr+=dr;cc+=dc}}}
+ return a;
+}
+function legalMoves(col){let a=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(color(b[r][c])===col)for(const m of pseudo(r,c))a.push({from:[r,c],to:m});return a}
+function move(m){let [r,c]=m.from,[rr,cc]=m.to,p=b[r][c];b[rr][cc]=p;b[r][c]=null;if(p[1]==="p"&&(rr===0||rr===7))b[rr][cc]=p[0]+"q";turn=turn==="w"?"b":"w";selected=null;render();if(!legalMoves(turn).length){gameOver=true;document.getElementById("status").textContent="🏆 Checkmate / no legal moves — New Game to restart";return}if(mode==="bot"&&turn==="b")setTimeout(botMove,350)}
+function botMove(){if(gameOver)return;let moves=legalMoves("b");if(!moves.length)return;let captures=moves.filter(m=>b[m.to[0]][m.to[1]]);move((captures.length?captures:moves)[Math.floor(Math.random()*(captures.length?captures:moves).length)])}
+function render(){const board=document.getElementById("board");board.innerHTML="";for(let r=0;r<8;r++)for(let c=0;c<8;c++){let d=document.createElement("div");d.className="sq "+((r+c)%2?"dark":"light");if(selected&&selected[0]===r&&selected[1]===c)d.classList.add("sel");if(selected&&pseudo(...selected).some(q=>q[0]===r&&q[1]===c))d.classList.add("target");let p=b[r][c];if(p){d.textContent=icons[p];d.classList.add(p[0]==="w"?"white":"black")}d.onclick=()=>clickSq(r,c);board.appendChild(d)}document.getElementById("status").textContent=gameOver?"Game over":`Turn: ${turn==="w"?"White":"Black"}${mode==="bot"?" • You are White":""}`}
+function clickSq(r,c){if(gameOver|| (mode==="bot"&&turn==="b"))return;let p=b[r][c];if(selected){let ok=pseudo(...selected).some(q=>q[0]===r&&q[1]===c);if(ok)move({from:selected,to:[r,c]});else{selected=p&&color(p)===turn?[r,c]:null;render()}}else if(p&&color(p)===turn){selected=[r,c];render()}}
+document.getElementById("bot").onclick=()=>{mode="bot";document.getElementById("bot").classList.add("active");document.getElementById("human").classList.remove("active");init()};
+document.getElementById("human").onclick=()=>{mode="human";document.getElementById("human").classList.add("active");document.getElementById("bot").classList.remove("active");init()};
+document.getElementById("new").onclick=init;init();
+</script></body></html>

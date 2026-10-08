@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0,
+      maximum-scale=1.0, user-scalable=no">
+
+<title>Astra Bird</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#111;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#game{
+    position:relative;
+    width:min(100vw,480px);
+    height:min(100vh,720px);
+    max-height:100vh;
+    overflow:hidden;
+    background:#75c9ed;
+    box-shadow:0 0 40px rgba(0,0,0,.5);
+}
+
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+}
+
+#ui{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+
+#score{
+    position:absolute;
+    top:30px;
+    left:0;
+    width:100%;
+    text-align:center;
+
+    color:white;
+    font-size:56px;
+    font-weight:bold;
+
+    text-shadow:
+        3px 3px 0 #333,
+        -1px -1px 0 #333;
+
+    z-index:5;
+}
+
+#message{
+    position:absolute;
+    left:50%;
+    top:38%;
+    transform:translate(-50%,-50%);
+
+    text-align:center;
+    color:white;
+
+    text-shadow:
+        3px 3px 0 #333;
+
+    z-index:10;
+}
+
+#title{
+    font-size:52px;
+    font-weight:bold;
+    margin-bottom:12px;
+}
+
+#subtitle{
+    font-size:18px;
+    margin-bottom:20px;
+}
+
+button{
+    pointer-events:auto;
+
+    border:0;
+    padding:13px 28px;
+
+    background:#fff;
+    color:#222;
+
+    font-size:18px;
+    font-weight:bold;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 4px 0 #aaa;
+}
+
+button:active{
+    transform:translateY(4px);
+    box-shadow:none;
+}
+
+#instructions{
+    margin-top:18px;
+    font-size:13px;
+    line-height:1.7;
+}
+
+.hidden{
+    display:none!important;
+}
+
+#hint{
+    position:absolute;
+    bottom:25px;
+    left:0;
+    width:100%;
+    text-align:center;
+
+    color:rgba(255,255,255,.9);
+
+    font-size:13px;
+    text-shadow:1px 1px 2px #333;
+}
+
+#flash{
+    position:absolute;
+    inset:0;
+
+    background:white;
+    opacity:0;
+
+    pointer-events:none;
+
+    z-index:20;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+
+<div id="score">0</div>
+
+<div id="message">
+
+<div id="title">ASTRA BIRD</div>
+
+<div id="subtitle">
+Tap / Click / Space to fly
+</div>
+
+<button id="start">
+START GAME
+</button>
+
+<div id="instructions">
+Avoid the walls<br>
+and fly as far as you can.
+</div>
+
+</div>
+
+<div id="hint">
+CLICK / SPACE = FLAP
+</div>
+
+<div id="flash"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+const game =
+document.getElementById("game");
+
+let W,H;
+
+function resize(){
+
+    const rect =
+    game.getBoundingClientRect();
+
+    W = rect.width;
+    H = rect.height;
+
+    const dpr =
+    Math.min(window.devicePixelRatio || 1,2);
+
+    canvas.width =
+    W*dpr;
+
+    canvas.height =
+    H*dpr;
+
+    canvas.style.width =
+    W+"px";
+
+    canvas.style.height =
+    H+"px";
+
+    ctx.setTransform(
+        dpr,0,0,dpr,0,0
+    );
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio;
+
+function initAudio(){
+
+    if(audio)return;
+
+    audio =
+    new(
+        window.AudioContext ||
+        window.webkitAudioContext
+    )();
+}
+
+function sound(
+    frequency,
+    duration,
+    type="sine",
+    volume=.06
+){
+
+    if(!audio)return;
+
+    if(audio.state==="suspended")
+        audio.resume();
+
+    const osc =
+    audio.createOscillator();
+
+    const gain =
+    audio.createGain();
+
+    osc.type=type;
+
+    osc.frequency.value=
+    frequency;
+
+    gain.gain.setValueAtTime(
+        volume,
+        audio.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audio.currentTime+
+        duration
+    );
+
+    osc.connect(gain);
+
+    gain.connect(
+        audio.destination
+    );
+
+    osc.start();
+
+    osc.stop(
+        audio.currentTime+
+        duration
+    );
+}
+
+
+/* =========================================================
+   GAME VARIABLES
+========================================================= */
+
+let state =
+"menu";
+
+let score = 0;
+
+let best =
+Number(
+    localStorage.getItem(
+        "astraBirdBest"
+    ) || 0
+);
+
+let lastTime =
+performance.now();
+
+let worldTime=0;
+
+
+/* =========================================================
+   BIRD
+========================================================= */
+
+const bird={
+
+    x:110,
+
+    y:300,
+
+    radius:16,
+
+    velocity:0,
+
+    gravity:1450,
+
+    flapPower:-430,
+
+    rotation:0
+
+};
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+let pipes=[];
+
+let pipeTimer=0;
+
+let pipeInterval=1.65;
+
+let pipeSpeed=190;
+
+let gap=155;
+
+let groundHeight=90;
+
+
+/* =========================================================
+   CLOUDS
+========================================================= */
+
+let clouds=[];
+
+for(let i=0;i<9;i++){
+
+    clouds.push({
+
+        x:
+        Math.random()*600,
+
+        y:
+        40+
+        Math.random()*220,
+
+        size:
+        30+
+        Math.random()*50,
+
+        speed:
+        10+
+        Math.random()*15
+
+    });
+}
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+function drawSky(){
+
+    const gradient =
+    ctx.createLinearGradient(
+        0,0,
+        0,H
+    );
+
+    gradient.addColorStop(
+        0,
+        "#63c3e8"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#bcecff"
+    );
+
+    ctx.fillStyle =
+    gradient;
+
+    ctx.fillRect(
+        0,0,W,H
+    );
+}
+
+
+function drawClouds(dt){
+
+    for(const cloud of clouds){
+
+        cloud.x -=
+        cloud.speed*dt;
+
+        if(
+            cloud.x <
+            -cloud.size*3
+        ){
+
+            cloud.x =
+            W+
+            cloud.size;
+
+            cloud.y =
+            30+
+            Math.random()*220;
+        }
+
+        drawCloud(
+            cloud.x,
+            cloud.y,
+            cloud.size
+        );
+    }
+}
+
+
+function drawCloud(
+    x,y,size
+){
+
+    ctx.save();
+
+    ctx.fillStyle=
+    "rgba(255,255,255,.85)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        size*.5,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        x+size*.55,
+        y-10,
+        size*.65,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        x+size*1.05,
+        y,
+        size*.45,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   GROUND
+========================================================= */
+
+function drawGround(){
+
+    const y =
+    H-groundHeight;
+
+    ctx.fillStyle =
+    "#80c850";
+
+    ctx.fillRect(
+        0,
+        y,
+        W,
+        14
+    );
+
+    ctx.fillStyle =
+    "#d5ad65";
+
+    ctx.fillRect(
+        0,
+        y+14,
+        W,
+        groundHeight-14
+    );
+
+    /*
+       Ground pattern
+    */
+
+    ctx.fillStyle =
+    "rgba(120,80,30,.18)";
+
+    const offset =
+    -(worldTime*pipeSpeed)%40;
+
+    for(
+        let x=offset;
+        x<W;
+        x+=40
+    ){
+
+        ctx.fillRect(
+            x,
+            y+22,
+            20,
+            4
+        );
+
+        ctx.fillRect(
+            x+25,
+            y+45,
+            12,
+            4
+        );
+    }
+}
+
+
+/* =========================================================
+   PIPE CREATION
+========================================================= */
+
+function createPipe(){
+
+    const margin=80;
+
+    const minCenter =
+    margin+gap/2;
+
+    const maxCenter =
+    H-groundHeight-
+    margin-gap/2;
+
+    const center =
+    minCenter+
+    Math.random()*
+    (maxCenter-minCenter);
+
+    pipes.push({
+
+        x:W+50,
+
+        width:68,
+
+        gapTop:
+        center-gap/2,
+
+        gapBottom:
+        center+gap/2,
+
+        passed:false
+
+    });
+}
+
+
+/* =========================================================
+   DRAW PIPES
+========================================================= */
+
+function drawPipe(pipe){
+
+    const x=pipe.x;
+    const w=pipe.width;
+
+    /*
+       Upper pipe
+    */
+
+    ctx.fillStyle =
+    "#55a83f";
+
+    ctx.fillRect(
+        x,
+        0,
+        w,
+        pipe.gapTop
+    );
+
+    /*
+       Lower pipe
+    */
+
+    ctx.fillRect(
+        x,
+        pipe.gapBottom,
+        w,
+        H-groundHeight-
+        pipe.gapBottom
+    );
+
+
+    /*
+       Pipe highlights
+    */
+
+    ctx.fillStyle =
+    "#79c95b";
+
+    ctx.fillRect(
+        x+7,
+        0,
+        10,
+        pipe.gapTop
+    );
+
+    ctx.fillRect(
+        x+7,
+        pipe.gapBottom,
+        10,
+        H-groundHeight-
+        pipe.gapBottom
+    );
+
+
+    /*
+       Pipe caps
+    */
+
+    ctx.fillStyle =
+    "#479334";
+
+    const cap=12;
+
+    ctx.fillRect(
+        x-5,
+        pipe.gapTop-cap,
+        w+10,
+        cap
+    );
+
+    ctx.fillRect(
+        x-5,
+        pipe.gapBottom,
+        w+10,
+        cap
+    );
+
+    /*
+       Cap highlight
+    */
+
+    ctx.fillStyle =
+    "#72bd50";
+
+    ctx.fillRect(
+        x,
+        pipe.gapTop-cap+3,
+        w,
+        4
+    );
+
+    ctx.fillRect(
+        x,
+        pipe.gapBottom+3,
+        w,
+        4
+    );
+}
+
+
+/* =========================================================
+   BIRD
+========================================================= */
+
+function drawBird(){
+
+    ctx.save();
+
+    ctx.translate(
+        bird.x,
+        bird.y
+    );
+
+    /*
+       Rotation based on velocity
+    */
+
+    bird.rotation =
+    Math.max(
+        -.5,
+        Math.min(
+            1.15,
+            bird.velocity/600
+        )
+    );
+
+    ctx.rotate(
+        bird.rotation
+    );
+
+
+    /*
+       Body
+    */
+
+    ctx.fillStyle =
+    "#f4d447";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        0,
+        bird.radius,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Wing
+    */
+
+    ctx.fillStyle =
+    "#e7b83c";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        -6,
+        5,
+        11,
+        6,
+        -.3,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Eye
+    */
+
+    ctx.fillStyle="white";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        7,
+        -7,
+        6,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle="#111";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        9,
+        -7,
+        2.5,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Beak
+    */
+
+    ctx.fillStyle =
+    "#e88932";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        14,
+        -1
+    );
+
+    ctx.lineTo(
+        29,
+        4
+    );
+
+    ctx.lineTo(
+        14,
+        9
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /*
+       Belly highlight
+    */
+
+    ctx.fillStyle =
+    "rgba(255,255,255,.18)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        -5,
+        -6,
+        7,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function circleRectCollision(
+    cx,cy,r,
+    rx,ry,rw,rh
+){
+
+    const closestX =
+    Math.max(
+        rx,
+        Math.min(
+            cx,
+            rx+rw
+        )
+    );
+
+    const closestY =
+    Math.max(
+        ry,
+        Math.min(
+            cy,
+            ry+rh
+        )
+    );
+
+    const dx=
+    cx-closestX;
+
+    const dy=
+    cy-closestY;
+
+    return(
+        dx*dx+
+        dy*dy
+        <
+        r*r
+    );
+}
+
+
+function checkCollision(){
+
+    /*
+       Ceiling
+    */
+
+    if(
+        bird.y-
+        bird.radius
+        <=0
+    )
+        return true;
+
+
+    /*
+       Ground
+    */
+
+    if(
+        bird.y+
+        bird.radius
+        >=
+        H-groundHeight
+    )
+        return true;
+
+
+    /*
+       Pipes
+    */
+
+    for(const pipe of pipes){
+
+        const topHit =
+        circleRectCollision(
+            bird.x,
+            bird.y,
+            bird.radius,
+
+            pipe.x,
+            0,
+            pipe.width,
+            pipe.gapTop
+        );
+
+        const bottomHit =
+        circleRectCollision(
+            bird.x,
+            bird.y,
+            bird.radius,
+
+            pipe.x,
+            pipe.gapBottom,
+            pipe.width,
+            H-groundHeight-
+            pipe.gapBottom
+        );
+
+        if(
+            topHit ||
+            bottomHit
+        )
+            return true;
+    }
+
+    return false;
+}
+
+
+/* =========================================================
+   FLAP
+========================================================= */
+
+function flap(){
+
+    if(state==="menu"){
+
+        startGame();
+
+        return;
+    }
+
+    if(state==="gameover"){
+
+        startGame();
+
+        return;
+    }
+
+    if(state!=="playing")
+        return;
+
+    bird.velocity =
+    bird.flapPower;
+
+    sound(
+        520,
+        .08,
+        "square",
+        .035
+    );
+}
+
+
+/* =========================================================
+   GAME START
+========================================================= */
+
+function startGame(){
+
+    initAudio();
+
+    if(
+        audio &&
+        audio.state==="suspended"
+    )
+        audio.resume();
+
+    state="playing";
+
+    score=0;
+
+    bird.x=
+    Math.max(
+        90,
+        W*.25
+    );
+
+    bird.y=
+    H*.45;
+
+    bird.velocity=0;
+
+    pipes=[];
+
+    pipeTimer=.5;
+
+    worldTime=0;
+
+    document
+    .getElementById("score")
+    .textContent="0";
+
+    document
+    .getElementById("message")
+    .classList
+    .add("hidden");
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function gameOver(){
+
+    if(state!=="playing")
+        return;
+
+    state="gameover";
+
+    sound(
+        120,
+        .3,
+        "sawtooth",
+        .08
+    );
+
+    flash();
+
+    if(score>best){
+
+        best=score;
+
+        localStorage.setItem(
+            "astraBirdBest",
+            best
+        );
+    }
+
+    const message =
+    document.getElementById(
+        "message"
+    );
+
+    message.classList
+    .remove("hidden");
+
+    document
+    .getElementById("title")
+    .textContent=
+    "GAME OVER";
+
+    document
+    .getElementById("subtitle")
+    .textContent=
+    "Score: "+
+    score+
+    "   Best: "+
+    best;
+
+    document
+    .getElementById("start")
+    .textContent=
+    "PLAY AGAIN";
+
+    document
+    .getElementById("instructions")
+    .textContent=
+    "Click or press Space to try again.";
+}
+
+
+/* =========================================================
+   FLASH EFFECT
+========================================================= */
+
+function flash(){
+
+    const el =
+    document.getElementById(
+        "flash"
+    );
+
+    el.style.opacity=.75;
+
+    setTimeout(
+        ()=>{
+            el.style.opacity=0;
+        },
+        80
+    );
+}
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+function update(dt){
+
+    if(state!=="playing")
+        return;
+
+    worldTime+=dt;
+
+
+    /*
+       Bird physics
+    */
+
+    bird.velocity +=
+    bird.gravity*dt;
+
+    bird.y +=
+    bird.velocity*dt;
+
+
+    /*
+       Pipes
+    */
+
+    pipeTimer-=dt;
+
+    if(pipeTimer<=0){
+
+        createPipe();
+
+        pipeTimer=
+        pipeInterval;
+    }
+
+
+    for(
+        let i=pipes.length-1;
+        i>=0;
+        i--
+    ){
+
+        const pipe=pipes[i];
+
+        pipe.x -=
+        pipeSpeed*dt;
+
+
+        /*
+           Score
+        */
+
+        if(
+            !pipe.passed &&
+            pipe.x+
+            pipe.width
+            <
+            bird.x
+        ){
+
+            pipe.passed=true;
+
+            score++;
+
+            document
+            .getElementById("score")
+            .textContent=
+            score;
+
+            sound(
+                900,
+                .08,
+                "sine",
+                .045
+            );
+
+
+            /*
+               Gradually increase difficulty
+            */
+
+            if(score%5===0){
+
+                pipeSpeed=
+                Math.min(
+                    290,
+                    pipeSpeed+10
+                );
+
+                gap=
+                Math.max(
+                    115,
+                    gap-4
+                );
+
+                pipeInterval=
+                Math.max(
+                    1.35,
+                    pipeInterval-.03
+                );
+            }
+        }
+
+
+        if(
+            pipe.x+
+            pipe.width
+            <
+            -100
+        ){
+
+            pipes.splice(
+                i,
+                1
+            );
+        }
+    }
+
+
+    if(checkCollision())
+        gameOver();
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw(){
+
+    drawSky();
+
+    drawClouds(
+        1/60
+    );
+
+    /*
+       Far mountains
+    */
+
+    ctx.fillStyle=
+    "rgba(80,150,160,.22)";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        H-groundHeight-70
+    );
+
+    for(
+        let x=0;
+        x<=W;
+        x+=80
+    ){
+
+        ctx.lineTo(
+            x,
+            H-groundHeight-
+            70-
+            Math.sin(x*.015)*35
+        );
+    }
+
+    ctx.lineTo(
+        W,
+        H-groundHeight
+    );
+
+    ctx.lineTo(
+        0,
+        H-groundHeight
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /*
+       Pipes
+    */
+
+    for(const pipe of pipes)
+        drawPipe(pipe);
+
+
+    /*
+       Ground
+    */
+
+    drawGround();
+
+
+    /*
+       Bird
+    */
+
+    drawBird();
+}
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function loop(now){
+
+    let dt =
+    (now-lastTime)/1000;
+
+    lastTime=now;
+
+    dt=
+    Math.min(
+        dt,
+        .033
+    );
+
+    update(dt);
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+}
+
+requestAnimationFrame(
+    loop
+);
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+document
+.getElementById("start")
+.addEventListener(
+    "click",
+    ()=>{
+        startGame();
+    }
+);
+
+
+/*
+   Mouse / touch
+*/
+
+game.addEventListener(
+    "pointerdown",
+    e=>{
+
+        if(
+            e.target.tagName===
+            "BUTTON"
+        )
+            return;
+
+        flap();
+    }
+);
+
+
+/*
+   Keyboard
+*/
+
+window.addEventListener(
+    "keydown",
+    e=>{
+
+        if(
+            e.code==="Space" ||
+            e.code==="ArrowUp"
+        ){
+
+            e.preventDefault();
+
+            flap();
+        }
+    }
+);
+
+
+/* =========================================================
+   INITIAL MENU
+========================================================= */
+
+document
+.getElementById("score")
+.textContent="0";
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تولدت مبارک! 🎂</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, sans-serif; }
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Balloons Background */
+        .balloon {
+            position: absolute;
+            bottom: -100px;
+            width: 40px;
+            height: 50px;
+            border-radius: 50%;
+            animation: floatUp 8s infinite linear;
+            opacity: 0.7;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Main Card */
+        .card {
+            background: rgba(26, 26, 26, 0.9);
+            border: 2px solid #ffc107;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(255, 193, 7, 0.3);
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 { color: #ffc107; margin-bottom: 15px; font-size: 1.8rem; }
+        p { color: #ccc; line-height: 1.8; margin-bottom: 20px; font-size: 0.95rem; }
+
+        /* Cake & Flame */
+        .cake {
+            font-size: 4rem;
+            margin: 15px 0;
+            position: relative;
+            display: inline-block;
+        }
+        .flame {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            animation: flicker 0.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.8; transform: translateX(-50%) scale(0.9); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* Interactive Button */
+        .btn-celebrate {
+            background: #ffc107;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-celebrate:hover {
+            background: #e0a800;
+            transform: scale(1.05);
+        }
+
+        /* Canvas for Confetti */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confettiCanvas"></canvas>
+
+    <div class="card">
+        <div class="cake">
+            <span class="flame" id="candleFlame">🔥</span>
+            🎂
+        </div>
+        <h1>تولدت مبارک رفیق! 🎉</h1>
+        <p>امیدوارم سال جدید زندگیت پر از کدهای تمیز، ایده‌های خفن و موفقیت‌های بی‌کنترل باشه! دم برنامه نویسیت گرم! 🔥✨</p>
+        <button class="btn-celebrate" onclick="blowCandle()">فوت کن و جشن بگیر! 🥳</button>
+    </div>
+
+    <script>
+        // Create Floating Balloons
+        const colors = ['#ffc107', '#e0a800', '#ff5722', '#00bcd4', '#9c27b0'];
+        for (let i = 0; i < 15; i++) {
+            let balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            balloon.style.left = Math.random() * 100 + 'vw';
+            balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            balloon.style.animationDuration = (Math.random() * 4 + 5) + 's';
+            balloon.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(balloon);
+        }
+
+        // Blow Candle & Trigger Confetti
+        function blowCandle() {
+            document.getElementById('candleFlame').style.display = 'none';
+            startConfetti();
+        }
+
+        // Confetti Effect
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+
+        function startConfetti() {
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12 - 3,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1; // gravity
+                p.life -= 1;
+
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.life <= 0) particles.splice(index, 1);
+            });
+
+            if (particles.length > 0) {
+                requestAnimationFrame(animateConfetti);
+            }
+        }
+    </script>
+</body>
+</html>

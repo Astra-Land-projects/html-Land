@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA Pasur</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 20%,#173b32,#07110f 68%);color:#fff;font-family:system-ui,Tahoma,sans-serif}
+.wrap{width:min(1050px,96vw);margin:auto;padding:16px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}h1{margin:0;font-size:25px}.controls{display:flex;gap:7px;flex-wrap:wrap}.btn{border:1px solid #ffffff20;background:#ffffff0b;color:#fff;padding:9px 13px;border-radius:11px;cursor:pointer}.active,.btn:hover{background:#4c8b6f}
+.status{text-align:center;margin:12px;color:#d0dfd7;font-size:14px}.score{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.pill{padding:8px 14px;border-radius:12px;background:#ffffff0b;border:1px solid #ffffff12;font-size:12px}
+.table{background:#14533f;border:7px solid #0d3329;border-radius:24px;padding:16px;box-shadow:0 25px 70px #0008;min-height:610px;display:flex;flex-direction:column;justify-content:space-between}
+.hand{display:flex;justify-content:center;gap:8px;min-height:112px;flex-wrap:wrap}.label{text-align:center;color:#a9c7bb;font-size:12px;margin-bottom:6px}
+.card{width:68px;height:96px;border-radius:9px;background:#f7f1df;color:#151515;border:2px solid #fff;box-shadow:0 5px 12px #0007;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;font-size:28px;user-select:none;transition:.15s}
+.card:hover{transform:translateY(-5px)}.card.selected{transform:translateY(-12px);box-shadow:0 0 0 3px #ffd65a,0 12px 18px #0008}.red{color:#c6283d}.black{color:#222}.back{background:repeating-linear-gradient(45deg,#b83d52,#b83d52 6px,#8d263a 6px,#8d263a 12px);color:#fff;border-color:#eab5bd}
+.center{display:flex;justify-content:center;align-items:center;gap:12px;min-height:145px;flex-wrap:wrap}.center .card{cursor:default}.turn{font-size:12px;color:#d6e7df;text-align:center;margin:7px}
+@media(max-width:600px){.table{min-height:650px;padding:10px}.card{width:57px;height:82px;font-size:23px}.hand{gap:5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><h1>🃏 ASTRA Pasur</h1><div class="controls"><button id="bot" class="btn active">🤖 Bot</button><button id="human" class="btn">👤 Player</button><button id="new" class="btn">↻ New Game</button></div></div>
+<div class="status" id="status"></div>
+<div class="score"><div class="pill">👤 شما: <b id="ps">0</b></div><div class="pill">🤖 حریف: <b id="bs">0</b></div><div class="pill">🃏 کارت‌های شما: <b id="pc">4</b></div></div>
+<div class="table">
+<section><div class="label">دست حریف</div><div class="hand" id="botHand"></div></section>
+<section><div class="label">کارت‌های روی میز</div><div class="center" id="tableCards"></div></section>
+<section><div class="label">دست شما — یک کارت انتخاب کنید</div><div class="hand" id="playerHand"></div></section>
+</div>
+</div>
+<script>
+const suits=["♠","♥","♦","♣"], ranks=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+let deck=[],ph=[],bh=[],table=[],ps=0,bs=0,mode="bot",turn="p",selected=-1,started=false,round=0;
+function makeDeck(){deck=[];for(const s of suits)for(const r of ranks)deck.push({s,r,v:r==="A"?1:r==="J"?11:r==="Q"?12:r==="K"?13:+r})}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function deal(){while(ph.length<4&&deck.length)ph.push(deck.pop());while(bh.length<4&&deck.length)bh.push(deck.pop());while(table.length<4&&deck.length)table.push(deck.pop())}
+function start(){makeDeck();shuffle(deck);ph=[];bh=[];table=[];ps=bs=0;turn="p";selected=-1;round=0;deal();render()}
+function val(c){return c.v}
+function canTake(card){return table.some(t=>t.v===card.v|| (t.v!==11&&t.v!==12&&t.v!==13&&card.v<11&&t.v+card.v<=10))}
+function choices(card){
+ let out=[];
+ for(let i=0;i<table.length;i++)if(table[i].v===card.v)out.push([i]);
+ // Simple Pasur-style sum combinations for numeric cards.
+ if(card.v<11){
+  function rec(start,sum,a){if(sum===card.v&&a.length)out.push([...a]);for(let i=start;i<table.length;i++)if(table[i].v<11)rec(i+1,sum+table[i].v,[...a,i])}
+  rec(0,0,[]);
+ }
+ return out.filter((x,i,a)=>a.findIndex(y=>y.join(",")===x.join(","))===i);
+}
+function play(ci,bot=false){
+ if(turn!=="p"&&!bot)return;
+ let hand=bot?bh:ph,card=hand[ci];if(!card)return;
+ let ch=choices(card),take=ch.length?ch[0]:[];
+ let isJ=card.v===11;
+ hand.splice(ci,1);
+ if(take.length){let captured=take.map(i=>table[i]);table=table.filter((_,i)=>!take.includes(i));if(isJ&&table.length===0){if(bot)bs+=2;else ps+=2}else if(isJ){if(bot)bs++;else ps++}else {if(bot)bs++;else ps++}}
+ else table.push(card);
+ if(take.length&&table.length===0&&!isJ){if(bot)bs++;else ps++}
+ turn=turn==="p"?"b":"p";selected=-1;render();
+ if(ph.length===0&&bh.length===0){finishRound();return}
+ if(mode==="bot"&&turn==="b")setTimeout(botMove,450);
+}
+function botMove(){if(!bh.length)return;let best=0,bscore=-1;bh.forEach((c,i)=>{let ch=choices(c);let score=ch.length*10+(c.v===11?5:0)+(c.s==="♣"?2:0);if(score>bscore){bscore=score;best=i}});play(best,true)}
+function finishRound(){
+ // Remaining table cards go to the player who made the last capture/played last.
+ if(table.length){if(turn==="b")ps+=table.length;else bs+=table.length;table=[]}
+ if(ps>=11||bs>=11){alert((ps>bs?"شما":"حریف")+" برنده شد! 🏆");start();return}
+ // fresh deck for another round, cumulative score
+ makeDeck();shuffle(deck);ph=[];bh=[];table=[];turn="p";deal();render();
+}
+function cardHTML(c,back=false){
+ let d=document.createElement("div");d.className="card "+(back?"back":(c.s==="♥"||c.s==="♦"?"red":"black"));
+ if(back)d.textContent="ASTRA";else d.innerHTML=`<span>${c.r}<br>${c.s}</span>`;return d;
+}
+function render(){
+ document.getElementById("ps").textContent=ps;document.getElementById("bs").textContent=bs;document.getElementById("pc").textContent=ph.length;
+ let bhd=document.getElementById("botHand");bhd.innerHTML="";bh.forEach(()=>bhd.appendChild(cardHTML(null,true)));
+ let tc=document.getElementById("tableCards");tc.innerHTML="";table.forEach(c=>tc.appendChild(cardHTML(c)));
+ let pd=document.getElementById("playerHand");pd.innerHTML="";
+ ph.forEach((c,i)=>{let d=cardHTML(c);if(i===selected)d.classList.add("selected");d.onclick=()=>choose(i);pd.appendChild(d)});
+ document.getElementById("status").textContent=turn==="p"?"نوبت شما — کارت بازی کنید":mode==="bot"?"نوبت ربات…":"نوبت بازیکن ۲…";
+}
+function choose(i){if(turn!=="p"||!ph[i])return;selected=i;let c=ph[i],ch=choices(c);if(ch.length>1){ // choose first for simplicity
+ }play(i)}
+document.getElementById("bot").onclick=()=>{mode="bot";bot.classList.add("active");human.classList.remove("active");start()};
+document.getElementById("human").onclick=()=>{mode="human";human.classList.add("active");bot.classList.remove("active");start()};
+document.getElementById("new").onclick=start;start();
+</script>
+</body></html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 25px;
+            font-size: 14px;
+        }
+
+        .nav a {
+            margin-left: 20px;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+        .logo {
+            margin-top: 120px;
+        }
+
+        .search-container {
+            margin-top: 30px;
+            width: 580px;
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .search-box {
+            width: 100%;
+            border: 1px solid #d8d4d4;
+            padding: 12px 45px;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s;
+            background-image: url("./نحوه-جستجوی-معکوس-تصویر-در-آیفون-و-آی_پد-یا-ایمیج-سرچ.jpg");
+            background-repeat: no-repeat;
+            background-size: 18px;
+            background-position: 15px center;
+        }
+
+        .search-box:focus {
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            margin: 0 7px;
+            border: none;
+            background: #f2f2f2;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .buttons button:hover {
+            background: #dfdcdc;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #cac8c8;
+            padding: 15px 30px;
+            color: #555;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer a {
+            color: #555;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="nav">
+        <a href="#">Gmail</a>
+        <a href="#">Images</a>
+    </div>
+
+    <img class="logo" src="./آموزش-حذف-عکس-در-گوگل.jpg" width="300px" alt="Google">
+
+    <div class="search-container">
+        <input type="text" class="search-box" id="searchInput">
+        <div class="buttons">
+            <button onclick="search()">Google Search</button>
+            <button onclick="lucky()">I'm Feeling Lucky</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>
+            <a href="#">About</a>
+            <a href="#">Advertising</a>
+            <a href="#">Business</a>
+        </div>
+        <div>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+            <a href="#">Settings</a>
+        </div>
+    </div>
+
+    <script>
+        function search() {
+            const q = document.getElementById("searchInput").value;
+            if (q.trim() !== "") {
+                window.location.href = "https://www.google.com/search?q=" + encodeURIComponent(q);
+            }
+        }
+        function lucky() {
+            window.location.href = "https://www.google.com/doodles";
+        }
+    </script>
+
+</body>
+
+</html>
+`

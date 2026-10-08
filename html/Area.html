@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Gladiator Arena</title>
+
+<style>
+*{box-sizing:border-box;user-select:none}
+body{
+margin:0;
+min-height:100vh;
+background:linear-gradient(#21150d,#070706);
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center;
+}
+#game{
+width:min(850px,95vw);
+text-align:center;
+}
+h1{color:#ffcc62}
+canvas{
+width:100%;
+background:#7d542d;
+border:2px solid #c08b45;
+border-radius:15px;
+}
+button{
+padding:11px 18px;
+margin:5px;
+background:#33200e;
+color:white;
+border:1px solid #a76d2c;
+border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>⚔️ ASTRA GLADIATOR ARENA</h1>
+
+<div>
+❤️ <span id="hp">100</span>
+&nbsp; | &nbsp;
+☠️ <span id="kills">0</span>
+&nbsp; | &nbsp;
+🌊 Wave <span id="wave">1</span>
+</div>
+
+<canvas id="c" width="800" height="450"></canvas>
+
+<button onclick="restart()">🔄 Restart</button>
+
+<p>WASD / Arrow Keys = Move | SPACE = Attack</p>
+
+</div>
+
+<script>
+
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+
+const W=800,H=450;
+
+let keys={};
+let enemies=[];
+let particles=[];
+
+let hp=100;
+let kills=0;
+let wave=1;
+let spawnTimer=0;
+let attackCooldown=0;
+let game=true;
+
+const player={
+x:400,
+y:225,
+r:20,
+speed:4
+};
+
+onkeydown=e=>{
+keys[e.key.toLowerCase()]=true;
+if(e.code==="Space")attack();
+};
+
+onkeyup=e=>{
+keys[e.key.toLowerCase()]=false;
+};
+
+function restart(){
+
+hp=100;
+kills=0;
+wave=1;
+spawnTimer=0;
+attackCooldown=0;
+game=true;
+
+enemies=[];
+particles=[];
+
+player.x=400;
+player.y=225;
+}
+
+function spawnEnemy(){
+
+const side=Math.floor(Math.random()*4);
+
+let x,y;
+
+if(side===0){x=Math.random()*W;y=-30}
+if(side===1){x=W+30;y=Math.random()*H}
+if(side===2){x=Math.random()*W;y=H+30}
+if(side===3){x=-30;y=Math.random()*H}
+
+enemies.push({
+  x,y,
+  r:18,
+  hp:40+wave*8,
+  speed:.7+wave*.04
+});
+}
+
+function attack(){
+
+if(!game||attackCooldown>0)return;
+
+attackCooldown=25;
+
+for(let i=enemies.length-1;i>=0;i--){
+
+  const e=enemies[i];
+
+  const d=Math.hypot(
+   e.x-player.x,
+   e.y-player.y
+  );
+
+  if(d<75){
+
+   e.hp-=45;
+
+   if(e.hp<=0){
+
+    kills++;
+    createParticles(e.x,e.y);
+    enemies.splice(i,1);
+   }
+  }
+}
+}
+
+function createParticles(x,y){
+
+for(let i=0;i<12;i++){
+
+  particles.push({
+   x,y,
+   vx:(Math.random()-.5)*5,
+   vy:(Math.random()-.5)*5,
+   life:25
+  });
+}
+}
+
+function update(){
+
+if(!game)return;
+
+let dx=0,dy=0;
+
+if(keys.w||keys.arrowup)dy--;
+if(keys.s||keys.arrowdown)dy++;
+if(keys.a||keys.arrowleft)dx--;
+if(keys.d||keys.arrowright)dx++;
+
+const l=Math.hypot(dx,dy)||1;
+
+player.x+=dx/l*player.speed;
+player.y+=dy/l*player.speed;
+
+player.x=Math.max(20,Math.min(W-20,player.x));
+player.y=Math.max(20,Math.min(H-20,player.y));
+
+if(attackCooldown>0)
+  attackCooldown--;
+
+spawnTimer++;
+
+if(spawnTimer>Math.max(18,70-wave*5)){
+
+  spawnTimer=0;
+  spawnEnemy();
+}
+
+if(kills>=wave*8)
+  wave++;
+
+enemies.forEach(e=>{
+
+  const a=Math.atan2(
+   player.y-e.y,
+   player.x-e.x
+  );
+
+  e.x+=Math.cos(a)*e.speed;
+  e.y+=Math.sin(a)*e.speed;
+
+  if(
+   Math.hypot(
+    e.x-player.x,
+    e.y-player.y
+   )<e.r+player.r
+  ){
+   hp-=.35;
+  }
+});
+
+particles.forEach(p=>{
+  p.x+=p.vx;
+  p.y+=p.vy;
+  p.life--;
+});
+
+particles=
+  particles.filter(p=>p.life>0);
+
+if(hp<=0)
+  game=false;
+
+document.getElementById("hp").textContent=Math.max(0,hp|0);
+document.getElementById("kills").textContent=kills;
+document.getElementById("wave").textContent=wave;
+}
+
+function draw(){
+
+ctx.fillStyle="#80542e";
+ctx.fillRect(0,0,W,H);
+
+// arena circles
+
+ctx.strokeStyle="#a9763e";
+ctx.lineWidth=5;
+
+ctx.beginPath();
+ctx.arc(W/2,H/2,160,0,Math.PI*2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(W/2,H/2,90,0,Math.PI*2);
+ctx.stroke();
+
+// player
+
+ctx.fillStyle="#57d9ff";
+ctx.beginPath();
+ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+ctx.fill();
+
+// sword
+
+if(attackCooldown>10){
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=7;
+
+  ctx.beginPath();
+  ctx.moveTo(
+   player.x,
+   player.y
+  );
+
+  ctx.lineTo(
+   player.x+50,
+   player.y-25
+  );
+
+  ctx.stroke();
+}
+
+// enemies
+
+enemies.forEach(e=>{
+
+  ctx.fillStyle="#d94444";
+
+  ctx.beginPath();
+  ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#222";
+
+  ctx.fillRect(
+   e.x-8,
+   e.y-4,
+   5,5
+  );
+
+  ctx.fillRect(
+   e.x+4,
+   e.y-4,
+   5,5
+  );
+
+  // health
+
+  ctx.fillStyle="#222";
+
+  ctx.fillRect(
+   e.x-20,
+   e.y-28,
+   40,
+   5
+  );
+
+  ctx.fillStyle="#5cff6b";
+
+  ctx.fillRect(
+   e.x-20,
+   e.y-28,
+   40*Math.max(0,e.hp)/(40+wave*8),
+   5
+  );
+});
+
+particles.forEach(p=>{
+
+  ctx.fillStyle="#ffd166";
+
+  ctx.fillRect(
+   p.x,p.y,4,4
+  );
+});
+
+if(!game){
+
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+
+  ctx.fillStyle="#ff5d67";
+  ctx.font="bold 46px Arial";
+  ctx.fillText(
+   "GLADIATOR FALLEN",
+   W/2,210
+  );
+
+  ctx.fillStyle="#fff";
+  ctx.font="20px Arial";
+  ctx.fillText(
+   `Kills: ${kills}`,
+   W/2,250
+  );
+}
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+
+</script>
+
+</body>
+</html>

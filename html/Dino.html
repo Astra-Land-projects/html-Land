@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Dino</title>
+<style>
+body{margin:0;background:#f4f4f4;font-family:Arial;text-align:center;color:#222}
+#game{width:min(900px,95vw);margin:30px auto}
+canvas{width:100%;border:2px solid #333;background:#fafafa}
+button{padding:10px 20px;margin:10px;border:0;border-radius:8px}
+</style>
+</head>
+<body>
+<div id="game">
+<h1>🦖 ASTRA DINO</h1>
+<div>Score: <b id="score">0</b> | Best: <b id="best">0</b></div>
+<canvas id="c" width="900" height="350"></canvas>
+<button onclick="restart()">🔄 Restart</button>
+<p>SPACE / لمس صفحه = پرش</p>
+</div>
+
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d");
+let d,obs,birds,score,best=+localStorage.dinoBest||0,speed,over,frame;
+
+function restart(){
+d={x:90,y:270,vy:0,on:true};
+obs=[];birds=[];score=0;speed=6;over=false;frame=0;
+}
+function jump(){
+if(d.on&&!over){d.vy=-14;d.on=false}
+else if(over)restart();
+}
+onkeydown=e=>{if(e.code=="Space")jump()};
+c.addEventListener("pointerdown",jump);
+
+function update(){
+if(over)return;
+frame++; score+=.08; speed=6+score/250;
+d.vy+=.65;d.y+=d.vy;
+if(d.y>=270){d.y=270;d.vy=0;d.on=true}
+
+if(frame%70<1)obs.push({x:900,w:20+Math.random()*20,h:35+Math.random()*35});
+if(frame%150<1)birds.push({x:900,y:170+Math.random()*60});
+
+obs.forEach(o=>o.x-=speed);
+birds.forEach(b=>b.x-=speed*1.15);
+
+for(let o of obs)
+  if(hit(d.x,d.y,35,50,o.x,o.y||300,o.w,o.h)){end()}
+
+for(let b of birds)
+  if(hit(d.x,d.y,35,45,b.x,b.y,45,25)){end()}
+
+obs=obs.filter(o=>o.x>-50);
+birds=birds.filter(b=>b.x>-60);
+
+document.getElementById("score").textContent=score|0;
+}
+function hit(a,b,w,h,c,d,W,H){
+return a<c+W&&a+w>c&&b<d+H&&b+h>d;
+}
+function end(){
+over=true;
+best=Math.max(best,score|0);
+localStorage.dinoBest=best;
+document.getElementById("best").textContent=best;
+}
+function draw(){
+x.clearRect(0,0,900,350);
+
+x.strokeStyle="#555";x.lineWidth=2;
+x.beginPath();x.moveTo(0,320);x.lineTo(900,320);x.stroke();
+
+x.font="48px Arial";x.fillText("🦖",d.x,d.y+45);
+
+x.font="42px Arial";
+obs.forEach(o=>x.fillText("🌵",o.x,315));
+
+x.font="35px Arial";
+birds.forEach(b=>x.fillText("🦅",b.x,b.y+20));
+
+if(over){
+  x.fillStyle="#0008";x.fillRect(0,0,900,350);
+  x.fillStyle="white";x.textAlign="center";
+  x.font="bold 42px Arial";x.fillText("GAME OVER",450,160);
+  x.font="22px Arial";x.fillText("Tap / Space to restart",450,205);
+  x.textAlign="left";
+}
+}
+function loop(){update();draw();requestAnimationFrame(loop)}
+restart();loop();
+</script>
+</body>
+</html>

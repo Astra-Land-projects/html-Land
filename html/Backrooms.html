@@ -1,0 +1,2098 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NOCLIP — Backrooms</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none;
+}
+
+#menu,
+#gameOver,
+#victory {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    background:
+        radial-gradient(circle at center, #252525 0%, #080808 60%, #000 100%);
+}
+
+.panel {
+    width: min(650px, 90vw);
+    padding: 30px;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(42px, 10vw, 90px);
+    letter-spacing: 12px;
+}
+
+h2 {
+    letter-spacing: 5px;
+}
+
+p {
+    color: #bbb;
+    line-height: 1.6;
+}
+
+button {
+    margin-top: 18px;
+    padding: 14px 32px;
+    border: 0;
+    background: #eee;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#gameOver,
+#victory {
+    display: none;
+}
+
+#hud {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    color: white;
+    text-shadow: 0 2px 5px #000;
+}
+
+#level {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+#objective {
+    position: absolute;
+    top: 44px;
+    left: 18px;
+    font-size: 12px;
+    color: #ddd;
+}
+
+#crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border: 1px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: .7;
+}
+
+#bars {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    width: 180px;
+    font-size: 11px;
+}
+
+.bar {
+    height: 7px;
+    background: #222;
+    border: 1px solid #777;
+    margin: 4px 0 8px;
+}
+
+.fill {
+    height: 100%;
+    width: 100%;
+}
+
+#healthFill {
+    background: #ddd;
+}
+
+#staminaFill {
+    background: #aaa;
+}
+
+#batteryFill {
+    background: #d5b84b;
+}
+
+#inventory {
+    margin-top: 6px;
+}
+
+#flashlight {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    font-size: 12px;
+}
+
+#message {
+    position: absolute;
+    top: 17%;
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    opacity: 0;
+    transition: opacity .2s;
+}
+
+#mobile {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+}
+
+.control {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 1px solid #aaa;
+    background: #1118;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+#up { left: 78px; bottom: 130px; }
+#down { left: 78px; bottom: 20px; }
+#left { left: 15px; bottom: 75px; }
+#right { left: 141px; bottom: 75px; }
+
+#run {
+    right: 18px;
+    bottom: 20px;
+    width: 70px;
+    height: 70px;
+}
+
+#light {
+    right: 105px;
+    bottom: 20px;
+}
+
+@media (max-width: 800px), (pointer: coarse) {
+    #mobile {
+        display: block;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+    <div id="level">LEVEL 0</div>
+    <div id="objective"></div>
+
+    <div id="crosshair"></div>
+
+    <div id="message"></div>
+
+    <div id="bars">
+        HEALTH <span id="healthText">100</span>
+        <div class="bar">
+            <div id="healthFill" class="fill"></div>
+        </div>
+
+        STAMINA <span id="staminaText">100</span>
+        <div class="bar">
+            <div id="staminaFill" class="fill"></div>
+        </div>
+
+        BATTERY <span id="batteryText">100</span>
+        <div class="bar">
+            <div id="batteryFill" class="fill"></div>
+        </div>
+
+        <div id="inventory">Inventory: Empty</div>
+    </div>
+
+    <div id="flashlight">FLASHLIGHT: ON</div>
+</div>
+
+
+<div id="menu">
+    <div class="panel">
+        <h1>NOCLIP</h1>
+
+        <p>
+            Three levels.<br>
+            One way out.
+        </p>
+
+        <p>
+            <b>PC:</b> WASD · Mouse · SHIFT · F · E
+        </p>
+
+        <p>
+            <b>Mobile:</b> Touch controls + drag screen
+        </p>
+
+        <button id="startButton">ENTER THE BACKROOMS</button>
+    </div>
+</div>
+
+
+<div id="gameOver">
+    <div class="panel">
+        <h1>LOST</h1>
+        <p>The Backrooms found you.</p>
+        <button onclick="restartGame()">TRY AGAIN</button>
+    </div>
+</div>
+
+
+<div id="victory">
+    <div class="panel">
+        <h1>ESCAPED</h1>
+        <p>
+            You survived all three levels.
+            <br>
+            You found the exit.
+        </p>
+        <button onclick="restartGame()">PLAY AGAIN</button>
+    </div>
+</div>
+
+
+<div id="mobile">
+
+    <div class="control" id="up">▲</div>
+    <div class="control" id="down">▼</div>
+    <div class="control" id="left">◀</div>
+    <div class="control" id="right">▶</div>
+
+    <div class="control" id="run">
+        RUN
+    </div>
+
+    <div class="control" id="light">
+        ☼
+    </div>
+
+</div>
+
+
+<script>
+
+"use strict";
+
+/* =========================================================
+   NOCLIP
+   Single-file Backrooms Horror Game
+   ========================================================= */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W = innerWidth;
+let H = innerHeight;
+let DPR = Math.min(devicePixelRatio || 1, 2);
+
+function resize() {
+
+    W = innerWidth;
+    H = innerHeight;
+
+    DPR = Math.min(devicePixelRatio || 1, 2);
+
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+addEventListener("resize", resize);
+resize();
+
+
+/* =========================================================
+   AUDIO
+   ========================================================= */
+
+let audio = null;
+
+function sound(type) {
+
+    if (!audio) return;
+
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+
+    const now = audio.currentTime;
+
+    let frequency = 80;
+
+    if (type === "step") frequency = 75;
+    if (type === "water") frequency = 145;
+    if (type === "hit") frequency = 48;
+    if (type === "entity") frequency = 110;
+    if (type === "door") frequency = 260;
+
+    osc.type = type === "entity"
+        ? "sawtooth"
+        : "sine";
+
+    osc.frequency.setValueAtTime(frequency, now);
+
+    osc.frequency.exponentialRampToValueAtTime(
+        frequency * 1.35,
+        now + .18
+    );
+
+    gain.gain.setValueAtTime(
+        type === "step" ? .018 : .045,
+        now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        now + .2
+    );
+
+    osc.connect(gain);
+    gain.connect(audio.destination);
+
+    osc.start();
+    osc.stop(now + .2);
+}
+
+
+function startAmbient() {
+
+    if (!audio) return;
+
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = 48;
+
+    gain.gain.value = .008;
+
+    osc.connect(gain);
+    gain.connect(audio.destination);
+
+    osc.start();
+}
+
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+
+const SIZE = 31;
+
+let map = [];
+
+let level = 0;
+
+let running = false;
+
+let gameTime = 0;
+
+let stepTimer = 0;
+
+let saveTimer = 0;
+
+let flashlight = true;
+
+let keys = {};
+
+let touch = {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    run: false
+};
+
+let player = {
+
+    x: 1.5,
+    y: 1.5,
+
+    angle: 0,
+
+    health: 100,
+
+    stamina: 100,
+
+    battery: 100,
+
+    key: false
+};
+
+
+let monster = {
+
+    x: 27.5,
+    y: 27.5,
+
+    active: false,
+
+    speed: .8
+};
+
+
+/* =========================================================
+   MAP GENERATION
+   ========================================================= */
+
+function createMaze() {
+
+    map = Array.from(
+        { length: SIZE },
+        () => Array(SIZE).fill(1)
+    );
+
+    const stack = [[1,1]];
+
+    map[1][1] = 0;
+
+    while (stack.length) {
+
+        const current =
+            stack[stack.length - 1];
+
+        const x = current[0];
+        const y = current[1];
+
+        const directions = [
+            [2,0],
+            [-2,0],
+            [0,2],
+            [0,-2]
+        ].sort(() => Math.random() - .5);
+
+        let carved = false;
+
+        for (const dir of directions) {
+
+            const nx = x + dir[0];
+            const ny = y + dir[1];
+
+            if (
+                nx > 0 &&
+                ny > 0 &&
+                nx < SIZE - 1 &&
+                ny < SIZE - 1 &&
+                map[ny][nx] === 1
+            ) {
+
+                map[y + dir[1] / 2]
+                   [x + dir[0] / 2] = 0;
+
+                map[ny][nx] = 0;
+
+                stack.push([nx,ny]);
+
+                carved = true;
+
+                break;
+            }
+        }
+
+        if (!carved) {
+            stack.pop();
+        }
+    }
+
+    map[SIZE-2][SIZE-2] = 0;
+    map[SIZE-2][SIZE-3] = 0;
+}
+
+
+function createPoolMap() {
+
+    map = Array.from(
+        { length: SIZE },
+        () => Array(SIZE).fill(0)
+    );
+
+    for (let y=0; y<SIZE; y++) {
+
+        for (let x=0; x<SIZE; x++) {
+
+            if (
+                x === 0 ||
+                y === 0 ||
+                x === SIZE-1 ||
+                y === SIZE-1
+            ) {
+                map[y][x] = 1;
+            }
+        }
+    }
+
+    for (let i=0; i<45; i++) {
+
+        const x =
+            2 + Math.floor(Math.random() * (SIZE-4));
+
+        const y =
+            2 + Math.floor(Math.random() * (SIZE-4));
+
+        for (let k=0; k<3; k++) {
+
+            if (x+k < SIZE-1) {
+
+                if (Math.random() < .7) {
+
+                    map[y][x+k] = 1;
+
+                }
+            }
+        }
+    }
+
+    map[2][2] = 0;
+    map[SIZE-3][SIZE-3] = 0;
+}
+
+
+function createPipeMap() {
+
+    map = Array.from(
+        { length: SIZE },
+        () => Array(SIZE).fill(0)
+    );
+
+    for (let y=0; y<SIZE; y++) {
+
+        for (let x=0; x<SIZE; x++) {
+
+            if (
+                x === 0 ||
+                y === 0 ||
+                x === SIZE-1 ||
+                y === SIZE-1
+            ) {
+                map[y][x] = 1;
+            }
+        }
+    }
+
+    for (let i=0; i<65; i++) {
+
+        const x =
+            2 + Math.floor(Math.random() * (SIZE-4));
+
+        const y =
+            2 + Math.floor(Math.random() * (SIZE-4));
+
+        map[y][x] =
+            Math.random() < .55 ? 1 : 0;
+    }
+
+    map[2][2] = 0;
+    map[SIZE-3][SIZE-3] = 0;
+}
+
+
+/* =========================================================
+   COLLISION
+   ========================================================= */
+
+function wall(x,y) {
+
+    if (
+        x < 0 ||
+        y < 0 ||
+        x >= SIZE ||
+        y >= SIZE
+    ) {
+        return true;
+    }
+
+    return map[
+        Math.floor(y)
+    ][
+        Math.floor(x)
+    ] === 1;
+}
+
+
+/* =========================================================
+   LEVELS
+   ========================================================= */
+
+function loadLevel(number) {
+
+    level = number;
+
+    player.key = false;
+
+    if (level === 0) {
+
+        createMaze();
+
+        player.x = 1.5;
+        player.y = 1.5;
+        player.angle = 0;
+
+        monster.x = 27.5;
+        monster.y = 27.5;
+
+        monster.speed = .78;
+        monster.active = false;
+
+        document.getElementById("level")
+            .textContent =
+            "LEVEL 0 — THE YELLOW ROOMS";
+
+        document.getElementById("objective")
+            .textContent =
+            "Find the exit. Something is moving in the walls.";
+    }
+
+
+    if (level === 1) {
+
+        createPoolMap();
+
+        player.x = 2.5;
+        player.y = 2.5;
+        player.angle = 0;
+
+        monster.x = 27.5;
+        monster.y = 27.5;
+
+        monster.speed = .65;
+        monster.active = false;
+
+        document.getElementById("level")
+            .textContent =
+            "LEVEL 1 — POOLROOMS";
+
+        document.getElementById("objective")
+            .textContent =
+            "The water is not empty. Find the blue exit.";
+    }
+
+
+    if (level === 2) {
+
+        createPipeMap();
+
+        player.x = 2.5;
+        player.y = 2.5;
+        player.angle = 0;
+
+        monster.x = 27.5;
+        monster.y = 27.5;
+
+        monster.speed = .9;
+        monster.active = false;
+
+        document.getElementById("level")
+            .textContent =
+            "LEVEL 2 — PIPEWORKS";
+
+        document.getElementById("objective")
+            .textContent =
+            "Follow the pipes. Reach the final door.";
+    }
+
+    showMessage(
+        "LEVEL " + level,
+        1
+    );
+
+    sound("door");
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function showMessage(text, seconds=.8) {
+
+    const element =
+        document.getElementById("message");
+
+    element.textContent = text;
+
+    element.style.opacity = "1";
+
+    clearTimeout(showMessage.timer);
+
+    showMessage.timer =
+        setTimeout(() => {
+
+            element.style.opacity = "0";
+
+        }, seconds * 1000);
+}
+
+
+/* =========================================================
+   SAVE SYSTEM
+   ========================================================= */
+
+function saveGame() {
+
+    try {
+
+        localStorage.setItem(
+            "noclip_save",
+            JSON.stringify({
+
+                level: level,
+
+                player: player,
+
+                flashlight: flashlight
+
+            })
+        );
+
+    } catch (error) {}
+
+}
+
+
+function loadGame() {
+
+    try {
+
+        const data =
+            JSON.parse(
+                localStorage.getItem("noclip_save")
+            );
+
+        if (!data) return;
+
+        player =
+            Object.assign(
+                player,
+                data.player
+            );
+
+        flashlight =
+            data.flashlight;
+
+        loadLevel(data.level || 0);
+
+        showMessage(
+            "SAVE LOADED",
+            1
+        );
+
+    } catch (error) {}
+}
+
+
+/* =========================================================
+   START / RESTART
+   ========================================================= */
+
+function restartGame() {
+
+    player = {
+
+        x: 1.5,
+        y: 1.5,
+
+        angle: 0,
+
+        health: 100,
+
+        stamina: 100,
+
+        battery: 100,
+
+        key: false
+    };
+
+    flashlight = true;
+
+    loadLevel(0);
+
+    running = true;
+
+    document.getElementById("gameOver")
+        .style.display = "none";
+
+    document.getElementById("victory")
+        .style.display = "none";
+}
+
+
+function gameOver() {
+
+    running = false;
+
+    document.getElementById("gameOver")
+        .style.display = "flex";
+}
+
+
+function victory() {
+
+    running = false;
+
+    try {
+        localStorage.removeItem("noclip_save");
+    } catch (error) {}
+
+    document.getElementById("victory")
+        .style.display = "flex";
+
+    sound("door");
+}
+
+
+/* =========================================================
+   RAYCASTING
+   ========================================================= */
+
+function castRay(angle) {
+
+    let x = player.x;
+    let y = player.y;
+
+    const dx = Math.cos(angle) * .045;
+    const dy = Math.sin(angle) * .045;
+
+    let distance = 0;
+
+    while (
+        distance < 32 &&
+        !wall(x,y)
+    ) {
+
+        x += dx;
+        y += dy;
+
+        distance += .045;
+    }
+
+    return distance;
+}
+
+
+/* =========================================================
+   MONSTER
+   ========================================================= */
+
+function updateMonster(dt) {
+
+    if (!monster.active)
+        return;
+
+    const dx =
+        player.x - monster.x;
+
+    const dy =
+        player.y - monster.y;
+
+    const distance =
+        Math.hypot(dx,dy) || 1;
+
+    const nx =
+        monster.x +
+        dx / distance *
+        monster.speed *
+        dt;
+
+    const ny =
+        monster.y +
+        dy / distance *
+        monster.speed *
+        dt;
+
+    if (!wall(nx,monster.y))
+        monster.x = nx;
+
+    if (!wall(monster.x,ny))
+        monster.y = ny;
+
+
+    if (distance < .7) {
+
+        player.health -=
+            25 * dt;
+
+        if (Math.random() < dt * 2) {
+
+            sound("hit");
+
+        }
+    }
+}
+
+
+/* =========================================================
+   UPDATE
+   ========================================================= */
+
+function update(dt) {
+
+    gameTime += dt;
+
+    let forward =
+        (keys["w"] || touch.up ? 1 : 0) -
+        (keys["s"] || touch.down ? 1 : 0);
+
+    let strafe =
+        (keys["d"] || touch.right ? 1 : 0) -
+        (keys["a"] || touch.left ? 1 : 0);
+
+    const sprint =
+        (keys["shift"] || touch.run) &&
+        player.stamina > 1;
+
+    const speed =
+        (sprint ? 3.1 : 1.85) * dt;
+
+
+    if (forward || strafe) {
+
+        const length =
+            Math.hypot(forward,strafe);
+
+        forward /= length;
+        strafe /= length;
+
+
+        const nx =
+            player.x +
+            (
+                Math.cos(player.angle) * forward -
+                Math.sin(player.angle) * strafe
+            ) * speed;
+
+
+        const ny =
+            player.y +
+            (
+                Math.sin(player.angle) * forward +
+                Math.cos(player.angle) * strafe
+            ) * speed;
+
+
+        if (!wall(nx,player.y))
+            player.x = nx;
+
+        if (!wall(player.x,ny))
+            player.y = ny;
+
+
+        stepTimer -= dt;
+
+        if (stepTimer <= 0) {
+
+            sound(
+                level === 1
+                    ? "water"
+                    : "step"
+            );
+
+            stepTimer =
+                sprint ? .24 : .38;
+        }
+
+
+        if (sprint)
+            player.stamina -= 29 * dt;
+        else
+            player.stamina += 17 * dt;
+
+    } else {
+
+        player.stamina +=
+            22 * dt;
+    }
+
+
+    player.stamina =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                player.stamina
+            )
+        );
+
+
+    if (flashlight) {
+
+        player.battery -=
+            level === 1
+                ? 1.7 * dt
+                : 1.1 * dt;
+
+        if (player.battery <= 0) {
+
+            player.battery = 0;
+
+            flashlight = false;
+
+            showMessage(
+                "FLASHLIGHT EMPTY",
+                1
+            );
+        }
+    }
+
+
+    const monsterDistance =
+        Math.hypot(
+            player.x - monster.x,
+            player.y - monster.y
+        );
+
+
+    if (
+        monsterDistance <
+        (level === 0 ? 9 :
+         level === 1 ? 8 :
+         11)
+    ) {
+
+        if (!monster.active) {
+
+            monster.active = true;
+
+            sound("entity");
+
+            showMessage(
+                "RUN",
+                .7
+            );
+        }
+    }
+
+
+    updateMonster(dt);
+
+
+    const exitDistance =
+        Math.hypot(
+            player.x - (SIZE - 2.5),
+            player.y - (SIZE - 2.5)
+        );
+
+
+    if (exitDistance < 1) {
+
+        if (level < 2) {
+
+            loadLevel(level + 1);
+
+        } else {
+
+            victory();
+
+        }
+    }
+
+
+    saveTimer += dt;
+
+    if (saveTimer > 12) {
+
+        saveGame();
+
+        saveTimer = 0;
+    }
+
+
+    if (player.health <= 0) {
+
+        gameOver();
+    }
+
+
+    updateHUD();
+}
+
+
+/* =========================================================
+   HUD
+   ========================================================= */
+
+function updateHUD() {
+
+    document.getElementById("healthText")
+        .textContent =
+        Math.ceil(player.health);
+
+    document.getElementById("staminaText")
+        .textContent =
+        Math.ceil(player.stamina);
+
+    document.getElementById("batteryText")
+        .textContent =
+        Math.ceil(player.battery);
+
+
+    document.getElementById("healthFill")
+        .style.width =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                player.health
+            )
+        ) + "%";
+
+
+    document.getElementById("staminaFill")
+        .style.width =
+        player.stamina + "%";
+
+
+    document.getElementById("batteryFill")
+        .style.width =
+        player.battery + "%";
+
+
+    document.getElementById("inventory")
+        .textContent =
+        player.key
+            ? "Inventory: Exit Key"
+            : "Inventory: Empty";
+
+
+    document.getElementById("flashlight")
+        .textContent =
+        "FLASHLIGHT: " +
+        (flashlight ? "ON" : "OFF");
+}
+
+
+/* =========================================================
+   ATMOSPHERE
+   ========================================================= */
+
+function drawAtmosphere() {
+
+    if (level === 1) {
+
+        ctx.strokeStyle =
+            "rgba(220,255,255,.10)";
+
+        ctx.lineWidth = 1;
+
+        for (let i=0; i<25; i++) {
+
+            const y =
+                H * .52 +
+                i * 13 +
+                (gameTime * 14 % 13);
+
+            ctx.beginPath();
+
+            ctx.moveTo(0,y);
+
+            ctx.lineTo(
+                W,
+                y +
+                Math.sin(
+                    i + gameTime
+                ) * 3
+            );
+
+            ctx.stroke();
+        }
+
+
+        ctx.fillStyle =
+            "rgba(255,255,255,.10)";
+
+        for (let i=0; i<12; i++) {
+
+            const x =
+                (i * 179 +
+                gameTime * 12) % W;
+
+            const y =
+                H*.52 +
+                Math.sin(
+                    gameTime+i
+                ) * 35;
+
+            ctx.fillRect(
+                x,
+                y,
+                2,
+                2
+            );
+        }
+    }
+
+
+    if (level === 2) {
+
+        ctx.strokeStyle =
+            "rgba(180,180,180,.32)";
+
+        ctx.lineWidth = 6;
+
+        for (let i=0; i<8; i++) {
+
+            const y =
+                H*.52 + i*28;
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                0,
+                y
+            );
+
+            ctx.bezierCurveTo(
+                W*.3,
+                y-18,
+                W*.65,
+                y+18,
+                W,
+                y-8
+            );
+
+            ctx.stroke();
+        }
+    }
+}
+
+
+/* =========================================================
+   MONSTER RENDER
+   ========================================================= */
+
+function drawMonster() {
+
+    if (!monster.active)
+        return;
+
+
+    const dx =
+        monster.x - player.x;
+
+    const dy =
+        monster.y - player.y;
+
+    const distance =
+        Math.hypot(dx,dy);
+
+    let angle =
+        Math.atan2(dy,dx) -
+        player.angle;
+
+
+    angle =
+        Math.atan2(
+            Math.sin(angle),
+            Math.cos(angle)
+        );
+
+
+    if (
+        Math.abs(angle) >
+        Math.PI/2
+    ) {
+        return;
+    }
+
+
+    const screenX =
+        W/2 +
+        angle/(Math.PI/3) *
+        W/2;
+
+
+    const size =
+        Math.max(
+            20,
+            Math.min(
+                H*.75,
+                H/(distance*.9)
+            )
+        );
+
+
+    ctx.save();
+
+    ctx.translate(
+        screenX,
+        H/2
+    );
+
+
+    /* LEVEL 0 ENTITY */
+
+    if (level === 0) {
+
+        ctx.fillStyle = "#030303";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -size*.10,
+            -size*.72
+        );
+
+        ctx.lineTo(
+            -size*.24,
+            size*.65
+        );
+
+        ctx.lineTo(
+            size*.12,
+            size*.65
+        );
+
+        ctx.lineTo(
+            size*.16,
+            -size*.72
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+
+        ctx.fillStyle = "#ddd";
+
+        ctx.fillRect(
+            -size*.07,
+            -size*.46,
+            size*.045,
+            size*.045
+        );
+
+        ctx.fillRect(
+            size*.025,
+            -size*.46,
+            size*.045,
+            size*.045
+        );
+    }
+
+
+    /* LEVEL 1 ENTITY */
+
+    if (level === 1) {
+
+        ctx.fillStyle = "#020202";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            -size*.55
+        );
+
+        ctx.lineTo(
+            size*.4,
+            size*.25
+        );
+
+        ctx.lineTo(
+            0,
+            size*.55
+        );
+
+        ctx.lineTo(
+            -size*.4,
+            size*.25
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+
+        ctx.fillStyle = "#eee";
+
+        ctx.font =
+            Math.max(
+                12,
+                size*.18
+            ) + "px Arial";
+
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            "⌣",
+            0,
+            size*.13
+        );
+    }
+
+
+    /* LEVEL 2 ENTITY */
+
+    if (level === 2) {
+
+        ctx.fillStyle =
+            "#070707";
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            0,
+            0,
+            size*.23,
+            size*.68,
+            0,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "#aaa";
+
+        ctx.lineWidth =
+            Math.max(
+                2,
+                size*.035
+            );
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -size*.18,
+            -size*.28
+        );
+
+        ctx.lineTo(
+            -size*.48,
+            size*.42
+        );
+
+        ctx.moveTo(
+            size*.18,
+            -size*.28
+        );
+
+        ctx.lineTo(
+            size*.48,
+            size*.42
+        );
+
+        ctx.stroke();
+    }
+
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+
+function render() {
+
+    /* BACKGROUND */
+
+    if (level === 0) {
+
+        ctx.fillStyle = "#cdb65b";
+
+    } else if (level === 1) {
+
+        ctx.fillStyle = "#78aebc";
+
+    } else {
+
+        ctx.fillStyle = "#242729";
+    }
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* RAYCAST */
+
+    const FOV =
+        Math.PI / 3;
+
+    const rays =
+        Math.ceil(W / 2);
+
+
+    for (
+        let i=0;
+        i<rays;
+        i++
+    ) {
+
+        const angle =
+            player.angle -
+            FOV/2 +
+            FOV*i/rays;
+
+
+        let distance =
+            castRay(angle);
+
+
+        distance *=
+            Math.cos(
+                angle -
+                player.angle
+            );
+
+
+        const wallHeight =
+            Math.min(
+                H*1.8,
+                H /
+                (
+                    Math.max(
+                        .05,
+                        distance
+                    ) * .72
+                )
+            );
+
+
+        const top =
+            (H-wallHeight)/2;
+
+
+        const shade =
+            Math.max(
+                .08,
+                Math.min(
+                    1,
+                    1-distance/15
+                )
+            );
+
+
+        if (level === 0) {
+
+            const flicker =
+                .82 +
+                .18 *
+                Math.sin(
+                    gameTime*17
+                ) +
+                .05 *
+                Math.sin(
+                    gameTime*43
+                );
+
+
+            ctx.fillStyle =
+                `rgb(
+                    ${35 + Math.floor(125*shade*flicker)},
+                    ${28 + Math.floor(110*shade*flicker)},
+                    ${12 + Math.floor(55*shade*flicker)}
+                )`;
+
+        }
+
+
+        else if (level === 1) {
+
+            ctx.fillStyle =
+                `rgb(
+                    ${25 + Math.floor(70*shade)},
+                    ${55 + Math.floor(120*shade)},
+                    ${70 + Math.floor(135*shade)}
+                )`;
+
+        }
+
+
+        else {
+
+            ctx.fillStyle =
+                `rgb(
+                    ${18 + Math.floor(65*shade)},
+                    ${20 + Math.floor(68*shade)},
+                    ${22 + Math.floor(70*shade)}
+                )`;
+        }
+
+
+        ctx.fillRect(
+            i*2,
+            top,
+            3,
+            wallHeight
+        );
+    }
+
+
+    /* FLOOR */
+
+    const floor =
+        ctx.createLinearGradient(
+            0,
+            H/2,
+            0,
+            H
+        );
+
+
+    floor.addColorStop(
+        0,
+        "rgba(20,20,20,.2)"
+    );
+
+
+    floor.addColorStop(
+        1,
+        level === 1
+            ? "#285966"
+            : "#070707"
+    );
+
+
+    ctx.fillStyle = floor;
+
+    ctx.fillRect(
+        0,
+        H/2,
+        W,
+        H/2
+    );
+
+
+    drawAtmosphere();
+
+    drawMonster();
+
+
+    /* FLASHLIGHT */
+
+    if (flashlight) {
+
+        const light =
+            ctx.createRadialGradient(
+                W/2,
+                H/2,
+                20,
+                W/2,
+                H/2,
+                Math.min(W,H)*.72
+            );
+
+
+        light.addColorStop(
+            0,
+            "rgba(255,255,255,.13)"
+        );
+
+        light.addColorStop(
+            .35,
+            "rgba(255,255,255,0)"
+        );
+
+        light.addColorStop(
+            1,
+            "rgba(0,0,0,.72)"
+        );
+
+
+        ctx.fillStyle = light;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+}
+
+
+/* =========================================================
+   KEYBOARD
+   ========================================================= */
+
+addEventListener(
+    "keydown",
+    event => {
+
+        keys[
+            event.key.toLowerCase()
+        ] = true;
+
+
+        if (
+            ["w","a","s","d","shift"," "]
+            .includes(
+                event.key.toLowerCase()
+            )
+        ) {
+            event.preventDefault();
+        }
+
+
+        if (
+            event.key.toLowerCase() === "f"
+        ) {
+
+            flashlight =
+                !flashlight;
+        }
+
+
+        if (
+            event.key.toLowerCase() === "e"
+        ) {
+
+            saveGame();
+
+            showMessage(
+                "GAME SAVED",
+                .8
+            );
+        }
+
+
+        if (
+            event.key.toLowerCase() === "r" &&
+            !running
+        ) {
+
+            restartGame();
+        }
+
+    }
+);
+
+
+addEventListener(
+    "keyup",
+    event => {
+
+        keys[
+            event.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+/* =========================================================
+   MOUSE LOOK
+   ========================================================= */
+
+let pointerLocked = false;
+
+
+canvas.addEventListener(
+    "click",
+    () => {
+
+        if (
+            running &&
+            document.body.requestPointerLock
+        ) {
+
+            document.body.requestPointerLock();
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "pointerlockchange",
+    () => {
+
+        pointerLocked =
+            document.pointerLockElement === canvas;
+
+    }
+);
+
+
+addEventListener(
+    "mousemove",
+    event => {
+
+        if (
+            pointerLocked &&
+            running
+        ) {
+
+            player.angle +=
+                event.movementX *
+                .0023;
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MOBILE LOOK
+   ========================================================= */
+
+let touchId = null;
+let lastTouchX = 0;
+
+
+canvas.addEventListener(
+    "touchstart",
+    event => {
+
+        if (!running)
+            return;
+
+        const t =
+            event.changedTouches[0];
+
+        touchId =
+            t.identifier;
+
+        lastTouchX =
+            t.clientX;
+
+    },
+    { passive:true }
+);
+
+
+canvas.addEventListener(
+    "touchmove",
+    event => {
+
+        for (
+            const t of event.changedTouches
+        ) {
+
+            if (
+                t.identifier ===
+                touchId
+            ) {
+
+                player.angle +=
+                    (
+                        t.clientX -
+                        lastTouchX
+                    ) * .006;
+
+                lastTouchX =
+                    t.clientX;
+            }
+        }
+
+    },
+    { passive:true }
+);
+
+
+canvas.addEventListener(
+    "touchend",
+    event => {
+
+        for (
+            const t of event.changedTouches
+        ) {
+
+            if (
+                t.identifier ===
+                touchId
+            ) {
+
+                touchId = null;
+            }
+        }
+
+    },
+    { passive:true }
+);
+
+
+/* =========================================================
+   MOBILE BUTTONS
+   ========================================================= */
+
+function bindButton(
+    id,
+    property
+) {
+
+    const element =
+        document.getElementById(id);
+
+
+    element.addEventListener(
+        "touchstart",
+        event => {
+
+            event.preventDefault();
+
+            touch[property] = true;
+
+        },
+        { passive:false }
+    );
+
+
+    element.addEventListener(
+        "touchend",
+        event => {
+
+            event.preventDefault();
+
+            touch[property] = false;
+
+        },
+        { passive:false }
+    );
+
+
+    element.addEventListener(
+        "touchcancel",
+        () => {
+
+            touch[property] = false;
+
+        }
+    );
+}
+
+
+bindButton("up","up");
+bindButton("down","down");
+bindButton("left","left");
+bindButton("right","right");
+bindButton("run","run");
+
+
+document.getElementById("light")
+    .addEventListener(
+        "click",
+        () => {
+
+            flashlight =
+                !flashlight;
+        }
+    );
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+document.getElementById("startButton")
+    .onclick =
+    async () => {
+
+        try {
+
+            audio =
+                new (
+                    window.AudioContext ||
+                    window.webkitAudioContext
+                )();
+
+            await audio.resume();
+
+            startAmbient();
+
+        } catch(error) {}
+
+
+        document.getElementById("menu")
+            .style.display = "none";
+
+        restartGame();
+    };
+
+
+/* =========================================================
+   GAME LOOP
+   ========================================================= */
+
+loadLevel(0);
+
+
+let lastFrame = performance.now();
+
+
+function gameLoop(now) {
+
+    const dt =
+        Math.min(
+            .05,
+            (now-lastFrame)/1000
+        );
+
+    lastFrame = now;
+
+
+    if (running) {
+
+        update(dt);
+    }
+
+
+    render();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+
+requestAnimationFrame(
+    gameLoop
+);
+
+</script>
+</body>
+</html>
+```

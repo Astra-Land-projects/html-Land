@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Explorer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#02050a;
+    color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+#globe{
+    position:fixed;
+    inset:0;
+}
+
+#loading{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    background:#02050a;
+}
+
+#loading h1{
+    font-size:34px;
+    letter-spacing:2px;
+    margin-bottom:14px;
+}
+
+#loading p{
+    color:#8b96a7;
+}
+
+.spinner{
+    width:48px;
+    height:48px;
+    border:4px solid #202a38;
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin-bottom:22px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+/* TOP */
+
+#top{
+    position:fixed;
+    top:18px;
+    left:18px;
+    right:18px;
+    z-index:20;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    pointer-events:none;
+}
+
+.logo{
+    pointer-events:auto;
+    padding:12px 17px;
+    border-radius:15px;
+    background:rgba(4,9,16,.78);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(15px);
+    font-weight:bold;
+    letter-spacing:1px;
+}
+
+.searchBox{
+    pointer-events:auto;
+    display:flex;
+    gap:8px;
+}
+
+.searchBox input{
+    width:min(330px,50vw);
+    padding:12px 15px;
+    border-radius:13px;
+    border:1px solid rgba(255,255,255,.14);
+    outline:none;
+    color:white;
+    background:rgba(4,9,16,.8);
+    backdrop-filter:blur(15px);
+}
+
+.searchBox button{
+    padding:0 15px;
+    border:0;
+    border-radius:13px;
+    background:white;
+    color:#05080d;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* INFO PANEL */
+
+#info{
+    position:fixed;
+    z-index:30;
+    right:20px;
+    bottom:20px;
+    width:min(390px,calc(100vw - 40px));
+    max-height:calc(100vh - 40px);
+    overflow:auto;
+
+    padding:22px;
+
+    border-radius:22px;
+    background:rgba(4,9,16,.88);
+    border:1px solid rgba(255,255,255,.13);
+    backdrop-filter:blur(22px);
+
+    box-shadow:0 25px 80px rgba(0,0,0,.55);
+
+    transform:translateY(30px);
+    opacity:0;
+    pointer-events:none;
+    transition:.25s ease;
+}
+
+#info.show{
+    transform:translateY(0);
+    opacity:1;
+    pointer-events:auto;
+}
+
+.close{
+    position:absolute;
+    top:12px;
+    right:14px;
+    border:0;
+    background:none;
+    color:#8893a3;
+    font-size:25px;
+    cursor:pointer;
+}
+
+.countryHeader{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    padding-right:25px;
+    margin-bottom:20px;
+}
+
+.flag{
+    width:72px;
+    height:48px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,.18);
+}
+
+.countryName{
+    font-size:25px;
+    font-weight:800;
+}
+
+.nativeName{
+    color:#8994a5;
+    font-size:12px;
+    margin-top:5px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+}
+
+.item{
+    background:rgba(255,255,255,.055);
+    border-radius:12px;
+    padding:12px;
+}
+
+.item.full{
+    grid-column:1/-1;
+}
+
+.item span{
+    display:block;
+    color:#7f8a9b;
+    font-size:11px;
+    margin-bottom:5px;
+}
+
+.item strong{
+    font-size:14px;
+    line-height:1.4;
+}
+
+.neighbors{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.neighbor{
+    padding:5px 8px;
+    border-radius:7px;
+    background:rgba(255,255,255,.08);
+    font-size:11px;
+}
+
+/* HINT */
+
+#hint{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:10;
+    padding:9px 14px;
+    border-radius:12px;
+    background:rgba(4,9,16,.7);
+    border:1px solid rgba(255,255,255,.08);
+    color:#8b96a7;
+    font-size:12px;
+    backdrop-filter:blur(12px);
+    pointer-events:none;
+}
+
+/* STATS */
+
+#stats{
+    position:fixed;
+    left:18px;
+    bottom:18px;
+    z-index:10;
+    padding:10px 13px;
+    border-radius:12px;
+    background:rgba(4,9,16,.72);
+    border:1px solid rgba(255,255,255,.08);
+    color:#8994a5;
+    font-size:12px;
+    backdrop-filter:blur(12px);
+}
+
+/* MOBILE */
+
+@media(max-width:650px){
+
+    #top{
+        top:10px;
+        left:10px;
+        right:10px;
+    }
+
+    .logo{
+        font-size:12px;
+        padding:10px;
+    }
+
+    .searchBox input{
+        width:42vw;
+    }
+
+    .searchBox button{
+        padding:0 10px;
+    }
+
+    #hint,
+    #stats{
+        display:none;
+    }
+
+    #info{
+        right:10px;
+        bottom:10px;
+        width:calc(100vw - 20px);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+    <div class="spinner"></div>
+    <h1>WORLD EXPLORER</h1>
+    <p>Loading the planet...</p>
+</div>
+
+<div id="globe"></div>
+
+<div id="top">
+
+    <div class="logo">
+        🌍 WORLD EXPLORER
+    </div>
+
+    <div class="searchBox">
+        <input
+            id="search"
+            type="text"
+            placeholder="Search country..."
+        >
+        <button onclick="searchCountry()">SEARCH</button>
+    </div>
+
+</div>
+
+<div id="hint">
+    🖱 Drag = rotate • Wheel = zoom • Click = explore
+</div>
+
+<div id="stats">
+    🌎 Countries loaded: <span id="countryCount">0</span>
+</div>
+
+<div id="info">
+
+    <button class="close" onclick="closeInfo()">×</button>
+
+    <div class="countryHeader">
+
+        <img
+            id="flag"
+            class="flag"
+            src=""
+            alt="Flag"
+        >
+
+        <div>
+            <div id="countryName" class="countryName">
+                Country
+            </div>
+
+            <div id="nativeName" class="nativeName">
+                --
+            </div>
+        </div>
+
+    </div>
+
+    <div class="grid">
+
+        <div class="item">
+            <span>Capital</span>
+            <strong id="capital">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Continent</span>
+            <strong id="continent">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Population</span>
+            <strong id="population">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Area</span>
+            <strong id="area">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Region</span>
+            <strong id="region">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Subregion</span>
+            <strong id="subregion">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Currency</span>
+            <strong id="currency">--</strong>
+        </div>
+
+        <div class="item">
+            <span>Languages</span>
+            <strong id="languages">--</strong>
+        </div>
+
+        <div class="item full">
+            <span>Neighboring Countries</span>
+            <div id="neighbors" class="neighbors">
+                --
+            </div>
+        </div>
+
+        <div class="item full">
+            <span>Timezones</span>
+            <strong id="timezones">--</strong>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let countries = [];
+let globe;
+let selectedCountry = null;
+let countryDetails = new Map();
+
+const loading =
+    document.getElementById("loading");
+
+const info =
+    document.getElementById("info");
+
+const search =
+    document.getElementById("search");
+
+
+/*
+==================================================
+  COUNTRY DATA
+==================================================
+*/
+
+async function loadCountryData(){
+
+    try{
+
+        const response =
+            await fetch(
+                "https://restcountries.com/v3.1/all"
+            );
+
+        const data =
+            await response.json();
+
+        data.forEach(country => {
+
+            const cca2 =
+                country.cca2;
+
+            if(cca2){
+                countryDetails.set(
+                    cca2.toUpperCase(),
+                    country
+                );
+            }
+
+        });
+
+    }catch(error){
+
+        console.error(
+            "Country API error:",
+            error
+        );
+
+    }
+}
+
+
+/*
+==================================================
+  WORLD GEOJSON
+==================================================
+*/
+
+async function loadWorld(){
+
+    const response =
+        await fetch(
+            "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson"
+        );
+
+    const geo =
+        await response.json();
+
+    countries =
+        geo.features.filter(
+            country => {
+
+                const iso =
+                    country.properties.ISO_A2;
+
+                return iso &&
+                       iso !== "-99" &&
+                       iso !== "AQ";
+
+            }
+        );
+
+    document.getElementById(
+        "countryCount"
+    ).textContent =
+        countries.length;
+
+    return countries;
+}
+
+
+/*
+==================================================
+  GLOBE
+==================================================
+*/
+
+async function init(){
+
+    try{
+
+        await loadCountryData();
+
+        const world =
+            await loadWorld();
+
+        globe =
+            Globe()(document.getElementById("globe"))
+
+            .backgroundColor("#02050a")
+
+            .globeImageUrl(
+                "https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg"
+            )
+
+            .bumpImageUrl(
+                "https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png"
+            )
+
+            .showAtmosphere(true)
+
+            .atmosphereColor("#4da6ff")
+
+            .atmosphereAltitude(.16)
+
+            .polygonsData(world)
+
+            .polygonAltitude(
+                country =>
+                    country === selectedCountry
+                        ? .025
+                        : .008
+            )
+
+            .polygonCapColor(
+                country => {
+
+                    if(country === selectedCountry){
+                        return "rgba(255,190,55,.92)";
+                    }
+
+                    return "rgba(35,110,190,.38)";
+                }
+            )
+
+            .polygonSideColor(
+                () =>
+                    "rgba(30,120,210,.18)"
+            )
+
+            .polygonStrokeColor(
+                () =>
+                    "rgba(255,255,255,.45)"
+            )
+
+            .polygonLabel(
+                country => {
+
+                    const p =
+                        country.properties;
+
+                    return `
+                        <div style="
+                            padding:9px 12px;
+                            background:rgba(3,8,14,.94);
+                            border:1px solid rgba(255,255,255,.12);
+                            border-radius:9px;
+                            color:white;
+                            font-family:Arial;
+                        ">
+                            <b>${escapeHTML(
+                                p.NAME ||
+                                p.ADMIN ||
+                                "Unknown"
+                            )}</b>
+                        </div>
+                    `;
+
+                }
+            )
+
+            .onPolygonHover(
+                country => {
+
+                    document.body.style.cursor =
+                        country
+                            ? "pointer"
+                            : "default";
+
+                }
+            )
+
+            .onPolygonClick(
+                country => {
+
+                    selectCountry(country);
+
+                }
+            );
+
+
+        /*
+        ==========================================
+          FLAGS / COUNTRY LABELS
+        ==========================================
+        */
+
+        const flagPoints =
+            world
+                .map(country => {
+
+                    const p =
+                        country.properties;
+
+                    const iso =
+                        normalizeISO(
+                            p.ISO_A2
+                        );
+
+                    const lat =
+                        Number(
+                            p.LABEL_Y
+                        );
+
+                    const lng =
+                        Number(
+                            p.LABEL_X
+                        );
+
+                    if(
+                        !iso ||
+                        Number.isNaN(lat) ||
+                        Number.isNaN(lng)
+                    ){
+                        return null;
+                    }
+
+                    const details =
+                        countryDetails.get(
+                            iso
+                        );
+
+                    return {
+
+                        lat,
+                        lng,
+
+                        iso,
+
+                        name:
+                            details?.name?.common ||
+                            p.NAME ||
+                            p.ADMIN ||
+                            "Unknown",
+
+                        flag:
+                            details?.flags?.png ||
+                            `https://flagcdn.com/w40/${iso.toLowerCase()}.png`
+
+                    };
+
+                })
+                .filter(Boolean);
+
+
+        /*
+        ------------------------------------------
+        HTML MARKERS
+        ------------------------------------------
+        */
+
+        globe
+            .htmlElementsData(
+                flagPoints
+            )
+
+            .htmlLat(
+                d => d.lat
+            )
+
+            .htmlLng(
+                d => d.lng
+            )
+
+            .htmlAltitude(
+                .015
+            )
+
+            .htmlElement(
+                d => {
+
+                    const el =
+                        document.createElement("div");
+
+                    el.style.cssText = `
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        width:32px;
+                        height:23px;
+                        cursor:pointer;
+                        pointer-events:auto;
+                    `;
+
+                    el.innerHTML = `
+                        <img
+                            src="${d.flag}"
+                            alt="${escapeHTML(d.name)}"
+                            title="${escapeHTML(d.name)}"
+                            style="
+                                width:30px;
+                                height:20px;
+                                object-fit:cover;
+                                border-radius:3px;
+                                border:1px solid rgba(255,255,255,.65);
+                                box-shadow:0 2px 8px rgba(0,0,0,.5);
+                            "
+                        >
+                    `;
+
+                    el.onclick =
+                        event => {
+
+                            event.stopPropagation();
+
+                            const feature =
+                                countries.find(
+                                    c =>
+                                        normalizeISO(
+                                            c.properties.ISO_A2
+                                        ) === d.iso
+                                );
+
+                            if(feature){
+                                selectCountry(
+                                    feature
+                                );
+                            }
+
+                        };
+
+                    return el;
+
+                }
+            );
+
+
+        /*
+        ==========================================
+          INITIAL CAMERA
+        ==========================================
+        */
+
+        globe.pointOfView(
+            {
+                lat:25,
+                lng:15,
+                altitude:2.4
+            },
+            1000
+        );
+
+
+        /*
+        ==========================================
+          AUTO ROTATION
+        ==========================================
+        */
+
+        const controls =
+            globe.controls();
+
+        controls.autoRotate =
+            true;
+
+        controls.autoRotateSpeed =
+            .28;
+
+        controls.enableDamping =
+            true;
+
+        controls.dampingFactor =
+            .08;
+
+        controls.addEventListener(
+            "start",
+            () => {
+
+                controls.autoRotate =
+                    false;
+
+            }
+        );
+
+
+        loading.style.display =
+            "none";
+
+
+    }catch(error){
+
+        console.error(error);
+
+        loading.querySelector("p").textContent =
+            "Could not load the world. Check your internet connection.";
+
+    }
+
+}
+
+
+/*
+==================================================
+  COUNTRY SELECTION
+==================================================
+*/
+
+async function selectCountry(country){
+
+    selectedCountry =
+        country;
+
+    const properties =
+        country.properties;
+
+    const iso =
+        normalizeISO(
+            properties.ISO_A2
+        );
+
+    const details =
+        countryDetails.get(
+            iso
+        );
+
+    updateGlobeSelection();
+
+    showCountry(
+        country,
+        details
+    );
+
+
+    /*
+    ----------------------------------------------
+      MOVE CAMERA
+    ----------------------------------------------
+    */
+
+    let lat =
+        Number(
+            properties.LABEL_Y
+        );
+
+    let lng =
+        Number(
+            properties.LABEL_X
+        );
+
+    /*
+      Some countries do not have perfect label
+      coordinates. Use REST Countries coordinates.
+    */
+
+    if(
+        details?.latlng &&
+        details.latlng.length >= 2
+    ){
+
+        lat =
+            details.latlng[0];
+
+        lng =
+            details.latlng[1];
+
+    }
+
+    if(
+        Number.isFinite(lat) &&
+        Number.isFinite(lng)
+    ){
+
+        globe.pointOfView(
+            {
+                lat,
+                lng,
+                altitude:1.9
+            },
+            1000
+        );
+
+    }
+
+}
+
+
+/*
+==================================================
+  UPDATE COUNTRY COLORS
+==================================================
+*/
+
+function updateGlobeSelection(){
+
+    if(!globe) return;
+
+    globe
+        .polygonAltitude(
+            country =>
+                country === selectedCountry
+                    ? .025
+                    : .008
+        )
+
+        .polygonCapColor(
+            country => {
+
+                if(
+                    country === selectedCountry
+                ){
+
+                    return "rgba(255,190,55,.95)";
+
+                }
+
+                return "rgba(35,110,190,.38)";
+
+            }
+        );
+
+}
+
+
+/*
+==================================================
+  COUNTRY INFORMATION PANEL
+==================================================
+*/
+
+function showCountry(
+    feature,
+    details
+){
+
+    const p =
+        feature.properties;
+
+    const name =
+        details?.name?.common ||
+        p.NAME ||
+        p.ADMIN ||
+        "Unknown";
+
+    const native =
+        details?.name?.nativeName;
+
+    let nativeName =
+        "";
+
+    if(native){
+
+        const first =
+            Object.values(native)[0];
+
+        nativeName =
+            first?.common ||
+            first?.official ||
+            "";
+
+    }
+
+
+    document.getElementById(
+        "countryName"
+    ).textContent =
+        name;
+
+    document.getElementById(
+        "nativeName"
+    ).textContent =
+        nativeName ||
+        details?.name?.official ||
+        "";
+
+
+    /*
+    FLAG
+    */
+
+    const flag =
+        document.getElementById(
+            "flag"
+        );
+
+    flag.src =
+        details?.flags?.png ||
+        (
+            normalizeISO(
+                p.ISO_A2
+            )
+                ? `https://flagcdn.com/w80/${
+                    normalizeISO(
+                        p.ISO_A2
+                    ).toLowerCase()
+                }.png`
+                : ""
+        );
+
+/*
+    CAPITAL
+    */
+
+    document.getElementById(
+        "capital"
+    ).textContent =
+        details?.capital?.join(", ")
+        ||
+        "Not available";
+
+
+    /*
+    CONTINENT
+    */
+
+    document.getElementById(
+        "continent"
+    ).textContent =
+        details?.continents?.join(", ")
+        ||
+        p.CONTINENT
+        ||
+        "Unknown";
+
+
+    /*
+    POPULATION
+    */
+
+    document.getElementById(
+        "population"
+    ).textContent =
+        details?.population
+            ? formatNumber(
+                details.population
+            )
+            : "Not available";
+
+
+    /*
+    AREA
+    */
+
+    document.getElementById(
+        "area"
+    ).textContent =
+        details?.area
+            ? `${formatNumber(details.area)} km²`
+            : "Not available";
+
+
+    /*
+    REGION
+    */
+
+    document.getElementById(
+        "region"
+    ).textContent =
+        details?.region ||
+        "Not available";
+
+
+    /*
+    SUBREGION
+    */
+
+    document.getElementById(
+        "subregion"
+    ).textContent =
+        details?.subregion ||
+        "Not available";
+
+
+    /*
+    CURRENCY
+    */
+
+    let currencyText =
+        "Not available";
+
+    if(details?.currencies){
+
+        currencyText =
+            Object.values(
+                details.currencies
+            )
+            .map(
+                currency =>
+                    `${currency.name} (${currency.symbol || ""})`
+            )
+            .join(", ");
+
+    }
+
+    document.getElementById(
+        "currency"
+    ).textContent =
+        currencyText;
+
+
+    /*
+    LANGUAGES
+    */
+
+    let languageText =
+        "Not available";
+
+    if(details?.languages){
+
+        languageText =
+            Object.values(
+                details.languages
+            ).join(", ");
+
+    }
+
+    document.getElementById(
+        "languages"
+    ).textContent =
+        languageText;
+
+
+    /*
+    NEIGHBORS
+    */
+
+    const neighbors =
+        document.getElementById(
+            "neighbors"
+        );
+
+    neighbors.innerHTML =
+        "";
+
+    if(
+        details?.borders &&
+        details.borders.length
+    ){
+
+        details.borders.forEach(
+            code => {
+
+                const neighborData =
+                    countryDetails.get(
+                        code.toUpperCase()
+                    );
+
+                const tag =
+                    document.createElement(
+                        "span"
+                    );
+
+                tag.className =
+                    "neighbor";
+
+                tag.textContent =
+                    neighborData?.name?.common ||
+                    code;
+
+                neighbors.appendChild(
+                    tag
+                );
+
+            }
+        );
+
+    }else{
+
+        neighbors.textContent =
+            "No land borders";
+
+    }
+
+
+    /*
+    TIMEZONES
+    */
+
+    document.getElementById(
+        "timezones"
+    ).textContent =
+        details?.timezones?.join(", ")
+        ||
+        "Not available";
+
+
+    info.classList.add(
+        "show"
+    );
+
+}
+
+
+/*
+==================================================
+  SEARCH
+==================================================
+*/
+
+function searchCountry(){
+
+    const query =
+        search.value
+            .trim()
+            .toLowerCase();
+
+    if(!query){
+        return;
+    }
+
+    const found =
+        countries.find(
+            country => {
+
+                const p =
+                    country.properties;
+
+                const iso =
+                    normalizeISO(
+                        p.ISO_A2
+                    ).toLowerCase();
+
+                const details =
+                    countryDetails.get(
+                        iso.toUpperCase()
+                    );
+
+                const common =
+                    details?.name?.common
+                    ?.toLowerCase()
+                    ||
+                    "";
+
+                const official =
+                    details?.name?.official
+                    ?.toLowerCase()
+                    ||
+                    "";
+
+                const mapName =
+                    (
+                        p.NAME ||
+                        p.ADMIN ||
+                        ""
+                    ).toLowerCase();
+
+                return (
+                    common === query ||
+                    official === query ||
+                    iso === query ||
+                    mapName === query ||
+                    common.includes(query) ||
+                    mapName.includes(query)
+                );
+
+            }
+        );
+
+
+    if(!found){
+
+        alert(
+            "Country not found."
+        );
+
+        return;
+
+    }
+
+    selectCountry(
+        found
+    );
+
+}
+
+
+search.addEventListener(
+    "keydown",
+    event => {
+
+        if(
+            event.key === "Enter"
+        ){
+
+            searchCountry();
+
+        }
+
+    }
+);
+/*
+==================================================
+  CLOSE
+==================================================
+*/
+
+function closeInfo(){
+
+    info.classList.remove(
+        "show"
+    );
+
+    selectedCountry =
+        null;
+
+    updateGlobeSelection();
+
+}
+
+
+/*
+==================================================
+  UTILITIES
+==================================================
+*/
+
+function normalizeISO(
+    value
+){
+
+    if(!value){
+        return "";
+    }
+
+    value =
+        String(value)
+            .trim()
+            .toUpperCase();
+
+    /*
+      GeoJSON occasionally contains -99
+      or unusual codes.
+    */
+
+    if(
+        value === "-99" ||
+        value.length !== 2
+    ){
+
+        return "";
+
+    }
+
+    return value;
+
+}
+
+
+function formatNumber(
+    number
+){
+
+    return Number(
+        number
+    ).toLocaleString(
+        "en-US"
+    );
+
+}
+
+
+function escapeHTML(
+    value
+){
+
+    return String(
+        value
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+/*
+==================================================
+  START
+==================================================
+*/
+
+init();
+
+</script>
+
+</body>
+</html>

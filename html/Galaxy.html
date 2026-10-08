@@ -1,0 +1,3122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>UNIVERSE EXPLORER V8</title>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+}
+body{user-select:none}
+#game{position:fixed;inset:0}
+canvas{display:block}
+
+#hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:10;
+}
+
+#topbar{
+    position:absolute;
+    top:16px;
+    left:16px;
+    right:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    padding:10px 14px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(3,7,15,.72);
+    backdrop-filter:blur(12px);
+    border-radius:13px;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:1.5px;
+}
+
+.stats{
+    display:flex;
+    gap:8px;
+}
+
+.badge{
+    padding:9px 12px;
+    background:rgba(3,7,15,.72);
+    border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(12px);
+    border-radius:12px;
+    color:#aeb8c8;
+    font-size:12px;
+}
+
+#crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:20px;
+    height:20px;
+    transform:translate(-50%,-50%);
+    opacity:.7;
+}
+
+#crosshair:before,
+#crosshair:after{
+    content:"";
+    position:absolute;
+    background:#fff;
+}
+
+#crosshair:before{
+    width:20px;
+    height:1px;
+    top:10px;
+    left:0;
+}
+
+#crosshair:after{
+    height:20px;
+    width:1px;
+    left:10px;
+    top:0;
+}
+
+.panel{
+    position:absolute;
+    pointer-events:auto;
+    background:rgba(3,7,15,.84);
+    border:1px solid rgba(255,255,255,.13);
+    backdrop-filter:blur(20px);
+    border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+#leftPanel{
+    left:16px;
+    top:78px;
+    width:235px;
+    padding:14px;
+}
+
+.panelTitle{
+    font-size:11px;
+    color:#7e899b;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    margin-bottom:10px;
+}
+
+.location{
+    font-size:18px;
+    font-weight:800;
+    margin-bottom:4px;
+}
+
+.sub{
+    color:#8792a4;
+    font-size:11px;
+}
+
+.controlRow{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.08);
+    color:#8994a5;
+    font-size:11px;
+    line-height:1.9;
+}
+
+kbd{
+    display:inline-block;
+    padding:2px 5px;
+    border-radius:5px;
+    background:rgba(255,255,255,.09);
+    color:#fff;
+    font-size:10px;
+}
+
+#rightPanel{
+    right:16px;
+    top:78px;
+    width:290px;
+    max-height:calc(100vh - 110px);
+    overflow:auto;
+    padding:16px;
+    transform:translateX(calc(100% + 20px));
+    transition:.25s ease;
+}
+
+#rightPanel.show{
+    transform:translateX(0);
+}
+
+.close{
+    position:absolute;
+    right:10px;
+    top:8px;
+    border:0;
+    background:none;
+    color:#7f8a9a;
+    font-size:23px;
+    cursor:pointer;
+}
+
+.objectHeader{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    padding-right:20px;
+    margin-bottom:14px;
+}
+
+.objectIcon{
+    width:48px;
+    height:48px;
+    display:grid;
+    place-items:center;
+    font-size:27px;
+    border-radius:12px;
+    background:rgba(255,255,255,.06);
+}
+
+.objectName{
+    font-size:21px;
+    font-weight:800;
+}
+
+.objectType{
+    color:#8490a2;
+    font-size:11px;
+    margin-top:3px;
+}
+
+.infoGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+}
+
+.info{
+    padding:10px;
+    border-radius:10px;
+    background:rgba(255,255,255,.045);
+}
+
+.info.full{
+    grid-column:1/-1;
+}
+
+.info span{
+    display:block;
+    color:#707b8d;
+    font-size:9px;
+    margin-bottom:4px;
+}
+
+.info strong{
+    font-size:11px;
+    line-height:1.4;
+}
+
+#bottom{
+    position:absolute;
+    bottom:15px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:7px;
+    pointer-events:auto;
+}
+
+.btn{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(3,7,15,.78);
+    color:#dce3ed;
+    padding:9px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    backdrop-filter:blur(12px);
+    font-size:11px;
+}
+
+.btn:hover{
+    background:rgba(255,255,255,.12);
+}
+
+#mission{
+    left:16px;
+    bottom:15px;
+    width:235px;
+    padding:13px;
+}
+
+.missionTitle{
+    font-size:11px;
+    color:#8793a5;
+    margin-bottom:7px;
+}
+
+#missionText{
+    font-size:12px;
+    line-height:1.5;
+}
+
+.progress{
+    height:4px;
+    margin-top:9px;
+    border-radius:10px;
+    background:rgba(255,255,255,.08);
+    overflow:hidden;
+}
+
+#progressBar{
+    width:0%;
+    height:100%;
+    background:#fff;
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:none;
+    place-items:center;
+    background:rgba(0,0,0,.68);
+    backdrop-filter:blur(7px);
+}
+
+.modal.show{display:grid}
+
+.modalBox{
+    width:min(650px,calc(100vw - 30px));
+    max-height:85vh;
+    overflow:auto;
+    padding:22px;
+    border-radius:20px;
+    background:#070b13;
+    border:1px solid rgba(255,255,255,.13);
+}
+
+.modalHeader{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.modalHeader h2{
+    margin:0;
+    font-size:23px;
+}
+
+.modalClose{
+    border:0;
+    background:none;
+    color:#8894a6;
+    font-size:25px;
+    cursor:pointer;
+}
+
+.galaxyGrid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:9px;
+}
+
+.galaxyCard{
+    padding:14px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:13px;
+    background:rgba(255,255,255,.035);
+    cursor:pointer;
+}
+
+.galaxyCard:hover{
+    background:rgba(255,255,255,.08);
+}
+
+.galaxyCard b{
+    display:block;
+    margin-bottom:5px;
+}
+
+.galaxyCard small{
+    color:#7f8b9d;
+}
+
+#loading{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:grid;
+    place-items:center;
+    background:#000;
+}
+
+.loadingBox{text-align:center}
+
+.loadingBox h1{
+    font-size:30px;
+    letter-spacing:4px;
+    margin:0 0 10px;
+}
+
+.loadingBox p{
+    color:#778294;
+    font-size:12px;
+}
+
+.loader{
+    width:42px;
+    height:42px;
+    border:3px solid #202938;
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin:0 auto 20px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+#toast{
+    position:fixed;
+    z-index:80;
+    left:50%;
+    top:75px;
+    transform:translateX(-50%) translateY(-10px);
+    opacity:0;
+    padding:10px 15px;
+    border-radius:10px;
+    background:rgba(4,8,15,.9);
+    border:1px solid rgba(255,255,255,.12);
+    color:#dbe3ed;
+    font-size:12px;
+    transition:.25s ease;
+    pointer-events:none;
+}
+
+#toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+#speed{
+    position:absolute;
+    right:16px;
+    bottom:16px;
+    color:#778394;
+    font-size:11px;
+}
+
+.mobileControls{
+    display:none;
+    position:absolute;
+    left:15px;
+    right:15px;
+    bottom:70px;
+    pointer-events:auto;
+}
+
+.mobilePad{
+    width:130px;
+    height:130px;
+    position:relative;
+}
+
+.mobileButton{
+    position:absolute;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.13);
+    background:rgba(4,8,15,.72);
+    color:white;
+    display:grid;
+    place-items:center;
+}
+
+.up{left:44px;top:0}
+.down{left:44px;bottom:0}
+.left{left:0;top:44px}
+.right{right:0;top:44px}
+
+@media(max-width:700px){
+
+    #leftPanel{
+        top:65px;
+        left:10px;
+        width:190px;
+        padding:11px;
+    }
+
+    #leftPanel .controlRow{
+        display:none;
+    }
+
+    #rightPanel{
+        right:10px;
+        width:calc(100vw - 20px);
+        top:auto;
+        bottom:10px;
+        max-height:55vh;
+    }
+
+    #topbar{
+        top:10px;
+        left:10px;
+        right:10px;
+    }
+
+    .stats .badge:nth-child(2){
+        display:none;
+    }
+
+    .logo{
+        font-size:10px;
+    }
+
+    #mission{
+        display:none;
+    }
+
+    #bottom{
+        bottom:10px;
+    }
+
+    #bottom .btn{
+        padding:8px 9px;
+    }
+
+    .mobileControls{
+        display:block;
+    }
+
+    #speed{
+        display:none;
+    }
+
+    .galaxyGrid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+    <div class="loadingBox">
+        <div class="loader"></div>
+        <h1>UNIVERSE EXPLORER</h1>
+        <p>INITIALIZING V8 EXPEDITION...</p>
+    </div>
+</div>
+
+<div id="game"></div>
+
+<div id="hud">
+
+    <div id="topbar">
+
+        <div class="logo">
+            🌌 UNIVERSE EXPLORER V8
+        </div>
+
+        <div class="stats">
+            <div class="badge">
+                DISCOVERIES:
+                <b id="discoveries">0</b>
+            </div>
+
+            <div class="badge">
+                MISSION:
+                <b id="missionCount">0</b>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="crosshair"></div>
+
+    <div id="leftPanel" class="panel">
+
+        <div class="panelTitle">
+            CURRENT LOCATION
+        </div>
+
+        <div id="location" class="location">
+            Deep Space
+        </div>
+
+        <div id="locationSub" class="sub">
+            Unknown coordinates
+        </div>
+
+        <div class="controlRow">
+            <kbd>W</kbd> Forward<br>
+            <kbd>S</kbd> Backward<br>
+            <kbd>A</kbd> Left &nbsp;
+            <kbd>D</kbd> Right<br>
+            <kbd>Q</kbd> Down &nbsp;
+            <kbd>E</kbd> Up<br>
+            <kbd>SHIFT</kbd> Boost<br>
+            <kbd>SPACE</kbd> Brake<br>
+            Mouse = Look
+        </div>
+
+    </div>
+
+    <div id="rightPanel" class="panel">
+
+        <button class="close" onclick="closeInfo()">×</button>
+
+        <div class="objectHeader">
+
+            <div id="objectIcon" class="objectIcon">
+                🌎
+            </div>
+
+            <div>
+                <div id="objectName" class="objectName">
+                    Earth
+                </div>
+
+                <div id="objectType" class="objectType">
+                    Planet
+                </div>
+            </div>
+
+        </div>
+
+        <div class="infoGrid">
+
+            <div class="info">
+                <span>STATUS</span>
+                <strong id="iStatus">Explorable</strong>
+            </div>
+
+            <div class="info">
+                <span>DISCOVERY</span>
+                <strong id="iDiscovery">Unknown</strong>
+            </div>
+
+            <div class="info">
+                <span>SIZE</span>
+                <strong id="iSize">--</strong>
+            </div>
+
+            <div class="info">
+                <span>TYPE</span>
+                <strong id="iType">--</strong>
+            </div>
+
+            <div class="info full">
+                <span>DESCRIPTION</span>
+                <strong id="iDescription">--</strong>
+            </div>
+
+            <div class="info full">
+                <span>LOCATION</span>
+                <strong id="iLocation">--</strong>
+            </div>
+
+        </div>
+
+        <button
+            class="btn"
+            style="margin-top:12px;width:100%"
+            onclick="discoverCurrent()"
+        >
+            🔬 RECORD DISCOVERY
+        </button>
+
+    </div>
+
+    <div id="mission" class="panel">
+
+        <div class="missionTitle">
+            ACTIVE MISSION
+        </div>
+
+        <div id="missionText">
+            Explore the universe.
+        </div>
+
+        <div class="progress">
+            <div id="progressBar"></div>
+        </div>
+
+    </div>
+
+    <div id="speed">
+        SPEED: <span id="speedValue">0</span>
+    </div>
+
+    <div id="bottom">
+
+        <button class="btn" onclick="openGalaxyMap()">
+            🌌 GALAXY MAP
+        </button>
+
+        <button class="btn" onclick="openSolarSystem()">
+            ☀️ SOLAR SYSTEM
+        </button>
+
+        <button class="btn" onclick="toggleAutoRotate()">
+            🔄 AUTO
+        </button>
+
+        <button class="btn" onclick="resetJourney()">
+            ↻ RESET
+        </button>
+
+    </div>
+
+    <div class="mobileControls">
+
+        <div class="mobilePad">
+
+            <button class="mobileButton up"
+                    data-key="w">▲</button>
+
+            <button class="mobileButton down"
+                    data-key="s">▼</button>
+
+            <button class="mobileButton left"
+                    data-key="a">◀</button>
+
+            <button class="mobileButton right"
+                    data-key="d">▶</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+
+<!-- GALAXY MAP -->
+
+<div id="galaxyModal" class="modal">
+
+    <div class="modalBox">
+
+        <div class="modalHeader">
+
+            <h2>🌌 Galaxy Map</h2>
+
+            <button
+                class="modalClose"
+                onclick="closeGalaxyMap()"
+            >×</button>
+
+        </div>
+
+        <div id="galaxyGrid" class="galaxyGrid"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   UNIVERSE EXPLORER V8
+   Single-file procedural space exploration simulator
+========================================================= */
+
+
+/* =========================================================
+   BASIC THREE.JS
+========================================================= */
+
+const scene =
+    new THREE.Scene();
+
+scene.background =
+    new THREE.Color(0x000005);
+
+const camera =
+    new THREE.PerspectiveCamera(
+        65,
+        innerWidth / innerHeight,
+        0.01,
+        100000
+    );
+
+camera.position.set(
+    0,
+    4,
+    18
+);
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias:true,
+        powerPreference:"high-performance"
+    });
+
+renderer.setPixelRatio(
+    Math.min(devicePixelRatio,2)
+);
+
+renderer.setSize(
+    innerWidth,
+    innerHeight
+);
+
+renderer.outputColorSpace =
+    THREE.SRGBColorSpace;
+
+document
+    .getElementById("game")
+    .appendChild(renderer.domElement);
+
+
+/* =========================================================
+   LIGHT
+========================================================= */
+
+const ambient =
+    new THREE.AmbientLight(
+        0xffffff,
+        .35
+    );
+
+scene.add(ambient);
+
+
+/* =========================================================
+   SPACE STARS
+========================================================= */
+
+function createStars(
+    count = 12000,
+    radius = 900
+){
+
+    const geometry =
+        new THREE.BufferGeometry();
+
+    const positions =
+        new Float32Array(
+            count * 3
+        );
+
+    for(let i=0;i<count;i++){
+
+        const r =
+            radius *
+            Math.cbrt(
+                Math.random()
+            );
+
+        const theta =
+            Math.random() *
+            Math.PI * 2;
+
+        const phi =
+            Math.acos(
+                2 * Math.random() - 1
+            );
+
+        positions[i*3] =
+            r *
+            Math.sin(phi) *
+            Math.cos(theta);
+
+        positions[i*3+1] =
+            r *
+            Math.sin(phi) *
+            Math.sin(theta);
+
+        positions[i*3+2] =
+            r *
+            Math.cos(phi);
+
+    }
+
+    geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+            positions,
+            3
+        )
+    );
+
+    const material =
+        new THREE.PointsMaterial({
+            color:0xffffff,
+            size:.75,
+            sizeAttenuation:true
+        });
+
+    return new THREE.Points(
+        geometry,
+        material
+    );
+}
+
+scene.add(
+    createStars()
+);
+
+
+/* =========================================================
+   GALAXIES
+========================================================= */
+
+const GALAXIES = {
+
+    milkyway:{
+        name:"Milky Way",
+        type:"Barred Spiral Galaxy",
+        color:0x8899ff,
+        description:
+            "Our home galaxy containing the Solar System and thousands of known exoplanet systems."
+    },
+
+    andromeda:{
+        name:"Andromeda",
+        type:"Spiral Galaxy",
+        color:0xffcfa0,
+        description:
+            "A nearby large spiral galaxy, also known as M31."
+    },
+
+    triangulum:{
+        name:"Triangulum",
+        type:"Spiral Galaxy",
+        color:0xff88bb,
+        description:
+            "A spiral galaxy in the Local Group, commonly called M33."
+    },
+
+    whirlpool:{
+        name:"Whirlpool Galaxy",
+        type:"Interacting Spiral Galaxy",
+        color:0x99ccff,
+        description:
+            "A famous interacting spiral galaxy known as M51."
+    },
+
+    sombrero:{
+        name:"Sombrero Galaxy",
+        type:"Unbarred Spiral Galaxy",
+        color:0xffaa66,
+        description:
+            "A distinctive galaxy with a bright central bulge and dark dust lane."
+    },
+
+    lmc:{
+        name:"Large Magellanic Cloud",
+        type:"Dwarf Irregular Galaxy",
+        color:0xff99cc,
+        description:
+            "A satellite galaxy of the Milky Way."
+    }
+};
+
+
+/* =========================================================
+   SYSTEM DATA
+========================================================= */
+
+const SYSTEMS = {
+
+    solar:{
+        name:"Solar System",
+        galaxy:"milkyway",
+        type:"Planetary System",
+        real:true,
+        description:
+            "Our planetary system. Includes the Sun, eight planets, Pluto and other small bodies."
+    },
+
+    trappist:{
+        name:"TRAPPIST-1",
+        galaxy:"milkyway",
+        type:"Exoplanet System",
+        real:true,
+        planets:[
+            "TRAPPIST-1b",
+            "TRAPPIST-1c",
+            "TRAPPIST-1d",
+            "TRAPPIST-1e",
+            "TRAPPIST-1f",
+            "TRAPPIST-1g",
+            "TRAPPIST-1h"
+        ],
+        description:
+            "A compact system around an ultracool dwarf star with seven known Earth-sized planets."
+    },
+
+    proxima:{
+        name:"Proxima Centauri System",
+        galaxy:"milkyway",
+        type:"Exoplanet System",
+        real:true,
+        planets:[
+            "Proxima Centauri b"
+        ],
+        description:
+            "The planetary system around the closest known star to the Sun."
+    },
+
+    kepler90:{
+        name:"Kepler-90",
+        galaxy:"milkyway",
+        type:"Exoplanet System",
+        real:true,
+        planets:[
+            "Kepler-90 b",
+            "Kepler-90 c",
+            "Kepler-90 d",
+            "Kepler-90 e",
+            "Kepler-90 f",
+            "Kepler-90 g",
+            "Kepler-90 h",
+            "Kepler-90 i"
+        ],
+        description:
+            "A known planetary system with eight confirmed planets."
+    },
+
+    kepler186:{
+        name:"Kepler-186",
+        galaxy:"milkyway",
+        type:"Exoplanet System",
+        real:true,
+        planets:[
+            "Kepler-186 b",
+            "Kepler-186 c",
+            "Kepler-186 d",
+            "Kepler-186 e",
+            "Kepler-186 f"
+        ],
+        description:
+            "An exoplanet system famous for Kepler-186f, an Earth-sized planet in the habitable zone."
+    },
+
+    cancri:{
+        name:"55 Cancri",
+        galaxy:"milkyway",
+        type:"Exoplanet System",
+        real:true,
+        planets:[
+            "55 Cancri b",
+            "55 Cancri c",
+            "55 Cancri d",
+            "55 Cancri e",
+            "55 Cancri f"
+        ],
+        description:
+            "A well-studied planetary system orbiting a Sun-like star."
+    }
+};
+
+
+/* =========================================================
+   PROCEDURAL SYSTEMS FOR OTHER GALAXIES
+========================================================= */
+
+const generatedSystems = {};
+
+function createGeneratedSystems(){
+
+    Object.keys(GALAXIES)
+        .filter(
+            key => key !== "milkyway"
+        )
+        .forEach(
+            galaxyKey => {
+
+                generatedSystems[
+                    galaxyKey
+                ] = [];
+
+                for(
+                    let i=1;
+                    i<=4;
+                    i++
+                ){
+
+                    generatedSystems[
+                        galaxyKey
+                    ].push({
+
+                        id:
+                            galaxyKey +
+                            "_system_" +
+                            i,
+
+                        name:
+                            GALAXIES[
+                                galaxyKey
+                            ].name +
+                            " System " +
+                            i,
+
+                        galaxy:
+                            galaxyKey,
+
+                        type:
+                            "Simulated Star System",
+
+                        real:false,
+
+                        description:
+                            "Procedurally simulated planetary system for exploration gameplay."
+
+                    });
+
+                }
+
+            }
+        );
+}
+
+createGeneratedSystems();
+
+
+/* =========================================================
+   OBJECT REGISTRY
+========================================================= */
+
+const objects = [];
+
+function registerObject(
+    mesh,
+    data
+){
+
+    mesh.userData =
+        data;
+
+    objects.push(mesh);
+
+    return mesh;
+}
+
+
+/* =========================================================
+   STAR CREATION
+========================================================= */
+
+function createStar(
+    radius,
+    color
+){
+
+    const geometry =
+        new THREE.SphereGeometry(
+            radius,
+            32,
+            20
+        );
+
+    const material =
+        new THREE.MeshBasicMaterial({
+            color
+        });
+
+    const star =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
+
+    return star;
+}
+
+
+/* =========================================================
+   PLANET CREATION
+========================================================= */
+
+function createPlanet(
+    name,
+    radius,
+    color,
+    orbit,
+    speed,
+    parent,
+    extra={}
+){
+
+    const pivot =
+        new THREE.Object3D();
+
+    parent.add(
+        pivot
+    );
+
+    const geometry =
+        new THREE.SphereGeometry(
+            radius,
+            24,
+            16
+        );
+
+    const material =
+        new THREE.MeshStandardMaterial({
+            color,
+            roughness:.85,
+            metalness:.05
+        });
+
+    const planet =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
+
+    planet.position.x =
+        orbit;
+
+    pivot.add(
+        planet
+    );
+
+    const ring =
+        new THREE.Mesh(
+            new THREE.RingGeometry(
+                orbit-.008,
+                orbit+.008,
+                96
+            ),
+            new THREE.MeshBasicMaterial({
+                color:0x44506a,
+                transparent:true,
+                opacity:.22,
+                side:THREE.DoubleSide
+            })
+        );
+
+    ring.rotation.x =
+        Math.PI/2;
+
+    parent.add(
+        ring
+    );
+
+    registerObject(
+        planet,
+        {
+            name,
+            type:"Planet",
+            icon:"🪐",
+            size:
+                extra.size ||
+                radius,
+            planetType:
+                extra.planetType ||
+                "Planet",
+            description:
+                extra.description ||
+                "A planetary body in this simulated universe.",
+            location:
+                extra.location ||
+                "Solar System"
+        }
+    );
+
+    planet.userData.orbit =
+        pivot;
+
+    planet.userData.orbitSpeed =
+        speed;
+
+    return planet;
+}
+
+
+/* =========================================================
+   SOLAR SYSTEM
+========================================================= */
+
+const solarSystem =
+    new THREE.Group();
+
+solarSystem.visible =
+    false;
+
+scene.add(
+    solarSystem
+);
+
+const sun =
+    createStar(
+        2.5,
+        0xffcc55
+    );
+
+solarSystem.add(
+    sun
+);
+
+registerObject(
+    sun,
+    {
+        name:"Sun",
+        type:"Star",
+        icon:"☀️",
+        size:"1.39 million km diameter",
+        planetType:"G-type star",
+        description:
+            "The star at the center of our Solar System.",
+        location:"Solar System"
+    }
+);
+
+
+const solarPlanets = [
+
+    {
+        name:"Mercury",
+        radius:.08,
+        color:0x8d8b82,
+        orbit:3.5,
+        speed:.012,
+        type:"Terrestrial planet"
+    },
+
+    {
+        name:"Venus",
+        radius:.15,
+        color:0xd4a66a,
+        orbit:4.5,
+        speed:.009,
+        type:"Terrestrial planet"
+    },
+
+    {
+        name:"Earth",
+        radius:.17,
+        color:0x3579d6,
+        orbit:5.7,
+        speed:.007,
+        type:"Terrestrial planet",
+        description:
+            "Our home planet, the only world currently known to support life.",
+    },
+
+    {
+        name:"Mars",
+        radius:.12,
+        color:0xb34a32,
+        orbit:7,
+        speed:.006,
+        type:"Terrestrial planet"
+    },
+
+    {
+        name:"Jupiter",
+        radius:.55,
+        color:0xc79c70,
+        orbit:10,
+        speed:.003,
+        type:"Gas giant"
+    },
+
+    {
+        name:"Saturn",
+        radius:.47,
+        color:0xd8bd82,
+        orbit:13,
+        speed:.0025,
+        type:"Gas giant"
+    },
+
+    {
+        name:"Uranus",
+        radius:.30,
+        color:0x78cbd2,
+        orbit:16,
+        speed:.0018,
+        type:"Ice giant"
+    },
+
+    {
+        name:"Neptune",
+        radius:.29,
+        color:0x416bd8,
+        orbit:19,
+        speed:.0014,
+        type:"Ice giant"
+    },
+
+    {
+        name:"Pluto",
+        radius:.07,
+        color:0xb5a48f,
+        orbit:23,
+        speed:.001,
+        type:"Dwarf planet",
+        description:
+            "A dwarf planet in the distant Kuiper Belt."
+    }
+
+];
+
+
+solarPlanets.forEach(
+    p => {
+
+        createPlanet(
+            p.name,
+            p.radius,
+            p.color,
+            p.orbit,
+            p.speed,
+            solarSystem,
+            {
+                planetType:p.type,
+                description:p.description
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   MOON
+========================================================= */
+
+const earth =
+    objects.find(
+        o =>
+            o.userData.name ===
+            "Earth"
+    );
+
+if(earth){
+
+    const moonPivot =
+        new THREE.Object3D();
+
+    earth.add(
+        moonPivot
+    );
+
+    const moon =
+        createPlanet(
+            "Moon",
+            .045,
+            0xaaaeb5,
+            .38,
+            .025,
+            moonPivot,
+            {
+                planetType:
+                    "Natural satellite",
+                description:
+                    "Earth's natural satellite.",
+                location:
+                    "Earth orbit"
+            }
+        );
+
+}
+
+
+/* =========================================================
+   SATURN RINGS
+========================================================= */
+
+const saturn =
+    objects.find(
+        o =>
+            o.userData.name ===
+            "Saturn"
+    );
+
+if(saturn){
+
+    const ring =
+        new THREE.Mesh(
+            new THREE.RingGeometry(
+                .65,
+                1.05,
+                64
+            ),
+            new THREE.MeshBasicMaterial({
+                color:0xc8b48c,
+                transparent:true,
+                opacity:.6,
+                side:THREE.DoubleSide
+            })
+        );
+
+    ring.rotation.x =
+        Math.PI/2;
+
+    saturn.add(
+        ring
+    );
+
+}
+
+
+/* =========================================================
+   SUN LIGHT
+========================================================= */
+
+const sunLight =
+    new THREE.PointLight(
+        0xffe4a3,
+        5,
+        100
+    );
+
+sunLight.position.set(
+    0,0,0
+);
+
+solarSystem.add(
+    sunLight
+);
+
+
+/* =========================================================
+   GALAXY VISUALIZATION
+========================================================= */
+
+function createGalaxyVisual(
+    galaxyKey
+){
+
+    const galaxy =
+        GALAXIES[
+            galaxyKey
+        ];
+
+    const group =
+        new THREE.Group();
+
+    const count =
+        6000;
+
+    const geometry =
+        new THREE.BufferGeometry();
+
+    const positions =
+        new Float32Array(
+            count * 3
+        );
+
+    for(
+        let i=0;
+        i<count;
+        i++
+    ){
+
+        const arm =
+            Math.floor(
+                Math.random()*5
+            );
+
+        const radius =
+            Math.random() *
+            18 +
+            1;
+
+        const angle =
+            radius*.7 +
+            arm *
+            (Math.PI*2/5);
+
+        const spread =
+            (Math.random()-.5)
+            *
+            (1.2 + radius*.08);
+
+        positions[i*3] =
+            Math.cos(
+                angle
+            ) *
+            radius +
+            spread;
+
+        positions[i*3+1] =
+            (Math.random()-.5)
+            * .7;
+
+        positions[i*3+2] =
+            Math.sin(
+                angle
+            ) *
+            radius +
+            spread;
+
+    }
+
+    geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+            positions,
+            3
+        )
+    );
+
+    const material =
+        new THREE.PointsMaterial({
+            color:
+                galaxy.color,
+            size:.045,
+            transparent:true,
+            opacity:.8
+        });
+
+    const points =
+        new THREE.Points(
+            geometry,
+            material
+        );
+
+    group.add(
+        points
+    );
+
+    const core =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                2,
+                24,
+                16
+            ),
+            new THREE.MeshBasicMaterial({
+                color:
+                    galaxy.color,
+                transparent:true,
+                opacity:.18
+            })
+        );
+
+    group.add(
+        core
+    );
+
+    group.visible =
+        false;
+
+    scene.add(
+        group
+    );
+
+    return group;
+}
+
+
+const galaxyVisuals = {};
+
+Object.keys(GALAXIES)
+    .forEach(
+        key => {
+
+            galaxyVisuals[key] =
+                createGalaxyVisual(
+                    key
+                );
+
+        }
+    );
+
+
+/* =========================================================
+   PLAYER SHIP
+========================================================= */
+
+const ship =
+    new THREE.Group();
+
+const shipBody =
+    new THREE.Mesh(
+        new THREE.ConeGeometry(
+            .22,
+            .8,
+            8
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0xd8dce5,
+            metalness:.8,
+            roughness:.25
+        })
+    );
+
+shipBody.rotation.x =
+    Math.PI/2;
+
+ship.add(
+    shipBody
+);
+
+const cockpit =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .12,
+            12,
+            8
+        ),
+        new THREE.MeshStandardMaterial({
+            color:0x4d9dff,
+            emissive:0x113355
+        })
+    );
+
+cockpit.position.z =
+    -.05;
+
+ship.add(
+    cockpit
+);
+
+const engine =
+    new THREE.PointLight(
+        0x55aaff,
+        2,
+        4
+    );
+
+engine.position.z =
+    .45;
+
+ship.add(
+    engine
+);
+
+camera.add(
+    ship
+);
+
+ship.position.set(
+    0,
+    0,
+    -3
+);
+
+
+/* =========================================================
+   CAMERA / PLAYER CONTROL
+========================================================= */
+
+let yaw = 0;
+let pitch = 0;
+
+let velocity =
+    new THREE.Vector3();
+
+let speed =
+    0;
+
+const keys = {};
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        keys[
+            e.key.toLowerCase()
+        ] = true;
+
+        if(
+            e.key === " "
+        ){
+            e.preventDefault();
+        }
+
+    }
+);
+
+window.addEventListener(
+    "keyup",
+    e => {
+
+        keys[
+            e.key.toLowerCase()
+        ] = false;
+
+    }
+);
+
+
+/* =========================================================
+   MOUSE LOOK
+========================================================= */
+
+let mouseDown =
+    false;
+
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+renderer.domElement.addEventListener(
+    "mousedown",
+    e => {
+
+        mouseDown =
+            true;
+
+        lastMouseX =
+            e.clientX;
+
+        lastMouseY =
+            e.clientY;
+
+    }
+);
+
+window.addEventListener(
+    "mouseup",
+    () => {
+        mouseDown =
+            false;
+    }
+);
+
+window.addEventListener(
+    "mousemove",
+    e => {
+
+        if(!mouseDown)
+            return;
+
+        const dx =
+            e.clientX -
+            lastMouseX;
+
+        const dy =
+            e.clientY -
+            lastMouseY;
+
+        lastMouseX =
+            e.clientX;
+
+        lastMouseY =
+            e.clientY;
+
+        yaw -=
+            dx * .002;
+
+        pitch -=
+            dy * .002;
+
+        pitch =
+            Math.max(
+                -1.45,
+                Math.min(
+                    1.45,
+                    pitch
+                )
+            );
+
+    }
+);
+
+
+/* =========================================================
+   MOBILE CONTROL
+========================================================= */
+
+document
+    .querySelectorAll(
+        ".mobileButton"
+    )
+    .forEach(
+        button => {
+
+            const key =
+                button.dataset.key;
+
+            button.addEventListener(
+                "touchstart",
+                e => {
+
+                    e.preventDefault();
+
+                    keys[key] =
+                        true;
+
+                },
+                {
+                    passive:false
+                }
+            );
+
+            button.addEventListener(
+                "touchend",
+                e => {
+
+                    e.preventDefault();
+
+                    keys[key] =
+                        false;
+
+                },
+                {
+                    passive:false
+                }
+            );
+
+        }
+    );
+
+
+/* =========================================================
+   MOVEMENT
+========================================================= */
+
+function updateMovement(){
+
+    const forward =
+        keys["w"] ||
+        keys["arrowup"];
+
+    const backward =
+        keys["s"] ||
+        keys["arrowdown"];
+
+    const left =
+        keys["a"] ||
+        keys["arrowleft"];
+
+    const right =
+        keys["d"] ||
+        keys["arrowright"];
+
+    const boost =
+        keys["shift"];
+
+    const brake =
+        keys[" "];
+
+    let acceleration =
+        boost
+            ? .055
+            : .022;
+
+    if(forward)
+        speed += acceleration;
+
+    if(backward)
+        speed -= acceleration;
+
+    if(brake)
+        speed *= .91;
+
+    if(
+        !forward &&
+        !backward
+    ){
+        speed *= .992;
+    }
+
+    speed =
+        Math.max(
+            -.5,
+            Math.min(
+                boost ? 2.5 : 1.1,
+                speed
+            )
+        );
+
+    const turnSpeed =
+        .025;
+
+    if(left)
+        yaw += turnSpeed;
+
+    if(right)
+        yaw -= turnSpeed;
+
+    camera.rotation.order =
+        "YXZ";
+
+    camera.rotation.y =
+        yaw;
+
+    camera.rotation.x =
+        pitch;
+
+    const direction =
+        new THREE.Vector3(
+            0,
+            0,
+            -1
+        );
+
+    direction.applyQuaternion(
+        camera.quaternion
+    );
+
+    camera.position.add(
+        direction.multiplyScalar(
+            speed
+        )
+    );
+
+    document
+        .getElementById(
+            "speedValue"
+        )
+        .textContent =
+            Math.abs(speed*100)
+                .toFixed(0);
+
+}
+
+
+/* =========================================================
+   GALAXY / SYSTEM STATE
+========================================================= */
+
+let currentGalaxy =
+    "milkyway";
+
+let currentSystem =
+    "solar";
+
+let autoRotate =
+    false;
+
+
+/* =========================================================
+   LOCATION UI
+========================================================= */
+
+function updateLocation(){
+
+    const galaxy =
+        GALAXIES[
+            currentGalaxy
+        ];
+
+    let systemName =
+        currentSystem === "solar"
+            ? "Solar System"
+            : (
+                SYSTEMS[
+                    currentSystem
+                ]?.name ||
+                "Unknown System"
+            );
+
+    document
+        .getElementById(
+            "location"
+        )
+        .textContent =
+            systemName;
+
+    document
+        .getElementById(
+            "locationSub"
+        )
+        .textContent =
+            galaxy.name +
+            " • " +
+            galaxy.type;
+
+}
+
+
+/* =========================================================
+   GALAXY TRAVEL
+========================================================= */
+
+function travelToGalaxy(
+    galaxyKey
+){
+
+    if(
+        !GALAXIES[
+            galaxyKey
+        ]
+    )
+        return;
+
+    currentGalaxy =
+        galaxyKey;
+
+    solarSystem.visible =
+        galaxyKey === "milkyway";
+
+    Object.keys(
+        galaxyVisuals
+    )
+    .forEach(
+        key => {
+
+            galaxyVisuals[key].visible =
+                key === galaxyKey;
+
+        }
+    );
+
+    camera.position.set(
+        0,
+        0,
+        35
+    );
+
+    yaw = 0;
+    pitch = 0;
+    speed = 0;
+
+    updateLocation();
+
+    toast(
+        "Arrived at " +
+        GALAXIES[
+            galaxyKey
+        ].name
+    );
+
+    updateMission();
+
+    saveGame();
+
+}
+
+
+/* =========================================================
+   SYSTEM TRAVEL
+========================================================= */
+
+function travelToSystem(
+    system
+){
+
+    currentSystem =
+        system;
+
+    if(
+        system === "solar"
+    ){
+
+        currentGalaxy =
+            "milkyway";
+
+        solarSystem.visible =
+            true;
+
+        camera.position.set(
+            0,
+            0,
+            35
+        );
+
+    }else{
+
+        const data =
+            SYSTEMS[
+                system
+            ];
+
+        if(data){
+
+            currentGalaxy =
+                data.galaxy;
+
+        }
+
+        solarSystem.visible =
+            false;
+
+    }
+
+    Object.keys(
+        galaxyVisuals
+    )
+    .forEach(
+        key => {
+
+            galaxyVisuals[key].visible =
+                key === currentGalaxy;
+
+        }
+    );
+
+    updateLocation();
+
+    toast(
+        "Travel destination: " +
+        (
+            SYSTEMS[
+                system
+            ]?.name ||
+            "Solar System"
+        )
+    );
+
+    updateMission();
+
+    saveGame();
+
+}
+
+
+/* =========================================================
+   GALAXY MAP
+========================================================= */
+
+function openGalaxyMap(){
+
+    const grid =
+        document.getElementById(
+            "galaxyGrid"
+        );
+
+    grid.innerHTML =
+        "";
+
+    Object.entries(
+        GALAXIES
+    )
+    .forEach(
+        ([key,galaxy]) => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "galaxyCard";
+
+            card.innerHTML = `
+                <b>🌌 ${galaxy.name}</b>
+                <small>
+                    ${galaxy.type}
+                </small>
+                <br>
+                <small>
+                    ${galaxy.description}
+                </small>
+            `;
+
+            card.onclick =
+                () => {
+
+                    closeGalaxyMap();
+
+                    travelToGalaxy(
+                        key
+                    );
+
+                };
+
+            grid.appendChild(
+                card
+            );
+
+        }
+    );
+
+    document
+        .getElementById(
+            "galaxyModal"
+        )
+        .classList.add(
+            "show"
+        );
+
+}
+
+
+function closeGalaxyMap(){
+
+    document
+        .getElementById(
+            "galaxyModal"
+        )
+        .classList.remove(
+            "show"
+        );
+
+}
+
+
+/* =========================================================
+   SOLAR SYSTEM MENU
+========================================================= */
+
+function openSolarSystem(){
+
+    travelToSystem(
+        "solar"
+    );
+
+}
+
+
+/* =========================================================
+   AUTO ROTATION
+========================================================= */
+
+function toggleAutoRotate(){
+
+    autoRotate =
+        !autoRotate;
+
+    toast(
+        autoRotate
+            ? "Auto navigation ON"
+            : "Auto navigation OFF"
+    );
+
+}
+
+
+/* =========================================================
+   RAYCASTER
+========================================================= */
+
+const raycaster =
+    new THREE.Raycaster();
+
+const pointer =
+    new THREE.Vector2();
+
+renderer.domElement.addEventListener(
+    "click",
+    event => {
+
+        if(
+            mouseDown
+        )
+            return;
+
+        pointer.x =
+            (
+                event.clientX /
+                innerWidth
+            ) * 2 - 1;
+
+        pointer.y =
+            -(
+                event.clientY /
+                innerHeight
+            ) * 2 + 1;
+
+        raycaster.setFromCamera(
+            pointer,
+            camera
+        );
+
+        const hits =
+            raycaster.intersectObjects(
+                objects,
+                true
+            );
+
+        if(
+            hits.length
+        ){
+
+            let object =
+                hits[0].object;
+
+            while(
+                object &&
+                !object.userData.name
+            ){
+
+                object =
+                    object.parent;
+
+            }
+
+            if(
+                object &&
+                object.userData.name
+            ){
+
+                showObjectInfo(
+                    object
+                );
+
+            }
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   OBJECT INFO
+========================================================= */
+
+function showObjectInfo(
+    object
+){
+
+    const data =
+        object.userData;
+
+    document
+        .getElementById(
+            "objectIcon"
+        )
+        .textContent =
+            data.icon ||
+            "🪐";
+
+    document
+        .getElementById(
+            "objectName"
+        )
+        .textContent =
+            data.name ||
+            "Unknown";
+
+    document
+        .getElementById(
+            "objectType"
+        )
+        .textContent =
+            data.type ||
+            "Celestial Object";
+
+    document
+        .getElementById(
+            "iStatus"
+        )
+        .textContent =
+            data.real === false
+                ? "Simulated"
+                : "Explorable";
+
+    document
+        .getElementById(
+            "iDiscovery"
+        )
+        .textContent =
+            isDiscovered(
+                data.name
+            )
+                ? "Recorded"
+                : "Not recorded";
+
+    document
+        .getElementById(
+            "iSize"
+        )
+        .textContent =
+            data.size ||
+            "--";
+
+    document
+        .getElementById(
+            "iType"
+        )
+        .textContent =
+            data.planetType ||
+            data.type ||
+            "--";
+
+    document
+        .getElementById(
+            "iDescription"
+        )
+        .textContent =
+            data.description ||
+            "--";
+
+    document
+        .getElementById(
+            "iLocation"
+        )
+        .textContent =
+            data.location ||
+            currentGalaxy;
+
+    document
+        .getElementById(
+            "rightPanel"
+        )
+        .classList.add(
+            "show"
+        );
+
+    window.currentSelectedObject =
+        object;
+
+}
+
+
+function closeInfo(){
+
+    document
+        .getElementById(
+            "rightPanel"
+        )
+        .classList.remove(
+            "show"
+        );
+
+}
+
+
+/* =========================================================
+   DISCOVERY SYSTEM
+========================================================= */
+
+let discoveries =
+    JSON.parse(
+        localStorage.getItem(
+            "universe_discoveries"
+        ) ||
+        "[]"
+    );
+
+
+function isDiscovered(
+    name
+){
+
+    return discoveries
+        .includes(
+            name
+        );
+
+}
+
+
+function discoverCurrent(){
+
+    if(
+        !window.currentSelectedObject
+    ){
+
+        toast(
+            "Select a celestial object first."
+        );
+
+        return;
+
+    }
+
+    const name =
+        window.currentSelectedObject
+            .userData
+            .name;
+
+    if(
+        !isDiscovered(
+            name
+        )
+    ){
+
+        discoveries.push(
+            name
+        );
+
+        localStorage.setItem(
+            "universe_discoveries",
+            JSON.stringify(
+                discoveries
+            )
+        );
+
+        updateDiscoveryUI();
+
+        toast(
+            "🔬 New Discovery: " +
+            name
+        );
+
+        updateMission();
+
+        saveGame();
+
+    }else{
+
+        toast(
+            "Already discovered."
+        );
+
+    }
+
+}
+
+
+function updateDiscoveryUI(){
+
+    document
+        .getElementById(
+            "discoveries"
+        )
+        .textContent =
+            discoveries.length;
+
+}
+
+
+/* =========================================================
+   MISSIONS
+========================================================= */
+
+const missions = [
+
+    {
+        text:
+            "Visit the Solar System.",
+        condition:
+            () =>
+                currentSystem ===
+                "solar"
+    },
+
+    {
+        text:
+            "Discover Earth.",
+        condition:
+            () =>
+                isDiscovered(
+                    "Earth"
+                )
+    },
+
+    {
+        text:
+            "Discover the Moon.",
+        condition:
+            () =>
+                isDiscovered(
+                    "Moon"
+                )
+    },
+
+    {
+        text:
+            "Discover Mars.",
+        condition:
+            () =>
+                isDiscovered(
+                    "Mars"
+                )
+    },
+
+    {
+        text:
+            "Travel to Andromeda.",
+        condition:
+            () =>
+                currentGalaxy ===
+                "andromeda"
+    },
+
+    {
+        text:
+            "Explore the Triangulum Galaxy.",
+        condition:
+            () =>
+                currentGalaxy ===
+                "triangulum"
+    },
+
+    {
+        text:
+            "Explore the Whirlpool Galaxy.",
+        condition:
+            () =>
+                currentGalaxy ===
+                "whirlpool"
+    },
+
+    {
+        text:
+            "Record 10 discoveries.",
+        condition:
+            () =>
+                discoveries.length >=
+                10
+    },
+
+    {
+        text:
+            "Record 20 discoveries.",
+        condition:
+            () =>
+                discoveries.length >=
+                20
+    }
+
+];
+
+let missionIndex =
+    Number(
+        localStorage.getItem(
+            "universe_mission"
+        ) ||
+        0
+    );
+
+
+function updateMission(){
+
+    if(
+        missionIndex >=
+        missions.length
+    ){
+
+        document
+            .getElementById(
+                "missionText"
+            )
+            .textContent =
+                "🏆 All missions completed!";
+
+        document
+            .getElementById(
+                "progressBar"
+            )
+            .style.width =
+                "100%";
+
+        return;
+
+    }
+
+    const mission =
+        missions[
+            missionIndex
+        ];
+
+    document
+        .getElementById(
+            "missionText"
+        )
+        .textContent =
+            mission.text;
+
+    document
+        .getElementById(
+            "missionCount"
+        )
+        .textContent =
+            missionIndex +
+            "/" +
+            missions.length;
+
+    const percentage =
+        (
+            missionIndex /
+            missions.length
+        ) * 100;
+
+    document
+        .getElementById(
+            "progressBar"
+        )
+        .style.width =
+            percentage +
+            "%";
+
+    if(
+        mission.condition()
+    ){
+
+        missionIndex++;
+
+        localStorage.setItem(
+            "universe_mission",
+            missionIndex
+        );
+
+        toast(
+            "🏆 Mission Complete!"
+        );
+
+        setTimeout(
+            updateMission,
+            300
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer;
+
+function toast(
+    message
+){
+
+    const element =
+        document.getElementById(
+            "toast"
+        );
+
+    element.textContent =
+        message;
+
+    element.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        toastTimer
+    );
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                element.classList.remove(
+                    "show"
+                );
+
+            },
+            2200
+        );
+
+}
+
+
+/* =========================================================
+   SAVE
+========================================================= */
+
+function saveGame(){
+
+    const state = {
+
+        galaxy:
+            currentGalaxy,
+
+        system:
+            currentSystem,
+
+        position:{
+            x:camera.position.x,
+            y:camera.position.y,
+            z:camera.position.z
+        }
+
+    };
+
+    localStorage.setItem(
+        "universe_state",
+        JSON.stringify(
+            state
+        )
+    );
+
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+function loadGame(){
+
+    const raw =
+        localStorage.getItem(
+            "universe_state"
+        );
+
+    if(!raw){
+
+        travelToSystem(
+            "solar"
+        );
+
+        return;
+
+    }
+
+    try{
+
+        const state =
+            JSON.parse(
+                raw
+            );
+
+        currentGalaxy =
+            state.galaxy ||
+            "milkyway";
+
+        currentSystem =
+            state.system ||
+            "solar";
+
+        if(
+            state.position
+        ){
+
+            camera.position.set(
+                state.position.x,
+                state.position.y,
+                state.position.z
+            );
+
+        }
+
+    }catch{
+
+        travelToSystem(
+            "solar"
+        );
+
+    }
+
+    solarSystem.visible =
+        currentSystem ===
+        "solar";
+
+    Object.keys(
+        galaxyVisuals
+    )
+    .forEach(
+        key => {
+
+            galaxyVisuals[key].visible =
+                key === currentGalaxy;
+
+        }
+    );
+
+    updateLocation();
+
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetJourney(){
+
+    if(
+        !confirm(
+            "Reset your current journey?"
+        )
+    )
+        return;
+
+    camera.position.set(
+        0,
+        0,
+        35
+    );
+
+    yaw = 0;
+    pitch = 0;
+    speed = 0;
+
+    currentGalaxy =
+        "milkyway";
+
+    currentSystem =
+        "solar";
+
+    solarSystem.visible =
+        true;
+
+    Object.keys(
+        galaxyVisuals
+    )
+    .forEach(
+        key => {
+
+            galaxyVisuals[key].visible =
+                key === "milkyway";
+
+        }
+    );
+
+    updateLocation();
+
+    toast(
+        "Journey reset."
+    );
+
+    saveGame();
+
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+const clock =
+    new THREE.Clock();
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const delta =
+        Math.min(
+            clock.getDelta(),
+            .05
+        );
+
+
+    /*
+    PLANET ORBITS
+    */
+
+    objects.forEach(
+        object => {
+
+            if(
+                object.userData.orbit &&
+                object.userData.orbitSpeed
+            ){
+
+                object.userData.orbit.rotation.y +=
+                    object.userData.orbitSpeed *
+                    delta *
+                    60;
+
+            }
+
+        }
+    );
+
+
+    /*
+    GALAXY ROTATION
+    */
+
+    Object.values(
+        galaxyVisuals
+    )
+    .forEach(
+        galaxy => {
+
+            if(
+                galaxy.visible
+            ){
+
+                galaxy.rotation.y +=
+                    .00012 *
+                    delta *
+                    60;
+
+            }
+
+        }
+    );
+
+
+    /*
+    AUTO CAMERA
+    */
+
+    if(
+        autoRotate
+    ){
+
+        yaw +=
+            .0015;
+
+    }
+
+
+    updateMovement();
+
+    updateMission();
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            innerWidth /
+            innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+
+    }
+);
+
+
+/* =========================================================
+   STARTUP
+========================================================= */
+
+function startup(){
+
+    loadGame();
+
+    updateDiscoveryUI();
+
+    updateMission();
+
+    document
+        .getElementById(
+            "loading"
+        )
+        .style.display =
+            "none";
+
+    toast(
+        "🌌 Universe Explorer V8 ready."
+    );
+
+    animate();
+
+}
+
+setTimeout(
+    startup,
+    700
+);
+
+</script>
+
+</body>
+</html>

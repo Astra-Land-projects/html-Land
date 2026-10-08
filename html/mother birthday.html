@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Special Letter</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            /* Light background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+        }
+
+        .letter-container {
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .letter-container:hover {
+            transform: scale(1.03);
+        }
+
+        .letter-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            /* Removes extra space below image */
+            border-radius: 15px;
+            /* Slightly rounded corners as requested */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            /* Subtle shadow */
+        }
+
+        .letter-content {
+            display: none;
+            /* Hidden by default */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            /* Semi-transparent white background */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 80%;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+            color: #333;
+            /* Dark text color */
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            /* Red close button */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="letter-container" onclick="showMessage()">
+        <img src="./IMG_20260421_215553.jpg"
+            ](https://storage.gapgpt.app/media/code_interpreter/951f55ce-e450-464c-a2ad-75586186a3b0/image_gen_4e59f050-cbdd-418a-aba6-47d831cda041_0.png%22)
+            alt="A special letter" class="letter-image">
+    </div>
+
+    <div class="letter-content" id="messageBox">
+        <button class="close-button" onclick="hideMessage()">X</button>
+        <h2>To My Dearest Mom,</h2>
+        <p>
+        <h1>HAPPY BIRTHDAY MY MOM</h1>
+        As a programmer, I often find solutions in logic and code, but the greatest masterpiece I've ever known is
+        you.
+        Life can sometimes feel like debugging a complex system – full of unexpected errors and challenging loops.
+        But you, with your unwavering patience and infinite love, have always been my guiding light, helping me find
+        the elegant solutions.
+        </p>
+        <p>
+            This digital letter is a small expression of the immense gratitude and love I hold for you.
+            May your birthday be filled with as much joy, warmth, and wonderful surprises as you've brought into my
+            life.
+            Here's to celebrating you today and always!
+        </p>
+        <p>With all my love,<br>Your Child</p>
+    </div>
+
+    <script>
+        function showMessage() {
+            document.getElementById('messageBox').style.display = 'block';
+        }
+        function hideMessage() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Nazanin 🎂</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #080510;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+#hint {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0,0,0,.55);
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+}
+
+#letterUI {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.72);
+    z-index: 20;
+    padding: 25px;
+}
+
+.letterPaper {
+    width: min(500px, 92vw);
+    max-height: 85vh;
+    overflow: auto;
+    background: #fff8df;
+    color: #292015;
+    padding: 35px;
+    border-radius: 8px;
+    box-shadow: 0 20px 70px rgba(0,0,0,.7);
+    transform: rotate(-1deg);
+    position: relative;
+}
+
+.letterPaper h1 {
+    text-align: center;
+    margin-top: 0;
+    color: #d83b65;
+}
+
+.letterPaper p {
+    font-size: 17px;
+    line-height: 1.8;
+}
+
+.close {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    border: none;
+    background: transparent;
+    font-size: 25px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="hint">
+    🖱️ Drag to look around • Click the candle 🔥 • Click the letter 💌
+</div>
+
+<div id="letterUI">
+    <div class="letterPaper">
+        <button class="close" onclick="closeLetter()">×</button>
+
+        <h1>💌 A Letter For You</h1>
+
+        <p>
+            Happy birthday🎈🎂.
+        </p>
+
+        <p>
+            Hi my cousin, I hope you are fine.
+        </p>
+
+        <p>
+            I hope you can survive in Iran.
+        </p>
+
+        <p>
+            I hope you are always healthy
+            (IDC(just kidding 😂 (I have to)))
+        </p>
+
+        <p>
+            Just this, HBD again, I love you so much.
+        </p>
+
+        <p>
+            Goodbye.
+        </p>
+
+        <p style="text-align:right;font-weight:bold;">
+            Arya.
+        </p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* =========================================================
+   NAZANIN BIRTHDAY PARTY
+   Three.js - Single HTML File
+========================================================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x080510);
+
+scene.fog = new THREE.Fog(
+    0x080510,
+    8,
+    22
+);
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    innerWidth / innerHeight,
+    0.1,
+    100
+);
+
+camera.position.set(
+    0,
+    3.2,
+    9
+);
+
+camera.lookAt(
+    0,
+    2,
+    0
+);
+
+
+/* =========================================================
+   RENDERER
+========================================================= */
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
+
+renderer.setSize(
+    innerWidth,
+    innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(devicePixelRatio, 2)
+);
+
+renderer.shadowMap.enabled = true;
+
+renderer.shadowMap.type =
+    THREE.PCFSoftShadowMap;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+/* =========================================================
+   LIGHTING
+========================================================= */
+
+const ambient = new THREE.AmbientLight(
+    0xffffff,
+    0.35
+);
+
+scene.add(ambient);
+
+
+/* =========================================================
+   ROOM
+========================================================= */
+
+const room = new THREE.Group();
+
+scene.add(room);
+
+
+/* Floor */
+
+const floorGeometry =
+    new THREE.BoxGeometry(
+        12,
+        .35,
+        9
+    );
+
+const floorMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x20172b,
+        roughness: .8
+    });
+
+const floor =
+    new THREE.Mesh(
+        floorGeometry,
+        floorMaterial
+    );
+
+floor.position.y = -0.2;
+
+floor.receiveShadow = true;
+
+room.add(floor);
+
+
+/* Back wall */
+
+const wallMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x24182d,
+        roughness: .9
+    });
+
+const backWall =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            12,
+            7,
+            .35
+        ),
+        wallMaterial
+    );
+
+backWall.position.set(
+    0,
+    3.3,
+    -4
+);
+
+backWall.receiveShadow = true;
+
+room.add(backWall);
+
+
+/* Left wall */
+
+const leftWall =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .35,
+            7,
+            8
+        ),
+        wallMaterial
+    );
+
+leftWall.position.set(
+    -6,
+    3.3,
+    0
+);
+
+room.add(leftWall);
+
+
+/* Right wall */
+
+const rightWall =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .35,
+            7,
+            8
+        ),
+        wallMaterial
+    );
+
+rightWall.position.set(
+    6,
+    3.3,
+    0
+);
+
+room.add(rightWall);
+
+
+/* =========================================================
+   FAKE DOOR
+========================================================= */
+
+const door =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            2.4,
+            4.4,
+            .25
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x111018,
+            roughness: .5
+        })
+    );
+
+door.position.set(
+    0,
+    2.1,
+    -3.78
+);
+
+door.castShadow = true;
+
+room.add(door);
+
+
+/* Door frame */
+
+const frameMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x8e6b35,
+        metalness: .4,
+        roughness: .4
+    });
+
+function makeFrame(
+    x,
+    y,
+    z,
+    sx,
+    sy,
+    sz
+) {
+
+    const f =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                sx,
+                sy,
+                sz
+            ),
+            frameMaterial
+        );
+
+    f.position.set(
+        x,
+        y,
+        z
+    );
+
+    room.add(f);
+}
+
+makeFrame(
+    -1.35,
+    2.2,
+    -3.58,
+    .18,
+    4.8,
+    .18
+);
+
+makeFrame(
+    1.35,
+    2.2,
+    -3.58,
+    .18,
+    4.8,
+    .18
+);
+
+makeFrame(
+    0,
+    4.6,
+    -3.58,
+    2.9,
+    .18,
+    .18
+);
+
+
+/* =========================================================
+   NAZANIN SIGN
+========================================================= */
+
+const sign =
+    new THREE.Group();
+
+sign.position.set(
+    0,
+    5.15,
+    -3.48
+);
+
+room.add(sign);
+
+
+/* Sign board */
+
+const signBoard =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            3.6,
+            .9,
+            .16
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x151018,
+            emissive: 0x32113e,
+            emissiveIntensity: .8,
+            metalness: .3
+        })
+    );
+
+sign.add(signBoard);
+
+
+/* Text */
+
+function createTextTexture(
+    text,
+    fontSize = 100
+) {
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width = 800;
+    canvas.height = 220;
+
+    const ctx =
+        canvas.getContext("2d");
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.font =
+        `bold ${fontSize}px Arial`;
+
+    ctx.textAlign =
+        "center";
+
+    ctx.textBaseline =
+        "middle";
+
+    ctx.fillStyle =
+        "#ffd76a";
+
+    ctx.shadowColor =
+        "#ff66cc";
+
+    ctx.shadowBlur = 18;
+
+    ctx.fillText(
+        text,
+        400,
+        110
+    );
+
+    return new THREE.CanvasTexture(
+        canvas
+    );
+}
+
+const signTexture =
+    createTextTexture(
+        "NAZANIN",
+        100
+    );
+
+const signText =
+    new THREE.Mesh(
+        new THREE.PlaneGeometry(
+            3.35,
+            .72
+        ),
+        new THREE.MeshBasicMaterial({
+            map: signTexture,
+            transparent: true
+        })
+    );
+
+signText.position.z =
+    .09;
+
+sign.add(signText);
+
+
+/* =========================================================
+   PARTY LIGHTS
+========================================================= */
+
+const partyLights = [];
+
+const lightColors = [
+    0xff1744,
+    0x00e5ff,
+    0x7c4dff,
+    0xffea00,
+    0x00ff88,
+    0xff4081
+];
+
+for (
+    let i = 0;
+    i < 8;
+    i++
+) {
+
+    const bulb =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .14,
+                12,
+                12
+            ),
+            new THREE.MeshStandardMaterial({
+                color:
+                    lightColors[
+                        i %
+                        lightColors.length
+                    ],
+                emissive:
+                    lightColors[
+                        i %
+                        lightColors.length
+                    ],
+                emissiveIntensity: 2
+            })
+        );
+
+    const x =
+        -4.8 +
+        (i % 4) * 3.2;
+
+    const z =
+        -3.6 +
+        Math.floor(i / 4) * 2;
+
+    bulb.position.set(
+        x,
+        5.9,
+        z
+    );
+
+    room.add(bulb);
+
+    const light =
+        new THREE.PointLight(
+            lightColors[
+                i %
+                lightColors.length
+            ],
+            1.5,
+            7
+        );
+
+    light.position.copy(
+        bulb.position
+    );
+
+    room.add(light);
+
+    partyLights.push({
+        bulb,
+        light,
+        offset: i * .8
+    });
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+const table =
+    new THREE.Group();
+
+table.position.set(
+    0,
+    0,
+    .5
+);
+
+room.add(table);
+
+
+/* Table top */
+
+const tableTop =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            5,
+            .45,
+            2.4
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x4a2630,
+            roughness: .65
+        })
+    );
+
+tableTop.position.y =
+    1.65;
+
+tableTop.castShadow = true;
+tableTop.receiveShadow = true;
+
+table.add(tableTop);
+
+
+/* Legs */
+
+for (
+    const x of [-2, 2]
+) {
+
+    for (
+        const z of [-.8, .8]
+    ) {
+
+        const leg =
+            new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    .3,
+                    1.7,
+                    .3
+                ),
+                new THREE.MeshStandardMaterial({
+                    color: 0x24151b
+                })
+            );
+
+        leg.position.set(
+            x,
+            .75,
+            z
+        );
+
+        leg.castShadow = true;
+
+        table.add(leg);
+    }
+}
+
+
+/* =========================================================
+   CAKE
+   LEFT SIDE
+========================================================= */
+
+const cake =
+    new THREE.Group();
+
+cake.position.set(
+    -1.25,
+    1.9,
+    .5
+);
+
+table.add(cake);
+
+
+/* Cake bottom */
+
+const cakeBottom =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .85,
+            .85,
+            .42,
+            32
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xffb6c9
+        })
+    );
+
+cake.add(cakeBottom);
+
+
+/* Cake top */
+
+const cakeTop =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .65,
+            .65,
+            .3,
+            32
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xffe1ec
+        })
+    );
+
+cakeTop.position.y =
+    .35;
+
+cake.add(cakeTop);
+
+
+/* Frosting */
+
+const frosting =
+    new THREE.Mesh(
+        new THREE.TorusGeometry(
+            .64,
+            .08,
+            12,
+            32
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xffffff
+        })
+    );
+
+frosting.rotation.x =
+    Math.PI / 2;
+
+frosting.position.y =
+    .53;
+
+cake.add(frosting);
+
+
+/* =========================================================
+   CANDLE
+========================================================= */
+
+const candle =
+    new THREE.Group();
+
+candle.position.set(
+    0,
+    .7,
+    0
+);
+
+cake.add(candle);
+
+
+/* Candle body */
+
+const candleBody =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .09,
+            .09,
+            .55,
+            16
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xfff2a8
+        })
+    );
+
+candleBody.position.y =
+    .27;
+
+candle.add(candleBody);
+
+
+/* Candle stripes */
+
+for (
+    let i = 0;
+    i < 4;
+    i++
+) {
+
+    const stripe =
+        new THREE.Mesh(
+            new THREE.TorusGeometry(
+                .092,
+                .012,
+                8,
+                16
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0xff5b91
+            })
+        );
+
+    stripe.rotation.x =
+        Math.PI / 2;
+
+    stripe.position.y =
+        .08 +
+        i * .12;
+
+    candle.add(stripe);
+}
+
+
+/* =========================================================
+   FLAME
+========================================================= */
+
+const flame =
+    new THREE.Group();
+
+flame.position.y =
+    .62;
+
+candle.add(flame);
+
+
+/* Outer flame */
+
+const flameOuter =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .16,
+            16,
+            16
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xff8c00,
+            emissive: 0xff4500,
+            emissiveIntensity: 3,
+            transparent: true,
+            opacity: .9
+        })
+    );
+
+flameOuter.scale.set(
+    .7,
+    1.5,
+    .7
+);
+
+flame.add(flameOuter);
+
+
+/* Inner flame */
+
+const flameInner =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .08,
+            12,
+            12
+        ),
+        new THREE.MeshBasicMaterial({
+            color: 0xffffcc
+        })
+    );
+
+flameInner.position.y =
+    -.02;
+
+flame.add(flameInner);
+
+
+/* Candle light */
+
+const flameLight =
+    new THREE.PointLight(
+        0xff8a00,
+        2.5,
+        4
+    );
+
+flameLight.position.y =
+    .1;
+
+flame.add(flameLight);
+
+
+/* =========================================================
+   LETTER
+   RIGHT SIDE
+========================================================= */
+
+const letter =
+    new THREE.Group();
+
+letter.position.set(
+    1.25,
+    1.95,
+    .5
+);
+
+letter.rotation.y =
+    -.08;
+
+table.add(letter);
+
+
+/* Paper */
+
+const paper =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            1.65,
+            .06,
+            1.15
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xfff3ce,
+            roughness: .8
+        })
+    );
+
+paper.castShadow = true;
+
+letter.add(paper);
+
+
+/* Letter decoration */
+
+const heart =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .09,
+            12,
+            12
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xff477e,
+            emissive: 0x661133,
+            emissiveIntensity: .8
+        })
+    );
+
+heart.position.set(
+    0,
+    .07,
+    0
+);
+
+heart.scale.set(
+    1,
+    .7,
+    .4
+);
+
+letter.add(heart);
+
+
+/* =========================================================
+   CONFETTI
+========================================================= */
+
+const confetti = [];
+
+const confettiColors = [
+    0xff1744,
+    0xffea00,
+    0x00e5ff,
+    0x76ff03,
+    0xff4081,
+    0x7c4dff,
+    0xff9100
+];
+
+function createConfetti(
+    amount,
+    burst = false
+) {
+
+    for (
+        let i = 0;
+        i < amount;
+        i++
+    ) {
+
+        const geo =
+            new THREE.PlaneGeometry(
+                .12,
+                .2
+            );
+
+        const color =
+            confettiColors[
+                Math.floor(
+                    Math.random() *
+                    confettiColors.length
+                )
+            ];
+
+        const mat =
+            new THREE.MeshBasicMaterial({
+                color,
+                side: THREE.DoubleSide
+            });
+
+        const piece =
+            new THREE.Mesh(
+                geo,
+                mat
+            );
+
+        if (burst) {
+
+            piece.position.set(
+                0,
+                2.5,
+                .5
+            );
+
+            piece.userData.vx =
+                (Math.random() - .5) * 6;
+
+            piece.userData.vy =
+                Math.random() * 5 + 2;
+
+            piece.userData.vz =
+                (Math.random() - .5) * 5;
+
+        } else {
+
+            piece.position.set(
+                (Math.random() - .5) * 10,
+                Math.random() * 6,
+                -3.5 +
+                Math.random() * 7
+            );
+
+            piece.userData.vx =
+                (Math.random() - .5) * .15;
+
+            piece.userData.vy =
+                -.01 -
+                Math.random() * .015;
+
+            piece.userData.vz =
+                (Math.random() - .5) * .1;
+        }
+
+        piece.userData.rx =
+            Math.random() * .04;
+
+        piece.userData.ry =
+            Math.random() * .05;
+
+        piece.userData.rz =
+            Math.random() * .04;
+
+        room.add(piece);
+
+        confetti.push(piece);
+    }
+}
+
+createConfetti(100);
+
+
+/* =========================================================
+   BALLOONS
+========================================================= */
+
+const balloons = [];
+
+for (
+    let i = 0;
+    i < 12;
+    i++
+) {
+
+    const color =
+        lightColors[
+            i % lightColors.length
+        ];
+
+    const balloon =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .38,
+                20,
+                20
+            ),
+            new THREE.MeshStandardMaterial({
+                color,
+                roughness: .4,
+                metalness: .05
+            })
+        );
+
+    balloon.scale.y =
+        1.25;
+
+    balloon.position.set(
+        -5 +
+        Math.random() * 10,
+        2.5 +
+        Math.random() * 2.5,
+        -3 +
+        Math.random() * 5
+    );
+
+    room.add(balloon);
+
+    balloons.push({
+        mesh: balloon,
+        offset: Math.random() * 10
+    });
+}
+
+
+/* =========================================================
+   CLICK SYSTEM
+========================================================= */
+
+const raycaster =
+    new THREE.Raycaster();
+
+const mouse =
+    new THREE.Vector2();
+
+let letterOpen = false;
+
+renderer.domElement.addEventListener(
+    "pointerdown",
+    function(event) {
+
+        mouse.x =
+            (event.clientX /
+                innerWidth) * 2 - 1;
+
+        mouse.y =
+            -(event.clientY /
+                innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(
+            mouse,
+            camera
+        );
+
+        const objects =
+            raycaster.intersectObjects(
+                scene.children,
+                true
+            );
+
+        for (
+            const hit of objects
+        ) {
+
+            let obj =
+                hit.object;
+
+            let current =
+                obj;
+
+            while (
+                current
+            ) {
+
+                if (
+                    current === letter
+                ) {
+
+                    openLetter();
+
+                    return;
+                }
+
+                if (
+                    current === candle
+                ) {
+
+                    candleParty();
+
+                    return;
+                }
+
+                current =
+                    current.parent;
+            }
+        }
+    }
+);
+
+
+/* =========================================================
+   CANDLE PARTY
+========================================================= */
+
+function candleParty() {
+
+    createConfetti(
+        140,
+        true
+    );
+
+    flameLight.intensity =
+        5;
+
+    setTimeout(
+        () => {
+            flameLight.intensity =
+                2.5;
+        },
+        400
+    );
+}
+
+
+/* =========================================================
+   LETTER UI
+========================================================= */
+
+function openLetter() {
+
+    document
+        .getElementById(
+            "letterUI"
+        )
+        .style.display =
+        "flex";
+
+    letterOpen = true;
+}
+
+function closeLetter() {
+
+    document
+        .getElementById(
+            "letterUI"
+        )
+        .style.display =
+        "none";
+
+    letterOpen = false;
+}
+
+window.closeLetter =
+    closeLetter;
+
+
+/* =========================================================
+   CAMERA DRAG
+========================================================= */
+
+let dragging = false;
+
+let previousX = 0;
+let previousY = 0;
+
+let cameraAngle = 0;
+let cameraHeight = 3.2;
+
+renderer.domElement.addEventListener(
+    "pointerdown",
+    e => {
+
+        dragging = true;
+
+        previousX =
+            e.clientX;
+
+        previousY =
+            e.clientY;
+    }
+);
+
+window.addEventListener(
+    "pointerup",
+    () => {
+        dragging = false;
+    }
+);
+
+window.addEventListener(
+    "pointermove",
+    e => {
+
+        if (
+            !dragging ||
+            letterOpen
+        ) return;
+
+        const dx =
+            e.clientX -
+            previousX;
+
+        const dy =
+            e.clientY -
+            previousY;
+
+        previousX =
+            e.clientX;
+
+        previousY =
+            e.clientY;
+
+        cameraAngle -=
+            dx * .005;
+
+        cameraHeight -=
+            dy * .008;
+
+        cameraHeight =
+            THREE.MathUtils.clamp(
+                cameraHeight,
+                1.5,
+                5
+            );
+    }
+);
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+const clock =
+    new THREE.Clock();
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const t =
+        clock.getElapsedTime();
+
+
+    /* Camera */
+
+    const radius = 9;
+
+    camera.position.x =
+        Math.sin(cameraAngle) *
+        radius;
+
+    camera.position.z =
+        Math.cos(cameraAngle) *
+        radius;
+
+    camera.position.y =
+        cameraHeight;
+
+    camera.lookAt(
+        0,
+        2.4,
+        0
+    );
+
+
+    /* Party lights */
+
+    partyLights.forEach(
+        (item, i) => {
+
+            const pulse =
+                (Math.sin(
+                    t * 3 +
+                    item.offset
+                ) + 1) / 2;
+
+            item.light.intensity =
+                .8 +
+                pulse * 2;
+
+            item.bulb.scale.setScalar(
+                .8 +
+                pulse * .35
+            );
+        }
+    );
+
+
+    /* Flame */
+
+    const flameWave =
+        Math.sin(
+            t * 9
+        );
+
+    flameOuter.scale.x =
+        .7 +
+        flameWave * .12;
+
+    flameOuter.scale.y =
+        1.5 +
+        Math.sin(
+            t * 12
+        ) * .18;
+
+    flameOuter.scale.z =
+        .7 +
+        Math.cos(
+            t * 10
+        ) * .1;
+
+    flame.rotation.z =
+        Math.sin(
+            t * 7
+        ) * .12;
+
+    flameLight.intensity =
+        2.1 +
+        Math.sin(
+            t * 15
+        ) * .45;
+
+
+    /* Confetti */
+
+    confetti.forEach(
+        piece => {
+
+            piece.position.x +=
+                piece.userData.vx;
+
+            piece.position.y +=
+                piece.userData.vy;
+
+            piece.position.z +=
+                piece.userData.vz;
+
+            piece.rotation.x +=
+                piece.userData.rx;
+
+            piece.rotation.y +=
+                piece.userData.ry;
+
+            piece.rotation.z +=
+                piece.userData.rz;
+
+            /* Gravity for burst confetti */
+
+            if (
+                piece.userData.vy > .1
+            ) {
+
+                piece.userData.vy -=
+                    .015;
+            }
+
+            if (
+                piece.position.y <
+                -.5
+            ) {
+
+                piece.position.y =
+                    6;
+
+                piece.position.x =
+                    (Math.random() - .5) *
+                    10;
+
+                piece.userData.vy =
+                    -.01 -
+                    Math.random() * .015;
+            }
+        }
+    );
+
+
+    /* Balloons */
+
+    balloons.forEach(
+        balloon => {
+
+            balloon.mesh.position.y +=
+                Math.sin(
+                    t * 1.4 +
+                    balloon.offset
+                ) * .0015;
+
+            balloon.mesh.rotation.z =
+                Math.sin(
+                    t * 1.1 +
+                    balloon.offset
+                ) * .08;
+        }
+    );
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animate();
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            innerWidth /
+            innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+    }
+);
+
+</script>
+
+</body>
+</html>

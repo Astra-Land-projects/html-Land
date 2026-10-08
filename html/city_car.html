@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>City Hustle</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{ --panel: rgba(10,14,20,0.8); --border: rgba(255,255,255,0.12); --text:#eef2f8; --text-dim:#9aa3b5; --accent:#ffb03b; --ok:#5fd18a; --bad:#e0503f; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0a0e14; font-family:'Segoe UI',Arial,sans-serif; }
+  canvas{ display:block; }
+  #three-canvas{ width:100%; height:100%; }
+
+  #hud{ position:fixed; inset:0; pointer-events:none; z-index:3; color:var(--text); }
+  #speedo{ position:absolute; bottom:20px; left:20px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 18px; font-weight:700; }
+  #speedVal{ font-size:26px; } #speedUnit{ font-size:11px; color:var(--text-dim); }
+
+  #taskBanner{
+    position:absolute; top:16px; left:50%; transform:translateX(-50%); width:min(92vw,420px);
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 18px; text-align:center;
+  }
+  #taskTitle{ font-size:13px; font-weight:700; letter-spacing:0.03em; }
+  #taskSub{ font-size:11px; color:var(--text-dim); margin-top:3px; }
+
+  #toast{
+    position:absolute; top:76px; left:50%; transform:translateX(-50%); background:var(--panel); border:1px solid var(--accent);
+    border-radius:10px; padding:8px 20px; font-size:13px; font-weight:700; color:var(--accent); opacity:0; transition:opacity .3s ease;
+  }
+  #toast.show{ opacity:1; }
+  #toast.bad{ border-color:var(--bad); color:var(--bad); }
+
+  #minimapWrap{ position:absolute; bottom:20px; right:20px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px; }
+  #minimap{ display:block; }
+
+  #startOverlay{
+    position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 50% 35%, #182233 0%, #060810 80%); color:var(--text); text-align:center; pointer-events:all;
+  }
+  #startOverlay h1{ font-size:32px; margin:0 0 8px; letter-spacing:0.02em; }
+  .sub{ color:var(--text-dim); font-size:12.5px; margin-bottom:22px; max-width:420px; line-height:1.6; }
+  .menu-btn{ padding:13px 34px; margin:6px; border-radius:8px; border:1px solid var(--border); background: rgba(255,176,59,0.14); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; min-width:220px; font-family:inherit; }
+  .menu-btn:hover{ background: rgba(255,176,59,0.24); }
+  .menu-btn:active{ transform: scale(0.97); }
+  .controls-list{ margin-top:18px; font-size:11.5px; color:var(--text-dim); line-height:2; text-align:left; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 20px; }
+  .controls-list b{ color:var(--text); }
+
+  #touchControls{ position:fixed; inset:0; z-index:6; display:none; pointer-events:none; }
+  .pedal{
+    position:absolute; width:84px; height:84px; border-radius:50%; pointer-events:all; touch-action:none;
+    background:var(--panel); border:1px solid var(--border); color:var(--text); font-size:13px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; user-select:none;
+  }
+  .pedal.active{ background: rgba(255,176,59,0.28); border-color: var(--accent); }
+  #btnGas{ right:24px; bottom:100px; }
+  #btnBrake{ right:24px; bottom:16px; width:64px; height:64px; }
+  #btnLeft{ left:24px; bottom:16px; }
+  #btnRight{ left:118px; bottom:16px; }
+</style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+
+<div id="hud">
+  <div id="taskBanner"><div id="taskTitle">—</div><div id="taskSub">—</div></div>
+  <div id="toast"></div>
+  <div id="speedo"><span id="speedVal">0</span> <span id="speedUnit">km/h</span></div>
+  <div id="minimapWrap"><canvas id="minimap" width="150" height="150"></canvas></div>
+</div>
+
+<div id="touchControls">
+  <button class="pedal" id="btnLeft">◀</button>
+  <button class="pedal" id="btnRight">▶</button>
+  <button class="pedal" id="btnBrake">BRK</button>
+  <button class="pedal" id="btnGas">GAS</button>
+</div>
+
+<div id="startOverlay">
+  <h1>🏙️ CITY HUSTLE</h1>
+  <div class="sub">A medium-sized city, real traffic, real pedestrians, real red lights. Jobs come one at a time, automatically: taxi runs, deliveries, patrol routes, street races, and police chases. No money, no score — just drive.</div>
+  <button class="menu-btn" id="playBtn">Start Driving</button>
+  <div class="controls-list">
+    <div><b>W / ↑</b> — gas &nbsp; <b>S / ↓</b> — brake</div>
+    <div><b>A/D or ←/→</b> — steer</div>
+    <div id="touchNote" style="display:none;">On touch: on-screen pedals + steer buttons, bottom of screen</div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   GAME LOGIC — no three.js / DOM dependency. City graph, physics, NPC AI,
+   traffic lights, pedestrian behavior, and the task system all live here
+   as plain functions so they can be unit-tested directly in Node.
+   ===================================================================== */
+var CityLogic = (function(){
+  'use strict';
+
+  var GRID_N = 6;
+  var BLOCK = 48;
+  var ROAD_WIDTH = 9;
+  var SIDEWALK_INSET = 1.6;   // how far in from the road edge pedestrian corners sit
+  var PICKUP_RADIUS = 7;
+  var CATCH_RADIUS = 5.5;
+  var CHASE_DURATION = 45;
+
+  var MAX_SPEED = 24;
+  var ACCEL = 17;
+  var BRAKE_POWER = 26;
+  var NATURAL_DRAG = 7.5;
+  var TURN_RATE = 2.7;
+  var REVERSE_MAX = MAX_SPEED * 0.4;
+  var PED_SPEED = 2.6;
+
+  var LIGHT_CYCLE = 15, LIGHT_GREEN = 6, LIGHT_YELLOW = 1.5;
+
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------------- Road graph ---------------- */
+  function buildRoadGraph(){
+    var nodes = [], index = {};
+    for(var i=0;i<=GRID_N;i++){
+      for(var j=0;j<=GRID_N;j++){
+        var idx = nodes.length;
+        nodes.push({ x:i*BLOCK, z:j*BLOCK, i:i, j:j });
+        index[i+'_'+j] = idx;
+      }
+    }
+    var edges = nodes.map(function(){ return []; });
+    for(var i2=0;i2<=GRID_N;i2++){
+      for(var j2=0;j2<=GRID_N;j2++){
+        var a = index[i2+'_'+j2];
+        if(i2<GRID_N){ var b = index[(i2+1)+'_'+j2]; edges[a].push(b); edges[b].push(a); }
+        if(j2<GRID_N){ var c = index[i2+'_'+(j2+1)]; edges[a].push(c); edges[c].push(a); }
+      }
+    }
+    return { nodes: nodes, edges: edges, index: index };
+  }
+
+  function bfsPath(graph, fromIdx, toIdx){
+    if(fromIdx===toIdx) return [fromIdx];
+    var n = graph.nodes.length;
+    var prev = new Int32Array(n).fill(-2);
+    prev[fromIdx] = -1;
+    var queue = [fromIdx], head = 0;
+    while(head<queue.length){
+      var cur = queue[head++];
+      if(cur===toIdx) break;
+      var nbs = graph.edges[cur];
+      for(var k=0;k<nbs.length;k++){
+        var nb = nbs[k];
+        if(prev[nb]!==-2) continue;
+        prev[nb]=cur;
+        queue.push(nb);
+      }
+    }
+    if(prev[toIdx]===-2) return null;
+    var path=[], cur=toIdx;
+    while(cur!==-1){ path.push(cur); cur=prev[cur]; if(path.length>n+2) break; }
+    path.reverse();
+    return path;
+  }
+
+  function randomNode(rng, graph){ return graph.nodes[Math.floor(rng()*graph.nodes.length)]; }
+  function randomFarNode(rng, graph, fromPos, minBlocks){
+    var attempts=0, node;
+    do { node = randomNode(rng, graph); attempts++; }
+    while(attempts<40 && Math.hypot(node.x-fromPos.x, node.z-fromPos.z) < minBlocks*BLOCK);
+    return node;
+  }
+
+  /* ---------------- Buildings & collision ---------------- */
+  var PALETTE = [0x8a8f99,0x9a8f7d,0x7d8a99,0x8f8a7d,0x6f7580,0x9c9184,0x84908a];
+  function generateBuildings(rng){
+    var buildings = [];
+    var margin = ROAD_WIDTH/2 + 2.2;
+    for(var i=0;i<GRID_N;i++){
+      for(var j=0;j<GRID_N;j++){
+        var cx0=i*BLOCK+margin, cx1=(i+1)*BLOCK-margin;
+        var cz0=j*BLOCK+margin, cz1=(j+1)*BLOCK-margin;
+        var w=cx1-cx0, d=cz1-cz0;
+        var splits = rng()<0.45 ? 1 : 2;
+        if(splits===1){
+          var pad=w*0.1;
+          buildings.push({ x:(cx0+cx1)/2, z:(cz0+cz1)/2, w:w-pad*2, d:d-pad*2, h:9+rng()*32, color:PALETTE[Math.floor(rng()*PALETTE.length)] });
+        } else {
+          var halfW=w/2, pad2=halfW*0.14;
+          buildings.push({ x:cx0+halfW/2, z:(cz0+cz1)/2, w:halfW-pad2*2, d:d-pad2*2, h:9+rng()*32, color:PALETTE[Math.floor(rng()*PALETTE.length)] });
+          buildings.push({ x:cx0+halfW+halfW/2, z:(cz0+cz1)/2, w:halfW-pad2*2, d:d-pad2*2, h:9+rng()*32, color:PALETTE[Math.floor(rng()*PALETTE.length)] });
+        }
+      }
+    }
+    return buildings;
+  }
+  function sidewalkPads(){
+    var pads = [];
+    var m = ROAD_WIDTH/2;
+    for(var i=0;i<GRID_N;i++) for(var j=0;j<GRID_N;j++){
+      pads.push({ x:i*BLOCK+BLOCK/2, z:j*BLOCK+BLOCK/2, w:BLOCK-ROAD_WIDTH, d:BLOCK-ROAD_WIDTH });
+    }
+    return pads;
+  }
+  function isBlockedByBuilding(x, z, buildings, radius){
+    radius = radius||0.9;
+    for(var i=0;i<buildings.length;i++){
+      var b = buildings[i];
+      if(Math.abs(x-b.x) < b.w/2+radius && Math.abs(z-b.z) < b.d/2+radius) return true;
+    }
+    return false;
+  }
+
+  /* ---------------- Traffic lights ---------------- */
+  // Global synchronized signal: EW axis (roads running along X) is green
+  // first half of the cycle, NS axis (roads along Z) the second half.
+  function getAxisState(axis, time){
+    var t = ((time % LIGHT_CYCLE) + LIGHT_CYCLE) % LIGHT_CYCLE;
+    var half = LIGHT_CYCLE/2;
+    var localT = axis==='EW' ? t : ((t+half) % LIGHT_CYCLE);
+    if(localT < LIGHT_GREEN) return 'green';
+    if(localT < LIGHT_GREEN+LIGHT_YELLOW) return 'yellow';
+    return 'red';
+  }
+
+  /* ---------------- Car physics (shared by player/NPC/rival/police) ---------------- */
+  function updateCarPhysics(car, input, dt, buildings){
+    var speedAbs = Math.abs(car.speed);
+    var speedRatio = Math.max(0.2, Math.min(1, speedAbs/MAX_SPEED));
+    if(input.throttle) car.speed += ACCEL*dt;
+    else if(input.brake) car.speed -= BRAKE_POWER*dt;
+    if(car.speed>0) car.speed = Math.max(0, car.speed - NATURAL_DRAG*0.3*dt);
+    else if(car.speed<0) car.speed = Math.min(0, car.speed + NATURAL_DRAG*0.3*dt);
+    var maxFwd = MAX_SPEED*(car.maxSpeedMult||1);
+    car.speed = Math.max(-REVERSE_MAX, Math.min(maxFwd, car.speed));
+    var steer = Math.max(-1, Math.min(1, input.steer||0));
+    var turnDir = car.speed>=0 ? 1 : -1;
+    car.yaw += steer*TURN_RATE*speedRatio*dt*turnDir;
+    var nx = car.x + Math.sin(car.yaw)*car.speed*dt;
+    var nz = car.z - Math.cos(car.yaw)*car.speed*dt;
+    if(!buildings || !isBlockedByBuilding(nx, nz, buildings)){
+      car.x = nx; car.z = nz;
+    } else {
+      car.speed *= 0.2;
+    }
+    return car;
+  }
+
+  // NPC car: follow a queued path of graph-node indices, steering toward
+  // the next node and stopping for red/yellow lights on the segment it's
+  // currently traveling.
+  function computeNpcCarInput(car, graph, time){
+    if(!car.path || car.path.length===0) return { throttle:false, brake:true, steer:0 };
+    var target = graph.nodes[car.path[0]];
+    var dx = target.x-car.x, dz = target.z-car.z;
+    var dist = Math.hypot(dx,dz);
+    if(dist < 4){
+      car.path.shift();
+      if(car.path.length===0) return { throttle:false, brake:true, steer:0 };
+      target = graph.nodes[car.path[0]];
+      dx = target.x-car.x; dz = target.z-car.z; dist = Math.hypot(dx,dz);
+    }
+    var desiredYaw = Math.atan2(dx,-dz);
+    var diff = desiredYaw - car.yaw;
+    while(diff>Math.PI) diff -= Math.PI*2;
+    while(diff<-Math.PI) diff += Math.PI*2;
+    var steer = Math.max(-1, Math.min(1, diff*2.2));
+
+    var axis = Math.abs(dx) > Math.abs(dz) ? 'EW' : 'NS';
+    var state = getAxisState(axis, time);
+    var approaching = dist < (ROAD_WIDTH+9) && dist > 3.2;
+    if(approaching && state!=='green'){
+      return { throttle:false, brake:true, steer:steer };
+    }
+    return { throttle:true, brake:false, steer:steer };
+  }
+
+  /* ---------------- Pedestrians ---------------- */
+  function blockCorners(i, j){
+    var m = ROAD_WIDTH/2 + SIDEWALK_INSET;
+    return [
+      { x:i*BLOCK+m, z:j*BLOCK+m },
+      { x:(i+1)*BLOCK-m, z:j*BLOCK+m },
+      { x:(i+1)*BLOCK-m, z:(j+1)*BLOCK-m },
+      { x:i*BLOCK+m, z:(j+1)*BLOCK-m }
+    ];
+  }
+  // The road axis a pedestrian would cross walking from corner k to k+1
+  // around their block (0:S edge=EW road, 1:E edge=NS road, 2:N edge=EW, 3:W edge=NS)
+  var CORNER_EDGE_AXIS = ['EW','NS','EW','NS'];
+
+  function nearestCorner(i, j, node){
+    var c = blockCorners(i,j), best=0, bestD=Infinity;
+    for(var k=0;k<4;k++){
+      var d = Math.hypot(c[k].x-node.x, c[k].z-node.z);
+      if(d<bestD){ bestD=d; best=k; }
+    }
+    return best;
+  }
+  function blocksTouchingNode(node){
+    var out = [];
+    var candidates = [[node.i-1,node.j-1],[node.i,node.j-1],[node.i-1,node.j],[node.i,node.j]];
+    for(var k=0;k<candidates.length;k++){
+      var bi=candidates[k][0], bj=candidates[k][1];
+      if(bi>=0 && bi<GRID_N && bj>=0 && bj<GRID_N) out.push({i:bi,j:bj});
+    }
+    return out;
+  }
+
+  function updatePedestrian(ped, graph, time, dt, rng){
+    var corners = blockCorners(ped.blockI, ped.blockJ);
+    var target = corners[ped.cornerIdx];
+    var dx = target.x-ped.x, dz = target.z-ped.z;
+    var dist = Math.hypot(dx,dz);
+    if(dist < 0.6){
+      // arrived at a corner: maybe cross to an adjacent block, else continue loop
+      var edgeAxis = CORNER_EDGE_AXIS[ped.cornerIdx];
+      var wantsCross = rng() < 0.4;
+      var lightSafe = getAxisState(edgeAxis, time) === 'red';
+      if(wantsCross && lightSafe){
+        var nodeI = ped.cornerIdx===0||ped.cornerIdx===3 ? ped.blockI : ped.blockI+1;
+        var nodeJ = ped.cornerIdx===0||ped.cornerIdx===1 ? ped.blockJ : ped.blockJ+1;
+        var node = { i:nodeI, j:nodeJ, x:nodeI*BLOCK, z:nodeJ*BLOCK };
+        var options = blocksTouchingNode(node).filter(function(b){ return !(b.i===ped.blockI && b.j===ped.blockJ); });
+        if(options.length>0){
+          var pick = options[Math.floor(rng()*options.length)];
+          ped.blockI = pick.i; ped.blockJ = pick.j;
+          ped.cornerIdx = nearestCorner(pick.i, pick.j, node);
+        } else {
+          ped.cornerIdx = (ped.cornerIdx+1)%4;
+        }
+      } else {
+        ped.cornerIdx = (ped.cornerIdx+1)%4;
+      }
+    } else {
+      ped.yaw = Math.atan2(dx,-dz);
+      ped.x += (dx/dist)*PED_SPEED*dt;
+      ped.z += (dz/dist)*PED_SPEED*dt;
+    }
+    return ped;
+  }
+
+  /* ---------------- Task system ---------------- */
+  function dist2D(a,b){ return Math.hypot(a.x-b.x, a.z-b.z); }
+
+  function generateTask(rng, graph, playerPos){
+    var types = ['taxi','delivery','patrol','race','chase'];
+    var type = types[Math.floor(rng()*types.length)];
+    if(type==='taxi' || type==='delivery'){
+      var pickup = randomFarNode(rng, graph, playerPos, 1);
+      var dropoff = randomFarNode(rng, graph, pickup, 2);
+      return { type:type, phase:'toPickup', pickup:{x:pickup.x,z:pickup.z}, dropoff:{x:dropoff.x,z:dropoff.z} };
+    }
+    if(type==='patrol'){
+      var pts = [];
+      for(var i=0;i<5;i++){ var n = randomNode(rng, graph); pts.push({x:n.x,z:n.z, visited:false}); }
+      return { type:'patrol', points: pts };
+    }
+    if(type==='race'){
+      var target = randomFarNode(rng, graph, playerPos, 3);
+      return { type:'race', target:{x:target.x,z:target.z}, playerArrived:false, rivalArrived:false, playerArriveTime:null, rivalArriveTime:null };
+    }
+    // chase
+    return { type:'chase', duration:CHASE_DURATION, elapsed:0, caught:false };
+  }
+
+  // Advances a task's own bookkeeping given the player's position; returns
+  // {done,success,message} once finished, otherwise null (still in progress).
+  function updateTaskProgress(task, player, ctx){
+    ctx = ctx || {};
+    if(task.type==='taxi' || task.type==='delivery'){
+      if(task.phase==='toPickup'){
+        if(dist2D(player, task.pickup) < PICKUP_RADIUS) task.phase = 'toDropoff';
+        return null;
+      }
+      if(dist2D(player, task.dropoff) < PICKUP_RADIUS){
+        return { done:true, success:true, message: task.type==='taxi' ? 'Passenger dropped off!' : 'Delivery complete!' };
+      }
+      return null;
+    }
+    if(task.type==='patrol'){
+      var allVisited = true;
+      for(var i=0;i<task.points.length;i++){
+        if(!task.points[i].visited && dist2D(player, task.points[i]) < PICKUP_RADIUS) task.points[i].visited = true;
+        if(!task.points[i].visited) allVisited = false;
+      }
+      return allVisited ? { done:true, success:true, message:'Patrol route complete!' } : null;
+    }
+    if(task.type==='race'){
+      if(!task.playerArrived && dist2D(player, task.target) < PICKUP_RADIUS){
+        task.playerArrived = true;
+        task.playerArriveTime = ctx.time;
+      }
+      if(task.playerArrived){
+        var beat = !task.rivalArrived || (task.playerArriveTime <= task.rivalArriveTime);
+        return { done:true, success:true, message: beat ? 'You won the race!' : 'Rival got there first!' };
+      }
+      return null;
+    }
+    if(task.type==='chase'){
+      task.elapsed += (ctx.dt||0);
+      if(task.caught) return { done:true, success:false, message:'Busted! Police caught you.' };
+      if(task.elapsed >= task.duration) return { done:true, success:true, message:'You evaded the police!' };
+      return null;
+    }
+    return null;
+  }
+
+  return {
+    GRID_N: GRID_N, BLOCK: BLOCK, ROAD_WIDTH: ROAD_WIDTH, PICKUP_RADIUS: PICKUP_RADIUS,
+    CATCH_RADIUS: CATCH_RADIUS, CHASE_DURATION: CHASE_DURATION, MAX_SPEED: MAX_SPEED,
+    LIGHT_CYCLE: LIGHT_CYCLE,
+    mulberry32: mulberry32, buildRoadGraph: buildRoadGraph, bfsPath: bfsPath,
+    randomNode: randomNode, randomFarNode: randomFarNode,
+    generateBuildings: generateBuildings, sidewalkPads: sidewalkPads, isBlockedByBuilding: isBlockedByBuilding,
+    getAxisState: getAxisState, updateCarPhysics: updateCarPhysics, computeNpcCarInput: computeNpcCarInput,
+    blockCorners: blockCorners, updatePedestrian: updatePedestrian,
+    generateTask: generateTask, updateTaskProgress: updateTaskProgress, dist2D: dist2D
+  };
+})();
+/* =====================================================================
+   END GAME LOGIC
+   ===================================================================== */
+</script>
+
+<script>
+(function(){
+  'use strict';
+  var L = CityLogic;
+  var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  var threeReady = (typeof THREE !== 'undefined');
+  /* =========================================================
+     WORLD SETUP (shared by logic + rendering)
+  ========================================================= */
+  var graph = L.buildRoadGraph();
+  var rng = L.mulberry32(Date.now() % 1000000);
+  var buildings = L.generateBuildings(rng);
+  var pads = L.sidewalkPads();
+
+  var citySpan = L.GRID_N * L.BLOCK;
+
+  function randomStart(){
+    var n = L.randomNode(rng, graph);
+    return { x:n.x, z:n.z };
+  }
+
+  var player = { x: L.BLOCK*1.5, z: L.BLOCK*1.5, yaw:0, speed:0 };
+
+  var npcCars = [];
+  var NPC_CAR_COUNT = 16;
+  function spawnNpcCars(){
+    npcCars = [];
+    for(var i=0;i<NPC_CAR_COUNT;i++){
+      var startNode = L.randomNode(rng, graph);
+      var car = { id:'npc'+i, x:startNode.x, z:startNode.z, yaw:0, speed:6, maxSpeedMult:0.8+rng()*0.3, path:[] };
+      npcCars.push(car);
+    }
+  }
+  spawnNpcCars();
+
+  var pedestrians = [];
+  var PED_COUNT = 22;
+  function spawnPedestrians(){
+    pedestrians = [];
+    for(var i=0;i<PED_COUNT;i++){
+      var bi = Math.floor(rng()*L.GRID_N), bj = Math.floor(rng()*L.GRID_N);
+      var corners = L.blockCorners(bi,bj);
+      var ci = Math.floor(rng()*4);
+      pedestrians.push({ id:'ped'+i, blockI:bi, blockJ:bj, cornerIdx:ci, x:corners[ci].x, z:corners[ci].z, yaw:0 });
+    }
+  }
+  spawnPedestrians();
+
+  var worldTime = 0;
+
+  function ensureNpcPath(car){
+    if(car.path && car.path.length>0) return;
+    var curIdx = nearestNodeIdx(car.x, car.z);
+    var targetNode = L.randomNode(rng, graph);
+    var targetIdx = graph.nodes.indexOf(targetNode);
+    var path = L.bfsPath(graph, curIdx, targetIdx);
+    car.path = path && path.length>1 ? path.slice(1) : [];
+  }
+  function nearestNodeIdx(x,z){
+    var best=0, bestD=Infinity;
+    for(var i=0;i<graph.nodes.length;i++){
+      var n = graph.nodes[i];
+      var d = Math.hypot(n.x-x,n.z-z);
+      if(d<bestD){ bestD=d; best=i; }
+    }
+    return best;
+  }
+
+  /* =========================================================
+     TASK STATE
+  ========================================================= */
+  var currentTask = null;
+  var rivalCar = null;
+  var policeCar = null;
+
+  function startNewTask(){
+    currentTask = L.generateTask(rng, graph, player);
+    rivalCar = null; policeCar = null;
+    if(currentTask.type==='race'){
+      var startIdx = nearestNodeIdx(player.x, player.z);
+      var targetIdx = nearestNodeIdx(currentTask.target.x, currentTask.target.z);
+      var path = L.bfsPath(graph, startIdx, targetIdx);
+      rivalCar = { id:'rival', x:player.x+4, z:player.z, yaw:player.yaw, speed:6, maxSpeedMult:0.95+rng()*0.15, path: path?path.slice(1):[] };
+    }
+    if(currentTask.type==='chase'){
+      var away = L.randomFarNode(rng, graph, player, 2);
+      policeCar = { id:'police', x:away.x, z:away.z, yaw:0, speed:8, maxSpeedMult:1.05, path:[], repathTimer:0 };
+    }
+    updateTaskBanner();
+  }
+
+  function updateTaskBanner(){
+    var titleEl = document.getElementById('taskTitle');
+    var subEl = document.getElementById('taskSub');
+    if(!currentTask){ titleEl.textContent='—'; subEl.textContent='—'; return; }
+    var t = currentTask;
+    if(t.type==='taxi'){
+      titleEl.textContent = '🚕 TAXI';
+      subEl.textContent = t.phase==='toPickup' ? 'Drive to the passenger (yellow marker)' : 'Drop them off (green marker)';
+    } else if(t.type==='delivery'){
+      titleEl.textContent = '📦 DELIVERY';
+      subEl.textContent = t.phase==='toPickup' ? 'Pick up the package (yellow marker)' : 'Deliver it (green marker)';
+    } else if(t.type==='patrol'){
+      var left = t.points.filter(function(p){return !p.visited;}).length;
+      titleEl.textContent = '🚓 PATROL ROUTE';
+      subEl.textContent = left + ' of ' + t.points.length + ' checkpoints left';
+    } else if(t.type==='race'){
+      titleEl.textContent = '🏁 STREET RACE';
+      subEl.textContent = 'Beat the rival to the marker';
+    } else if(t.type==='chase'){
+      titleEl.textContent = '🚨 POLICE CHASE';
+      subEl.textContent = 'Evade for ' + Math.max(0, Math.ceil(t.duration-t.elapsed)) + 's';
+    }
+  }
+
+  function showToast(message, success){
+    var el = document.getElementById('toast');
+    el.textContent = message;
+    el.classList.remove('bad');
+    if(!success) el.classList.add('bad');
+    el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 1800);
+  }
+
+  var taskCooldown = 0;
+  function stepTasks(dt){
+    if(taskCooldown > 0){
+      taskCooldown -= dt;
+      if(taskCooldown <= 0) startNewTask();
+      return;
+    }
+    if(!currentTask) { startNewTask(); return; }
+    var result = L.updateTaskProgress(currentTask, player, { time: worldTime, dt: dt });
+    if(result){
+      showToast(result.message, result.success);
+      currentTask = null;
+      taskCooldown = 1.6;
+    } else {
+      updateTaskBanner();
+    }
+  }
+
+  /* =========================================================
+     PLAYER / NPC / PEDESTRIAN STEP
+  ========================================================= */
+  var input = { forward:false, back:false, left:false, right:false };
+  function playerInputVector(){
+    return { throttle: input.forward, brake: input.back, steer: (input.right?1:0) - (input.left?1:0) };
+  }
+
+  function stepWorld(dt){
+    worldTime += dt;
+    L.updateCarPhysics(player, playerInputVector(), dt, buildings);
+
+    for(var i=0;i<npcCars.length;i++){
+      var car = npcCars[i];
+      ensureNpcPath(car);
+      var inp = L.computeNpcCarInput(car, graph, worldTime);
+      L.updateCarPhysics(car, inp, dt, buildings);
+    }
+
+    if(rivalCar){
+      if(!rivalCar.path || rivalCar.path.length===0){
+        var idx = nearestNodeIdx(rivalCar.x, rivalCar.z);
+        var tIdx = nearestNodeIdx(currentTask.target.x, currentTask.target.z);
+        var p = L.bfsPath(graph, idx, tIdx);
+        rivalCar.path = p ? p.slice(1) : [];
+      }
+      var rInp = L.computeNpcCarInput(rivalCar, graph, worldTime);
+      L.updateCarPhysics(rivalCar, rInp, dt, buildings);
+      if(currentTask && currentTask.type==='race' && !currentTask.rivalArrived){
+        if(L.dist2D(rivalCar, currentTask.target) < L.PICKUP_RADIUS){
+          currentTask.rivalArrived = true;
+          currentTask.rivalArriveTime = worldTime;
+        }
+      }
+    }
+
+    if(policeCar){
+      policeCar.repathTimer -= dt;
+      if(policeCar.repathTimer <= 0){
+        policeCar.repathTimer = 0.6;
+        var pIdx = nearestNodeIdx(policeCar.x, policeCar.z);
+        var plIdx = nearestNodeIdx(player.x, player.z);
+        var pp = L.bfsPath(graph, pIdx, plIdx);
+        policeCar.path = pp ? pp.slice(1) : [];
+      }
+      var pcInp = L.computeNpcCarInput(policeCar, graph, worldTime);
+      L.updateCarPhysics(policeCar, pcInp, dt, buildings);
+      if(currentTask && currentTask.type==='chase' && !currentTask.caught){
+        if(L.dist2D(policeCar, player) < L.CATCH_RADIUS) currentTask.caught = true;
+      }
+    }
+
+    for(var k=0;k<pedestrians.length;k++){
+      L.updatePedestrian(pedestrians[k], graph, worldTime, dt, rng);
+    }
+
+    stepTasks(dt);
+  }
+
+  /* =========================================================
+     THREE.JS RENDERING
+  ========================================================= */
+  var canvas = document.getElementById('three-canvas');
+  var scene, camera, renderer;
+  var carMeshPool = {}, pedMeshPool = {};
+  var markerMeshes = {};
+
+  function buildCarMesh(color){
+    var g = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.7,0.5,3.4), new THREE.MeshStandardMaterial({ color:color, roughness:0.55 }));
+    body.position.y = 0.48;
+    g.add(body);
+    var cabin = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.45,1.5), new THREE.MeshStandardMaterial({ color:0x1c2230, roughness:0.4 }));
+    cabin.position.set(0,0.9,-0.1);
+    g.add(cabin);
+    var wheelGeo = new THREE.CylinderGeometry(0.3,0.3,0.28,10);
+    var wheelMat = new THREE.MeshStandardMaterial({ color:0x151515, roughness:0.9 });
+    [[-0.9,0.3,1.1],[0.9,0.3,1.1],[-0.9,0.3,-1.1],[0.9,0.3,-1.1]].forEach(function(p){
+      var w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.rotation.z = Math.PI/2;
+      w.position.set(p[0],p[1],p[2]);
+      g.add(w);
+    });
+    return g;
+  }
+  function buildPedMesh(){
+    var g = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.9,0.25), new THREE.MeshStandardMaterial({ color:0x3a5fbf, roughness:0.7 }));
+    body.position.y = 0.7;
+    g.add(body);
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.26,0.26), new THREE.MeshStandardMaterial({ color:0xe0b088, roughness:0.7 }));
+    head.position.y = 1.28;
+    g.add(head);
+    return g;
+  }
+  function buildMarker(color){
+    var g = new THREE.Group();
+    var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,3,6), new THREE.MeshStandardMaterial({ color:0x222222 }));
+    pole.position.y = 1.5;
+    g.add(pole);
+    var ball = new THREE.Mesh(new THREE.SphereGeometry(0.55,10,10), new THREE.MeshStandardMaterial({ color:color, emissive:color, emissiveIntensity:0.4 }));
+    ball.position.y = 3.2;
+    g.add(ball);
+    return g;
+  }
+
+  function initThree(){
+    if(!threeReady) return;
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87b3d6);
+    scene.fog = new THREE.Fog(0x87b3d6, 70, 240);
+
+    camera = new THREE.PerspectiveCamera(68, window.innerWidth/window.innerHeight, 0.1, 700);
+    renderer = new THREE.WebGLRenderer({ canvas:canvas, antialias:true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    var sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun.position.set(80,120,60);
+    scene.add(sun);
+
+    var ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(citySpan+120, citySpan+120),
+      new THREE.MeshStandardMaterial({ color:0x2c2f36, roughness:1 })
+    );
+    ground.rotation.x = -Math.PI/2;
+    ground.position.set(citySpan/2, -0.02, citySpan/2);
+    scene.add(ground);
+
+    var padMat = new THREE.MeshStandardMaterial({ color:0x77808c, roughness:0.9 });
+    pads.forEach(function(p){
+      var m = new THREE.Mesh(new THREE.BoxGeometry(p.w,0.08,p.d), padMat);
+      m.position.set(p.x, 0.04, p.z);
+      scene.add(m);
+    });
+
+    buildings.forEach(function(b){
+      var m = new THREE.Mesh(new THREE.BoxGeometry(b.w,b.h,b.d), new THREE.MeshStandardMaterial({ color:b.color, roughness:0.85 }));
+      m.position.set(b.x, b.h/2+0.08, b.z);
+      scene.add(m);
+    });
+
+    var stripeMat = new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.6 });
+    graph.nodes.forEach(function(n){
+      for(var s=-1; s<=1; s+=2){
+        var m1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.05, 4.2), stripeMat);
+        m1.position.set(n.x + s*(L.ROAD_WIDTH/2-1.4), 0.06, n.z);
+        scene.add(m1);
+        var m2 = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.05, 1.1), stripeMat);
+        m2.position.set(n.x, 0.06, n.z + s*(L.ROAD_WIDTH/2-1.4));
+        scene.add(m2);
+      }
+    });
+
+    var carColors = { player:0x3fa7ff };
+    carMeshPool.player = buildCarMesh(0x3fa7ff);
+    scene.add(carMeshPool.player);
+    npcCars.forEach(function(c){
+      var col = 0xb8bcc4;
+      var mesh = buildCarMesh(col);
+      carMeshPool[c.id] = mesh;
+      scene.add(mesh);
+    });
+
+    pedestrians.forEach(function(p){
+      var mesh = buildPedMesh();
+      pedMeshPool[p.id] = mesh;
+      scene.add(mesh);
+    });
+
+    window.addEventListener('resize', onResize);
+  }
+  function onResize(){
+    if(!threeReady) return;
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function ensureSpecialMesh(id, car, color){
+    if(!threeReady || !car) return;
+    if(!carMeshPool[id]){
+      var mesh = buildCarMesh(color);
+      carMeshPool[id] = mesh;
+      scene.add(mesh);
+    }
+  }
+  function removeSpecialMesh(id){
+    if(!threeReady) return;
+    if(carMeshPool[id]){ scene.remove(carMeshPool[id]); delete carMeshPool[id]; }
+  }
+
+  function updateMarkers(){
+    if(!threeReady) return;
+    Object.keys(markerMeshes).forEach(function(k){ scene.remove(markerMeshes[k]); });
+    markerMeshes = {};
+    if(!currentTask) return;
+    function place(key, x, z, color){
+      var m = buildMarker(color);
+      m.position.set(x, 0, z);
+      scene.add(m);
+      markerMeshes[key] = m;
+    }
+    if(currentTask.type==='taxi' || currentTask.type==='delivery'){
+      if(currentTask.phase==='toPickup') place('a', currentTask.pickup.x, currentTask.pickup.z, 0xffd23f);
+      else place('b', currentTask.dropoff.x, currentTask.dropoff.z, 0x5fd18a);
+    } else if(currentTask.type==='patrol'){
+      currentTask.points.forEach(function(p,i){ if(!p.visited) place('p'+i, p.x, p.z, 0x3fa7ff); });
+    } else if(currentTask.type==='race'){
+      place('r', currentTask.target.x, currentTask.target.z, 0xff5a3f);
+    }
+  }
+
+  /* =========================================================
+     MINIMAP
+  ========================================================= */
+  var minimap = document.getElementById('minimap');
+  var mctx = minimap.getContext('2d');
+  function renderMinimap(){
+    mctx.clearRect(0,0,150,150);
+    var pad=10, s=(150-pad*2)/citySpan;
+    function toMap(x,z){ return [pad+x*s, pad+z*s]; }
+    mctx.fillStyle = 'rgba(255,255,255,0.08)';
+    mctx.fillRect(pad,pad,150-pad*2,150-pad*2);
+    mctx.strokeStyle = 'rgba(255,255,255,0.35)'; mctx.lineWidth=1;
+    for(var i=0;i<=L.GRID_N;i++){
+      var xm = toMap(i*L.BLOCK,0)[0];
+      mctx.beginPath(); mctx.moveTo(xm,pad); mctx.lineTo(xm,150-pad); mctx.stroke();
+      var zm = toMap(0,i*L.BLOCK)[1];
+      mctx.beginPath(); mctx.moveTo(pad,zm); mctx.lineTo(150-pad,zm); mctx.stroke();
+    }
+    if(currentTask){
+      mctx.fillStyle = '#ffd23f';
+      if((currentTask.type==='taxi'||currentTask.type==='delivery')){
+        var pt = currentTask.phase==='toPickup' ? currentTask.pickup : currentTask.dropoff;
+        mctx.fillStyle = currentTask.phase==='toPickup' ? '#ffd23f' : '#5fd18a';
+        var pm = toMap(pt.x, pt.z);
+        mctx.beginPath(); mctx.arc(pm[0],pm[1],4,0,Math.PI*2); mctx.fill();
+      } else if(currentTask.type==='patrol'){
+        currentTask.points.forEach(function(p){
+          if(p.visited) return;
+          var pm = toMap(p.x,p.z);
+          mctx.fillStyle='#3fa7ff';
+          mctx.beginPath(); mctx.arc(pm[0],pm[1],4,0,Math.PI*2); mctx.fill();
+        });
+      } else if(currentTask.type==='race'){
+        var pm2 = toMap(currentTask.target.x, currentTask.target.z);
+        mctx.fillStyle='#ff5a3f';
+        mctx.beginPath(); mctx.arc(pm2[0],pm2[1],4,0,Math.PI*2); mctx.fill();
+      }
+    }
+    var pm3 = toMap(player.x, player.z);
+    mctx.fillStyle = '#3fa7ff';
+    mctx.beginPath(); mctx.arc(pm3[0],pm3[1],4.5,0,Math.PI*2); mctx.fill();
+    if(policeCar){
+      var pm4 = toMap(policeCar.x, policeCar.z);
+      mctx.fillStyle = '#ff3f3f';
+      mctx.beginPath(); mctx.arc(pm4[0],pm4[1],3.5,0,Math.PI*2); mctx.fill();
+    }
+  }
+
+  /* =========================================================
+     RENDER LOOP
+  ========================================================= */
+  var camSmooth = { x:0, y:0, z:0 };
+  function updateCamera(dt){
+    if(!threeReady) return;
+    var backX = -Math.sin(player.yaw), backZ = Math.cos(player.yaw);
+    var targetX = player.x + backX*8, targetZ = player.z + backZ*8, targetY = 4.6;
+    var a = Math.min(1, dt*4.5);
+    camSmooth.x += (targetX-camSmooth.x)*a;
+    camSmooth.y += (targetY-camSmooth.y)*a;
+    camSmooth.z += (targetZ-camSmooth.z)*a;
+    camera.position.set(camSmooth.x, camSmooth.y, camSmooth.z);
+    camera.lookAt(player.x, 1.0, player.z);
+  }
+
+  var lastMarkerTaskRef = null;
+  function render(){
+    if(!threeReady) return;
+    var m = carMeshPool.player;
+    m.position.set(player.x,0,player.z); m.rotation.y = player.yaw;
+    npcCars.forEach(function(c){
+      var mesh = carMeshPool[c.id];
+      if(mesh){ mesh.position.set(c.x,0,c.z); mesh.rotation.y = c.yaw; }
+    });
+    pedestrians.forEach(function(p){
+      var mesh = pedMeshPool[p.id];
+      if(mesh){ mesh.position.set(p.x,0,p.z); mesh.rotation.y = p.yaw; }
+    });
+
+    if(rivalCar){ ensureSpecialMesh('rival', rivalCar, 0xe8c23f); var rm=carMeshPool.rival; if(rm){ rm.position.set(rivalCar.x,0,rivalCar.z); rm.rotation.y=rivalCar.yaw; } }
+    else removeSpecialMesh('rival');
+    if(policeCar){ ensureSpecialMesh('police', policeCar, 0x2255dd); var pm=carMeshPool.police; if(pm){ pm.position.set(policeCar.x,0,policeCar.z); pm.rotation.y=policeCar.yaw; } }
+    else removeSpecialMesh('police');
+
+    if(currentTask !== lastMarkerTaskRef){
+      updateMarkers();
+      lastMarkerTaskRef = currentTask;
+    }
+
+    updateCamera(1/60);
+    renderer.render(scene, camera);
+  }
+
+  /* =========================================================
+     HUD
+  ========================================================= */
+  var speedVal = document.getElementById('speedVal');
+  function renderHUD(){
+    speedVal.textContent = Math.round(Math.abs(player.speed)*3.4);
+    if(currentTask && currentTask.type==='chase') updateTaskBanner();
+    renderMinimap();
+  }
+
+  /* =========================================================
+     INPUT
+  ========================================================= */
+  window.addEventListener('keydown', function(e){
+    switch(e.code){
+      case 'KeyW': case 'ArrowUp': input.forward=true; break;
+      case 'KeyS': case 'ArrowDown': input.back=true; break;
+      case 'KeyA': case 'ArrowLeft': input.left=true; break;
+      case 'KeyD': case 'ArrowRight': input.right=true; break;
+    }
+  });
+  window.addEventListener('keyup', function(e){
+    switch(e.code){
+      case 'KeyW': case 'ArrowUp': input.forward=false; break;
+      case 'KeyS': case 'ArrowDown': input.back=false; break;
+      case 'KeyA': case 'ArrowLeft': input.left=false; break;
+      case 'KeyD': case 'ArrowRight': input.right=false; break;
+    }
+  });
+  function bindPedal(id, onFn, offFn){
+    var el = document.getElementById(id);
+    el.addEventListener('touchstart', function(e){ e.preventDefault(); el.classList.add('active'); onFn(); }, {passive:false});
+    el.addEventListener('touchend', function(e){ e.preventDefault(); el.classList.remove('active'); offFn(); }, {passive:false});
+    el.addEventListener('touchcancel', function(){ el.classList.remove('active'); offFn(); });
+    el.addEventListener('mousedown', function(){ el.classList.add('active'); onFn(); });
+    el.addEventListener('mouseup', function(){ el.classList.remove('active'); offFn(); });
+    el.addEventListener('mouseleave', function(){ el.classList.remove('active'); offFn(); });
+  }
+  bindPedal('btnGas', function(){ input.forward=true; }, function(){ input.forward=false; });
+  bindPedal('btnBrake', function(){ input.back=true; }, function(){ input.back=false; });
+  bindPedal('btnLeft', function(){ input.left=true; }, function(){ input.left=false; });
+  bindPedal('btnRight', function(){ input.right=true; }, function(){ input.right=false; });
+
+  /* =========================================================
+     MAIN LOOP
+  ========================================================= */
+  var running = false;
+  var lastTs = null;
+  function loop(ts){
+    if(lastTs===null) lastTs=ts;
+    var dt = (ts-lastTs)/1000;
+    if(dt>0.05) dt=0.05;
+    lastTs = ts;
+    if(running) stepWorld(dt);
+    render();
+    renderHUD();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('playBtn').addEventListener('click', function(){
+    document.getElementById('startOverlay').style.display = 'none';
+    if(isTouch) document.getElementById('touchControls').style.display = 'block';
+    running = true;
+    startNewTask();
+  });
+  if(isTouch) document.getElementById('touchNote').style.display = 'block';
+
+  initThree();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

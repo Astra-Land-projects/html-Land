@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra Task Manager</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --gold: #ffc107;
+            --gold-hover: #e0a800;
+            --text-color: #ffffff;
+            --text-muted: #aaa;
+            --border-color: #333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; display: flex; justify-content: center; }
+
+        .container { width: 100%; max-width: 500px; }
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { color: var(--gold); font-size: 1.8rem; margin-bottom: 5px; }
+
+        /* Card Setup */
+        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+       
+        /* Input Controls */
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; outline: none; }
+        .btn { background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn:hover { background: var(--gold-hover); }
+
+        /* Progress Bar */
+        .progress-bar-bg { background: #222; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 10px; }
+        .progress-bar-fill { background: var(--gold); height: 100%; width: 0%; transition: width 0.3s ease; }
+
+        /* Task Item */
+        .task-item { display: flex; align-items: center; justify-content: space-between; background: #222; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+        .task-item.completed span { text-decoration: line-through; color: var(--text-muted); }
+        .task-info { display: flex; align-items: center; gap: 10px; }
+        .badge { font-size: 0.7rem; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        .badge-high { background: #dc3545; color: #fff; }
+        .badge-medium { background: #ffc107; color: #000; }
+        .badge-low { background: #28a745; color: #fff; }
+
+        .btn-del { background: transparent; border: none; color: #dc3545; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>ASTRA TASKS</h1>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">مدیریت هوشمند کارهای روزانه</p>
+        </header>
+
+        <!-- Task Progress -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span>پیشرفت کارها</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Add Task Form -->
+        <div class="card">
+            <input type="text" id="taskTitle" placeholder="عنوان کار جدید...">
+            <select id="taskPriority">
+                <option value="low">اولویت کم</option>
+                <option value="medium" selected>اولویت متوسط</option>
+                <option value="high">اولویت بالا</option>
+            </select>
+            <button class="btn" onclick="addTask()">افزودن کار</button>
+        </div>
+
+        <!-- Task List -->
+        <div class="card">
+            <div style="color: var(--gold); font-weight: bold; margin-bottom: 10px; font-size: 0.95rem;">لیست کارها</div>
+            <div id="taskList"></div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('astra_tasks')) || [];
+
+        function saveAndRender() {
+            localStorage.setItem('astra_tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function addTask() {
+            let title = document.getElementById('taskTitle').value.trim();
+            let priority = document.getElementById('taskPriority').value;
+
+            if (!title) return alert("لطفاً عنوان کار را وارد کنید.");
+
+            tasks.push({
+                id: Date.now(),
+                title: title,
+                priority: priority,
+                completed: false
+            });
+
+            document.getElementById('taskTitle').value = '';
+            saveAndRender();
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            saveAndRender();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveAndRender();
+        }
+
+        function renderTasks() {
+            let list = document.getElementById('taskList');
+            list.innerHTML = '';
+
+            if (tasks.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem; text-align: center;">هیچ کاری ثبت نشده است.</p>';
+            }
+
+            let completedCount = 0;
+
+            tasks.forEach(t => {
+                if (t.completed) completedCount++;
+
+                let priorityClass = t.priority === 'high' ? 'badge-high' : (t.priority === 'medium' ? 'badge-medium' : 'badge-low');
+                let priorityText = t.priority === 'high' ? 'بالا' : (t.priority === 'medium' ? 'متوسط' : 'کم');
+
+                let item = document.createElement('div');
+                item.className = `task-item ${t.completed ? 'completed' : ''}`;
+                item.innerHTML = `
+                    <div class="task-info">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})">
+                        <span>${t.title}</span>
+                        <span class="badge ${priorityClass}">${priorityText}</span>
+                    </div>
+                    <button class="btn-del" onclick="deleteTask(${t.id})">حذف</button>
+                `;
+                list.appendChild(item);
+            });
+
+            // Update Progress Bar
+            let percent = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+            document.getElementById('progressPercent').innerText = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        // Initial Load
+        renderTasks();
+    </script>
+</body>
+</html>

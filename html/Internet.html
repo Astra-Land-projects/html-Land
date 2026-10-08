@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra Internet</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --gold: #ffc107;
+            --gold-hover: #e0a800;
+            --text-color: #ffffff;
+            --text-muted: #aaa;
+            --border-color: #333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding-bottom: 70px; }
+
+        /* Header */
+        header { background: #141414; text-align: center; padding: 15px; border-bottom: 1px solid var(--border-color); }
+        header img { height: 50px; }
+
+        /* Navigation Pages */
+        .page { display: none; padding: 15px; }
+        .page.active { display: block; }
+
+        /* Cards & Containers */
+        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .card-title { font-size: 1.1rem; color: var(--gold); margin-bottom: 10px; font-weight: bold; }
+
+        /* Slider */
+        .slider { width: 100%; height: 120px; background: linear-gradient(45deg, #1f1d0a, #383106); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; margin-bottom: 15px; border: 1px solid var(--gold); }
+
+        /* Usage Dashboard */
+        .usage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+        .usage-item { background: #252525; padding: 10px; border-radius: 8px; }
+        .usage-item span { display: block; font-size: 0.8rem; color: var(--text-muted); }
+        .usage-item strong { color: var(--gold); font-size: 0.9rem; }
+
+        /* Packages Grid */
+        .pkg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .pkg-card { background: #222; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; }
+        .pkg-card h4 { color: #fff; font-size: 0.9rem; margin-bottom: 5px; }
+        .pkg-card p { color: var(--gold); font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; }
+
+        /* Buttons & Forms */
+        .btn { background: var(--gold); color: #000; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn:hover { background: var(--gold-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; }
+
+        /* Footer & Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #141414; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--border-color); }
+        .nav-item { color: var(--text-muted); cursor: pointer; text-align: center; font-size: 0.8rem; }
+        .nav-item.active { color: var(--gold); font-weight: bold; }
+
+        /* Floating AI Bot */
+        .ai-fab { position: fixed; bottom: 75px; right: 15px; width: 50px; height: 50px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .chat-modal { display: none; position: fixed; bottom: 135px; right: 15px; width: 280px; background: #1a1a1a; border: 1px solid var(--gold); border-radius: 12px; padding: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        /* Gift Boxes */
+        .gift-container { display: flex; justify-content: space-between; margin-top: 10px; }
+        .gift-box { width: 30%; background: #222; border: 1px dashed var(--gold); padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h2 style="color: var(--gold); font-style: italic;">ASTRA INTERNET</h2>
+    </header>
+
+    <!-- Page 1: Home -->
+    <div id="home" class="page active">
+        <div class="slider" id="autoSlider">پیشنهاد ویژه: ۵۰ گیگابایت اینترنت آسترا - ۳۰ روزه</div>
+
+        <div class="card">
+            <div class="card-title">میزان مصرف باقی‌مانده</div>
+            <div class="usage-grid">
+                <div class="usage-item"><span>اینترنت</span><strong>۱۲.۵ GB</strong></div>
+                <div class="usage-item"><span>مکالمه</span><strong>۱۵0 دقیقه</strong></div>
+                <div class="usage-item"><span>پیامک</span><strong>۴۵ عدد</strong></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">صورت‌حساب و قبض</div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">بدهی دوره جاری: ۳۵,۰۰۰ تومان</p>
+            <button class="btn" onclick="payBill()">پرداخت قبض</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">خرید بسته جدید</div>
+            <div class="pkg-grid">
+                <div class="pkg-card">
+                    <h4>۱۰ گیگ ۱ ماهه</h4>
+                    <p>۴۵,۰۰۰ تومان</p>
+                    <button class="btn" onclick="buyPackage('۱۰ گیگ ۱ ماهه', 45000)">خرید</button>
+                </div>
+                <div class="pkg-card">
+                    <h4>۲۰ گیگ ۳ ماهه</h4>
+                    <p>۸۵,۰۰۰ تومان</p>
+                    <button class="btn" onclick="buyPackage('۲۰ گیگ ۳ ماهه', 85000)">خرید</button>
+                </div>
+                <div class="pkg-card">
+                    <h4>۵۰ گیگ ۱ ساله</h4>
+                    <p>۲۱۰,۰۰۰ تومان</p>
+                    <button class="btn" onclick="buyPackage('۵۰ گیگ ۱ ساله', 210000)">خرید</button>
+                </div>
+                <div class="pkg-card">
+                    <h4>۱۰۰0 دقیقه مکالمه</h4>
+                    <p>۳۰,۰۰۰ تومان</p>
+                    <button class="btn" onclick="buyPackage('۱۰۰0 دقیقه مکالمه', 30000)">خرید</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">درباره Astra Internet</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">پلتفرم آسترا اینترنت ارائه دهنده خدمات نسل جدید ارتباطات و اینترنت پرسرعت با پشتیبانی هوشمند در سراسر کشور.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">پشتیبانی و معرفی</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">پشتیبانی ۲۴/۷ با ربات اختصاصی Astra AI. در هر ساعت از شبانه‌روز پاسخگوی شما هستیم.</p>
+        </div>
+    </div>
+
+    <!-- Page 2: Assets -->
+    <div id="assets" class="page">
+        <div class="card">
+            <div class="card-title">کیف پول آسترا</div>
+            <p style="margin-bottom: 10px;">موجودی فعلی: <strong id="walletBalance" style="color: var(--gold);">۵۰,۰۰۰</strong> تومان</p>
+            <input type="number" id="topupAmount" placeholder="مبلغ شارژ (تومان)">
+            <button class="btn" onclick="chargeWallet()">افزایش موجودی</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">باشگاه مشتریان (امتیاز: <span id="userPoints" style="color: var(--gold);">۱۲۰</span>)</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">یکی از شانس‌های زیر را انتخاب کنید:</p>
+            <div class="gift-container">
+                <div class="gift-box" onclick="openGift(1)">🎁</div>
+                <div class="gift-box" onclick="openGift(2)">🎁</div>
+                <div class="gift-box" onclick="openGift(3)">🎁</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3: Settings -->
+    <div id="settings" class="page">
+        <div class="card">
+            <div class="card-title">تنظیمات حساب کاربری</div>
+            <button class="btn btn-outline" style="margin-bottom: 8px;">ویرایش پروفایل</button>
+            <button class="btn btn-outline" style="margin-bottom: 8px;">تغییر رمز عبور</button>
+            <button class="btn btn-outline" style="margin-bottom: 8px;">تنظیمات اعلان‌ها</button>
+            <button class="btn" style="background: #dc3545; color: #fff;">خروج از حساب</button>
+        </div>
+    </div>
+
+    <!-- AI Bot Floating Floating Widget -->
+    <div class="ai-fab" onclick="toggleChat()">؟</div>
+    <div class="chat-modal" id="chatModal">
+        <div style="color: var(--gold); font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">دستیار هوشمند Astra</div>
+        <input type="text" id="aiInput" placeholder="کلمه‌ای بنویسید (مثلا: تنظیمات، نت)...">
+        <button class="btn" onclick="askAI()">پرسش</button>
+        <p id="aiReply" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;"></p>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('home', this)">خانه</div>
+        <div class="nav-item" onclick="switchPage('assets', this)">دارایی</div>
+        <div class="nav-item" onclick="switchPage('settings', this)">تنظیمات</div>
+    </div>
+
+    <script>
+        // Page Switcher
+        function switchPage(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        // Mock Payment Actions
+        function payBill() {
+            alert("پرداخت قبض با موفقیت انجام شد.");
+        }
+
+        function buyPackage(name, price) {
+            let useWallet = confirm(`بسته ${name} به قیمت ${price} تومان.\nآیا می‌خواهید از کیف پول پرداخت کنید؟`);
+            if (useWallet) {
+                let current = parseInt(document.getElementById('walletBalance').innerText.replace(',', ''));
+                if (current >= price) {
+                    document.getElementById('walletBalance').innerText = (current - price).toLocaleString();
+                    alert("خرید با موفقیت از طریق کیف پول انجام شد.");
+                } else {
+                    alert("موجودی کیف پول کافی نیست! پرداخت مستقیم انجام شد.");
+                }
+            } else {
+                alert("پرداخت مستقیم با موفقیت انجام شد و روی قبض شما ثبت گردید.");
+            }
+        }
+
+        function chargeWallet() {
+            let val = parseInt(document.getElementById('topupAmount').value);
+            if (val > 0) {
+                let current = parseInt(document.getElementById('walletBalance').innerText.replace(',', ''));
+                document.getElementById('walletBalance').innerText = (current + val).toLocaleString();
+                alert(`مبلغ ${val.toLocaleString()} تومان با موفقیت به کیف پول اضافه شد.`);
+                document.getElementById('topupAmount').value = '';
+            }
+        }
+
+        function openGift(id) {
+            let points = [10, 50, 100];
+            let won = points[Math.floor(Math.random() * points.length)];
+            let current = parseInt(document.getElementById('userPoints').innerText);
+            document.getElementById('userPoints').innerText = current + won;
+            alert(`تبریک! شما ${won} امتیاز Astra هدیه گرفتید.`);
+        }
+
+        // AI Bot Mock
+        function toggleChat() {
+            let modal = document.getElementById('chatModal');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function askAI() {
+            let q = document.getElementById('aiInput').value.toLowerCase();
+            let reply = document.getElementById('aiReply');
+            if (q.includes("astra") || q.includes("آسترا")) {
+                reply.innerText = "Astra Internet ارائه دهنده خدمات ارتباطی هوشمند نسل جدید است.";
+            } else if (q.includes("تنظیمات")) {
+                reply.innerText = "برای تغییر مشخصات یا رمز عبور به بخش تنظیمات از منوی پایین بروید.";
+            } else if (q.includes("نت") || q.includes("اینترنت")) {
+                reply.innerText = "شما می‌توانید انواع بسته‌های اینترنت را از صفحه اصلی خریداری کنید.";
+            } else {
+                reply.innerText = "دستیار Astra: چطور می‌توانم در مورد خدمات Astra به شما کمک کنم؟";
+            }
+        }
+
+        // Auto Slider Mock
+        let slides = [
+            "پیشنهاد ویژه: ۵۰ گیگابایت اینترنت آسترا - ۳۰ روزه",
+            "با پرداخت به موقع قبض، امتیاز Astra دریافت کنید!",
+            "گردونه شانس در بخش دارایی فعال شد."
+        ];
+        let idx = 0;
+        setInterval(() => {
+            idx = (idx + 1) % slides.length;
+            document.getElementById('autoSlider').innerText = slides[idx];
+        }, 3000);
+    </script>
+</body>
+</html>

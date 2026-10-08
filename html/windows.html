@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra Cyber HUD - Studio Edition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #050508;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Animated RGB Border */
+        .rgb-border {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .rgb-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 4px solid transparent;
+            border-image: linear-gradient(var(--angle), #ff0055, #7a00ff, #00e5ff, #00ff66, #ffcc00, #ff0055) 1;
+            animation: rotateRGB 5s linear infinite;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6));
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes rotateRGB {
+            to { --angle: 360deg; }
+        }
+
+        /* Particle Canvas Background */
+        canvas#particles {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        /* HUD Container */
+        .hud-container {
+            position: relative;
+            z-index: 2;
+            width: 90%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* Card HUD Style */
+        .hud-card {
+            background: rgba(15, 15, 25, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+            transition: all 0.3s ease;
+        }
+        .hud-card:hover {
+            border-color: rgba(0, 229, 255, 0.6);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+        }
+
+        /* Center Widget: Clock & Visualizer */
+        .center-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clock {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #00e5ff, #7a00ff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+
+        .date-display {
+            color: #8a8aab;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Audio Visualizer Bars */
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 80px;
+            width: 100%;
+            justify-content: center;
+        }
+        .bar {
+            width: 8px;
+            background: linear-gradient(to top, #7a00ff, #00e5ff);
+            border-radius: 4px;
+            animation: jump 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes jump {
+            0% { height: 15%; }
+            100% { height: 100%; }
+        }
+
+        /* Stats Widgets */
+        .stat-title {
+            font-size: 0.85rem;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bg {
+            background: rgba(255, 255, 255, 0.05);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .progress-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, #00e5ff, #ff0055);
+            box-shadow: 0 0 10px #00e5ff;
+            transition: width 0.5s ease;
+        }
+
+        /* Status Badge */
+        .status-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: rgba(0, 255, 102, 0.1);
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- RGB Border -->
+    <div class="rgb-border"></div>
+
+    <!-- Background Canvas -->
+    <canvas id="particles"></canvas>
+
+    <!-- Main HUD UI -->
+    <div class="hud-container">
+       
+        <!-- Left Panel: System Monitor -->
+        <div class="hud-card">
+            <div class="stat-title"><span>GPU RENDER</span><span id="gpuVal">64%</span></div>
+            <div class="progress-bg"><div class="progress-fill" id="gpuBar" style="width: 64%;"></div></div>
+
+            <div class="stat-title"><span>CPU CORE</span><span id="cpuVal">42%</span></div>
+            <div class="progress-bg"><div class="progress-fill" id="cpuBar" style="width: 42%; background: linear-gradient(90deg, #7a00ff, #00e5ff);"></div></div>
+
+            <div class="stat-title"><span>RAM BUFFER</span><span id="ramVal">78%</span></div>
+            <div class="progress-bg"><div class="progress-fill" id="ramBar" style="width: 78%; background: linear-gradient(90deg, #ffcc00, #ff0055);"></div></div>
+
+            <div class="status-tag">● STUDIO MODE ACTIVE</div>
+        </div>
+
+        <!-- Center Panel: Time & Audio Spectrum -->
+        <div class="hud-card center-card">
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="date-display" id="date">ASTRA CYBERNETIC ENGINE</div>
+           
+            <div class="visualizer" id="visualizer"></div>
+        </div>
+
+        <!-- Right Panel: Render Status & Quality -->
+        <div class="hud-card">
+            <div class="stat-title"><span>FRAME RATE</span><span>60 FPS</span></div>
+            <div class="progress-bg"><div class="progress-fill" style="width: 100%; background: #00ff66;"></div></div>
+
+            <div class="stat-title"><span>RESOLUTION</span><span>4K ULTRA HD</span></div>
+            <div class="progress-bg"><div class="progress-fill" style="width: 100%; background: #00e5ff;"></div></div>
+
+            <div class="stat-title"><span>COLOR PROFILE</span><span>REC. 2020 HDR</span></div>
+            <div class="progress-bg"><div class="progress-fill" style="width: 90%; background: #ff0055;"></div></div>
+
+            <div class="status-tag" style="color: #00e5ff; border-color: #00e5ff; background: rgba(0, 229, 255, 0.1);">● 8K ENCODER READY</div>
+        </div>
+
+    </div>
+
+    <script>
+        // Digital Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Audio Visualizer Bars Generator
+        const visualizer = document.getElementById('visualizer');
+        const barCount = 24;
+        for (let i = 0; i < barCount; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.animationDelay = `${(i * 0.08).toFixed(2)}s`;
+            bar.style.animationDuration = `${(Math.random() * 0.5 + 0.6).toFixed(2)}s`;
+            visualizer.appendChild(bar);
+        }
+
+        // Live Simulated System Gauge Animations
+        setInterval(() => {
+            const cpu = Math.floor(Math.random() * 30) + 35;
+            const gpu = Math.floor(Math.random() * 40) + 50;
+            const ram = Math.floor(Math.random() * 15) + 70;
+
+            document.getElementById('cpuVal').innerText = cpu + '%';
+            document.getElementById('cpuBar').style.width = cpu + '%';
+
+            document.getElementById('gpuVal').innerText = gpu + '%';
+            document.getElementById('gpuBar').style.width = gpu + '%';
+
+            document.getElementById('ramVal').innerText = ram + '%';
+            document.getElementById('ramBar').style.width = ram + '%';
+        }, 2000);
+
+        // Background Glowing Particles
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        for (let i = 0; i < 60; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                color: ['#00e5ff', '#7a00ff', '#ff0055'][Math.floor(Math.random() * 3)]
+            });
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawParticles);
+        }
+        drawParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

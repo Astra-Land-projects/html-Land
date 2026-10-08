@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA Snakes & Ladders</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080d18;color:#fff;font-family:system-ui,Arial;min-height:100vh;display:grid;place-items:center}.wrap{width:min(820px,95vw);padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.controls{display:flex;gap:7px}.btn{border:1px solid #ffffff20;background:#ffffff0b;color:#fff;padding:9px 12px;border-radius:10px;cursor:pointer}.active,.btn:hover{background:#6575ff}
+#status{text-align:center;color:#c0c9dd;margin:10px}.board{width:min(86vw,620px);aspect-ratio:1;margin:auto;display:grid;grid-template-columns:repeat(10,1fr);border:7px solid #141b2b;border-radius:15px;overflow:hidden}
+.cell{position:relative;display:grid;place-items:center;border:1px solid #0002;font-weight:800;font-size:12px}.cell:nth-child(4n){background:#293754}.cell:nth-child(4n+1){background:#31415f}.cell:nth-child(4n+2){background:#26334d}.cell:nth-child(4n+3){background:#354967}
+.num{position:absolute;top:3px;left:5px;font-size:10px;color:#ffffff99}.p{width:28px;height:28px;border-radius:50%;border:2px solid #fff;position:absolute;bottom:5px;box-shadow:0 3px 7px #0008}.p1{background:#ff4f64}.p2{background:#52a9ff}
+#roll{display:block;margin:14px auto 0;border:0;border-radius:13px;padding:13px 28px;background:linear-gradient(135deg,#6575ff,#9b5cff);color:white;font-weight:900;font-size:16px;cursor:pointer}#roll:disabled{opacity:.45}.legend{text-align:center;color:#8d98b0;font-size:12px;margin-top:8px}
+</style></head><body><div class="wrap">
+<div class="top"><h1>🐍 ASTRA Snakes & Ladders</h1><div class="controls"><button id="bot" class="btn active">🤖 Bot</button><button id="human" class="btn">👤 Player</button><button id="new" class="btn">↻ New</button></div></div>
+<div id="status"></div><div class="board" id="board"></div><button id="roll">🎲 Roll Dice</button><div class="legend">اولین بازیکنی که دقیقاً به خانه 100 برسد برنده است.</div>
+</div>
+<script>
+const snakes={98:78,95:56,92:73,87:24,64:36,62:18,49:11,47:26,34:6};const ladders={2:23,8:29,20:41,32:53,38:59,51:72,63:81,70:90,77:97};
+let pos=[0,0],turn=0,mode="bot",rolling=false;
+function reset(){pos=[0,0];turn=0;rolling=false;render()}
+function render(){let b=document.getElementById("board");b.innerHTML="";for(let n=100;n>=1;n--){let d=document.createElement("div");d.className="cell";d.innerHTML='<span class="num">'+n+"</span>";if(pos[0]===n){let p=document.createElement("i");p.className="p p1";d.appendChild(p)}if(pos[1]===n){let p=document.createElement("i");p.className="p p2";d.appendChild(p)}b.appendChild(d)}document.getElementById("status").textContent=`Turn: ${turn===0?"You":mode==="bot"?"Bot":"Player 2"}${rolling?" • rolling...":""}`;document.getElementById("roll").disabled=rolling||(mode==="bot"&&turn===1)}
+function roll(){if(rolling||(mode==="bot"&&turn===1))return;rolling=true;render();let d=1+Math.floor(Math.random()*6);setTimeout(()=>play(d),450)}
+function play(d){let np=pos[turn]+d;if(np<=100)pos[turn]=np;if(ladders[pos[turn]])pos[turn]=ladders[pos[turn]];else if(snakes[pos[turn]])pos[turn]=snakes[pos[turn]];if(pos[turn]===100){alert((turn===0?"You":mode==="bot"?"Bot":"Player 2")+" wins! 🏆");reset();return}turn=1-turn;rolling=false;render();if(mode==="bot"&&turn===1)setTimeout(bot,500)}
+function bot(){if(turn===1)rollBot()}
+function rollBot(){rolling=true;render();let d=1+Math.floor(Math.random()*6);setTimeout(()=>play(d),450)}
+document.getElementById("roll").onclick=roll;document.getElementById("new").onclick=reset;
+document.getElementById("bot").onclick=()=>{mode="bot";bot.classList.add("active");human.classList.remove("active");reset()};
+document.getElementById("human").onclick=()=>{mode="human";human.classList.add("active");bot.classList.remove("active");reset()};
+reset();
+</script></body></html>

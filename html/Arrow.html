@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Archery</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+body{
+margin:0;
+min-height:100vh;
+background:linear-gradient(#101a2e,#05070d);
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center
+}
+#box{width:min(850px,96vw);text-align:center}
+h1{color:#ffd76a}
+canvas{
+width:100%;
+background:linear-gradient(#16243d,#0b121d);
+border:2px solid #725c2d;
+border-radius:14px;
+touch-action:none
+}
+button{
+padding:11px 22px;
+margin:5px;
+background:#2b2414;
+color:white;
+border:1px solid #8b7135;
+border-radius:8px;
+font-weight:bold
+}
+</style>
+</head>
+<body>
+
+<div id="box">
+<h1>🏹 ASTRA ARCHERY</h1>
+<div>
+🎯 <span id="score">0</span>
+&nbsp; | &nbsp;
+🏹 <span id="shots">10</span>
+&nbsp; | &nbsp;
+🔥 <span id="combo">0</span>
+</div>
+
+<canvas id="c" width="800" height="450"></canvas>
+
+<button onclick="restart()">🔄 Restart</button>
+<p>برای شلیک روی صفحه کلیک کن یا لمس کن</p>
+</div>
+
+<script>
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+const W=800,H=450;
+
+let score=0;
+let shots=10;
+let combo=0;
+let target={
+x:650,
+y:220,
+r:55,
+vx:2.5
+};
+
+let arrows=[];
+
+function restart(){
+score=0;
+shots=10;
+combo=0;
+arrows=[];
+target.x=650;
+target.y=220;
+updateUI();
+}
+
+c.addEventListener("pointerdown",e=>{
+if(shots<=0)return;
+
+const r=c.getBoundingClientRect();
+
+const tx=(e.clientX-r.left)*W/r.width;
+const ty=(e.clientY-r.top)*H/r.height;
+
+shoot(tx,ty);
+});
+
+function shoot(tx,ty){
+
+shots--;
+
+const startX=90;
+const startY=350;
+
+const angle=Math.atan2(
+  ty-startY,
+  tx-startX
+);
+
+arrows.push({
+  x:startX,
+  y:startY,
+  vx:Math.cos(angle)*11,
+  vy:Math.sin(angle)*11,
+  life:100
+});
+
+updateUI();
+}
+
+function update(){
+
+target.x+=target.vx;
+
+if(target.x>740||target.x<500)
+  target.vx*=-1;
+
+for(const a of arrows){
+
+  a.x+=a.vx;
+  a.y+=a.vy;
+  a.vy+=.12;
+  a.life--;
+
+  const d=Math.hypot(
+   a.x-target.x,
+   a.y-target.y
+  );
+
+  if(d<target.r){
+
+   let points=0;
+
+   if(d<18)points=100;
+   else if(d<35)points=50;
+   else points=25;
+
+   score+=points;
+   combo++;
+
+   target.y=100+Math.random()*260;
+
+   a.life=0;
+  }
+}
+
+arrows=arrows.filter(a=>
+  a.life>0 &&
+  a.x<W+30 &&
+  a.y<H+30 &&
+  a.y>-30
+);
+
+updateUI();
+}
+
+function draw(){
+
+ctx.clearRect(0,0,W,H);
+
+// sky
+ctx.fillStyle="#172840";
+ctx.fillRect(0,0,W,H);
+
+// ground
+ctx.fillStyle="#18251c";
+ctx.fillRect(0,370,W,80);
+
+// target stand
+ctx.strokeStyle="#8a7040";
+ctx.lineWidth=7;
+ctx.beginPath();
+ctx.moveTo(target.x, target.y+target.r);
+ctx.lineTo(target.x,target.y+150);
+ctx.stroke();
+
+// target
+ctx.fillStyle="#d9364f";
+ctx.beginPath();
+ctx.arc(target.x,target.y,target.r,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="#fff";
+ctx.beginPath();
+ctx.arc(target.x,target.y,38,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="#333";
+ctx.beginPath();
+ctx.arc(target.x,target.y,23,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="#ffd34d";
+ctx.beginPath();
+ctx.arc(target.x,target.y,10,0,Math.PI*2);
+ctx.fill();
+
+// bow
+ctx.strokeStyle="#c58b42";
+ctx.lineWidth=5;
+ctx.beginPath();
+ctx.arc(90,350,45,-1.1,1.1);
+ctx.stroke();
+
+// arrows
+for(const a of arrows){
+
+  const angle=Math.atan2(a.vy,a.vx);
+
+  ctx.save();
+  ctx.translate(a.x,a.y);
+  ctx.rotate(angle);
+
+  ctx.strokeStyle="#e6e6e6";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.moveTo(-25,0);
+  ctx.lineTo(15,0);
+  ctx.stroke();
+
+  ctx.fillStyle="#aaa";
+  ctx.beginPath();
+  ctx.moveTo(15,0);
+  ctx.lineTo(7,-5);
+  ctx.lineTo(7,5);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+if(shots<=0&&arrows.length===0){
+
+  ctx.fillStyle="#000a";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+  ctx.fillStyle="#ffd76a";
+  ctx.font="bold 42px Arial";
+  ctx.fillText("ROUND COMPLETE",W/2,210);
+
+  ctx.fillStyle="#fff";
+  ctx.font="20px Arial";
+  ctx.fillText(
+   `Score: ${score}`,
+   W/2,250
+  );
+}
+}
+
+function updateUI(){
+document.getElementById("score").textContent=score;
+document.getElementById("shots").textContent=shots;
+document.getElementById("combo").textContent=combo;
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+</script>
+
+</body>
+</html>

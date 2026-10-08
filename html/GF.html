@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Virtual Companion — Three.js</title>
+<style>
+  :root{
+    --bg:#0b0e16;
+    --panel:rgba(17,21,34,.82);
+    --panel2:rgba(255,255,255,.07);
+    --line:rgba(255,255,255,.12);
+    --text:#f6f7fb;
+    --muted:#a7afc1;
+    --accent:#8b7cff;
+    --accent2:#5de1c0;
+    --good:#66e3a3;
+    --bad:#ff7288;
+    --shadow:0 20px 70px rgba(0,0,0,.42);
+  }
+  *{box-sizing:border-box}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text)}
+  #app{position:relative;width:100%;height:100%}
+  #scene{position:absolute;inset:0}
+  canvas{display:block}
+  .topbar{
+    position:absolute;top:18px;left:18px;right:18px;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    pointer-events:none
+  }
+  .brand,.status{
+    pointer-events:auto;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    background:rgba(12,15,25,.58);
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+    border-radius:18px;
+  }
+  .brand{padding:12px 15px;display:flex;align-items:center;gap:11px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--accent2);box-shadow:0 0 18px rgba(93,225,192,.8)}
+  .brand b{font-size:14px;letter-spacing:.2px}
+  .brand span{font-size:11px;color:var(--muted)}
+  .status{padding:10px 13px;font-size:12px;color:var(--muted)}
+  .status strong{color:var(--text);font-weight:650}
+  .chat{
+    position:absolute;z-index:10;right:18px;top:82px;bottom:18px;width:min(390px,calc(100vw - 36px));
+    display:flex;flex-direction:column;
+    background:linear-gradient(180deg,rgba(15,19,31,.90),rgba(11,14,23,.92));
+    border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);
+    overflow:hidden;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  }
+  .chat-head{padding:17px 18px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .person{display:flex;align-items:center;gap:12px}
+  .avatar{
+    width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),#5c56d9);font-weight:800;
+    box-shadow:0 10px 28px rgba(139,124,255,.3)
+  }
+  .person b{display:block;font-size:14px}
+  .person small{display:block;color:var(--good);font-size:11px;margin-top:2px}
+  .actions{display:flex;gap:7px}
+  button{
+    border:0;color:var(--text);font:inherit;cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+  }
+  .icon-btn{width:34px;height:34px}
+  .messages{flex:1;padding:15px;overflow:auto;scroll-behavior:smooth}
+  .messages::-webkit-scrollbar{width:7px}
+  .messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:20px}
+  .bubble{max-width:86%;padding:10px 12px;margin:8px 0;border-radius:16px;line-height:1.42;font-size:13px;white-space:pre-wrap}
+  .bubble.you{margin-left:auto;background:linear-gradient(135deg,#675be7,#8278ff);border-bottom-right-radius:5px}
+  .bubble.her{margin-right:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:5px}
+  .meta{font-size:9px;color:var(--muted);margin-top:4px;padding:0 3px}
+  .chips{display:flex;gap:7px;overflow:auto;padding:9px 14px;border-top:1px solid var(--line)}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{padding:7px 10px;white-space:nowrap;font-size:11px;color:#dfe4ef;background:rgba(255,255,255,.05)}
+  .input-wrap{padding:12px;border-top:1px solid var(--line);display:flex;gap:8px}
+  .input{
+    flex:1;min-width:0;border:1px solid var(--line);outline:none;color:var(--text);
+    background:rgba(255,255,255,.045);border-radius:14px;padding:12px 13px;font:inherit;font-size:13px
+  }
+  .input::placeholder{color:#7f879a}
+  .send{
+    width:48px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#5d58dc);
+    box-shadow:0 10px 28px rgba(103,91,231,.28);font-size:18px
+  }
+  .emotion-pill{
+    position:absolute;z-index:7;left:50%;transform:translateX(-50%);
+    bottom:28px;padding:8px 12px;border-radius:999px;font-size:11px;
+    background:rgba(9,12,20,.58);border:1px solid var(--line);backdrop-filter:blur(15px);
+    box-shadow:var(--shadow);color:#e9ecf6
+  }
+  .hint{
+    position:absolute;z-index:6;left:18px;bottom:18px;padding:9px 12px;border-radius:14px;
+    background:rgba(9,12,20,.46);border:1px solid var(--line);font-size:11px;color:var(--muted);
+    max-width:calc(100vw - 430px)
+  }
+  .modal-backdrop{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:18px}
+  .modal{
+    width:min(520px,100%);background:#121727;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:20px
+  }
+  .modal h3{margin:0 0 6px;font-size:18px}
+  .modal p{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+  textarea{width:100%;min-height:220px;resize:vertical;background:#0d1120;color:#dfe4ef;border:1px solid var(--line);border-radius:14px;padding:12px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+  .primary{background:linear-gradient(135deg,var(--accent),#5d58dc);padding:10px 14px}
+  .secondary{padding:10px 14px}
+  @media (max-width:900px){
+    .chat{left:18px;right:18px;top:auto;bottom:18px;height:38vh;width:auto}
+    .hint{display:none}
+    .emotion-pill{bottom:calc(38vh + 30px)}
+    .topbar{right:18px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="scene"></div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <b>Mia • Virtual Companion</b>
+        <span>3D room · text interaction · local memory</span>
+      </div>
+    </div>
+    <div class="status">Mood: <strong id="moodText">Happy</strong></div>
+  </div>
+
+  <div class="hint">Type something about your day, work, school, success, jokes, food, music, friends, or feelings.</div>
+  <div class="emotion-pill" id="emotionPill">🙂 Happy</div>
+
+  <section class="chat">
+    <div class="chat-head">
+      <div class="person">
+        <div class="avatar">M</div>
+        <div>
+          <b>Mia</b>
+          <small>● here</small>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="icon-btn" id="memoryBtn" title="View local memory">🧠</button>
+        <button class="icon-btn" id="clearBtn" title="Clear conversation">↺</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="chips" id="chips">
+      <button class="chip">Good morning ☀️</button>
+      <button class="chip">I finished my project!</button>
+      <button class="chip">I'm tired today</button>
+      <button class="chip">Tell me something funny 😂</button>
+      <button class="chip">I have an exam</button>
+    </div>
+
+    <form class="input-wrap" id="form">
+      <input class="input" id="input" autocomplete="off" placeholder="Write a message..." />
+      <button class="send" title="Send">➤</button>
+    </form>
+  </section>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h3>Local Memory JSON</h3>
+      <p>Memory is stored only in this browser using localStorage. You can inspect, edit, export, or import the JSON below.</p>
+      <textarea id="memoryArea"></textarea>
+      <div class="modal-actions">
+        <button class="secondary" id="closeModal">Close</button>
+        <button class="secondary" id="resetMemory">Reset</button>
+        <button class="primary" id="saveMemory">Save JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+/* =========================================================
+   1) APP STATE + LOCAL JSON MEMORY
+   ========================================================= */
+const STORAGE_KEY = "virtual_companion_memory_v1";
+
+const defaultMemory = {
+  version: 1,
+  name: "Mia",
+  lastEmotion: "happy",
+  messageCount: 0,
+  topics: {},
+  memories: [],
+  chat: [
+    {role:"her", text:"Hey! I’m here. You can tell me about your day, school, work, projects, music, games, or anything funny.", mood:"happy", ts:Date.now()}
+  ]
+};
+
+function loadMemory(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return structuredClone(defaultMemory);
+    const parsed = JSON.parse(raw);
+    return {...structuredClone(defaultMemory), ...parsed, chat:Array.isArray(parsed.chat)?parsed.chat:[]};
+  }catch{
+    return structuredClone(defaultMemory);
+  }
+}
+let memory = loadMemory();
+
+function saveMemory(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(memory, null, 2));
+}
+
+/* =========================================================
+   2) THREE.JS SCENE
+   ========================================================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1120);
+scene.fog = new THREE.Fog(0x0d1120, 9, 24);
+
+const camera = new THREE.PerspectiveCamera(38, innerWidth/innerHeight, .1, 100);
+camera.position.set(0, 2.15, 8.2);
+camera.lookAt(0, 1.7, 0);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.getElementById("scene").appendChild(renderer.domElement);
+
+const clock = new THREE.Clock();
+
+scene.add(new THREE.HemisphereLight(0xc9d8ff, 0x211d2d, 1.45));
+
+const keyLight = new THREE.DirectionalLight(0xffe5cf, 2.1);
+keyLight.position.set(-4,7,5);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(1024,1024);
+keyLight.shadow.camera.left = -7;
+keyLight.shadow.camera.right = 7;
+keyLight.shadow.camera.top = 7;
+keyLight.shadow.camera.bottom = -3;
+scene.add(keyLight);
+
+const rim = new THREE.PointLight(0x7b71ff, 16, 12, 2);
+rim.position.set(3.5,3.5,-2);
+scene.add(rim);
+
+function mat(color, rough=.72, metal=0){
+  return new THREE.MeshStandardMaterial({color, roughness:rough, metalness:metal});
+}
+function box(w,h,d,x,y,z,material,rotY=0){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), material);
+  m.position.set(x,y,z); m.rotation.y=rotY; m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+function cyl(rt,rb,h,x,y,z,material){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,32), material);
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+
+/* Room */
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(22,22), mat(0x171c2a,.9));
+floor.rotation.x = -Math.PI/2; floor.position.y=-.02; floor.receiveShadow=true; scene.add(floor);
+
+const backWall = new THREE.Mesh(new THREE.PlaneGeometry(22,12), mat(0x22283a,1));
+backWall.position.set(0,5,-3.6); backWall.receiveShadow=true; scene.add(backWall);
+
+const rug = new THREE.Mesh(new THREE.PlaneGeometry(6.6,4.2), mat(0x322f4e,.95));
+rug.rotation.x=-Math.PI/2; rug.position.set(0,.01,.55); rug.receiveShadow=true; scene.add(rug);
+
+const wood = mat(0x5b3d32,.8);
+box(4.4,.12,1.15,2.7,1.15,-1.6,wood,-.05);
+box(4.4,.55,.12,2.7,.85,-2.1,wood,-.05);
+const cushion = mat(0x756b9d,.95);
+box(1.95,.22,.95,1.6,1.45,-1.88,cushion,-.05);
+box(1.95,.22,.95,3.8,1.45,-1.88,cushion,-.05);
+box(1.05,.55,.8,5.0,1.2,-1.68,mat(0x403a61,.9),-.05);
+
+const tableTop = box(1.9,.14,1.1,-3.25,1.35,-1.45,mat(0x47342f,.75),.08);
+cyl(.08,.08,1.05,-4.0,.77,-1.42,wood);
+cyl(.08,.08,1.05,-2.5,.77,-1.42,wood);
+
+const lampBase = cyl(.28,.34,.12,-3.3,1.82,-1.45,mat(0x272b3a,.35,.55));
+const lampStem = cyl(.045,.045,.72,-3.3,2.2,-1.45,mat(0x68687d,.35,.7));
+const lampShade = new THREE.Mesh(new THREE.ConeGeometry(.42,.55,32,true), mat(0xd6b46c,.55));
+lampShade.position.set(-3.3,2.55,-1.45); lampShade.rotation.x=Math.PI; lampShade.castShadow=true; scene.add(lampShade);
+const lamp = new THREE.PointLight(0xffd9a0, 8, 7, 2);
+lamp.position.set(-3.3,2.42,-1.45); scene.add(lamp);
+
+const windowFrame = mat(0x2b3144,.5,.3);
+box(2.4,2.5,.12,-.15,3.55,-3.51,windowFrame);
+box(2.05,2.15,.08,-.15,3.55,-3.43,mat(0x18263d,.35));
+box(.08,2.15,.1,-.15,3.55,-3.30,windowFrame);
+box(2.05,.08,.1,-.15,3.55,-3.30,windowFrame);
+const moon = new THREE.Mesh(new THREE.SphereGeometry(.3,32,32), new THREE.MeshStandardMaterial({color:0xe6e9ff,emissive:0x8fa4ff,emissiveIntensity:2}));
+moon.position.set(.28,4.15,-3.27); scene.add(moon);
+for(let i=0;i<12;i++){
+  const star = new THREE.Mesh(new THREE.SphereGeometry(.025,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
+  star.position.set(-1.0+(i*0.37)%1.8,3.25+(i*1.27)%1.9,-3.28);
+  scene.add(star);
+}
+
+function plant(x,z){
+  const pot = cyl(.28,.34,.42,x,.22,z,mat(0x8c5b49,.85));
+  for(let i=0;i<5;i++){
+    const stem = cyl(.025,.025,.7,x+(i-2)*.08,.75,z,mat(0x355d49,.9));
+    stem.rotation.z=(i-2)*.08;
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(.16,12,12),mat(0x477b5f,.8));
+    leaf.scale.set(1.3,.45,.7);
+    leaf.position.set(x+(i-2)*.17,.98,z+(i%2)*.03);
+    leaf.rotation.z=(i-2)*.25;
+    scene.add(leaf);
+  }
+}
+plant(-5.0,-1.9);
+plant(5.4,-2.0);
+
+/* wall art */
+box(1.8,1.15,.08,-5.15,3.65,-3.45,mat(0x3f4560,.5,.15),-.08);
+box(1.36,.72,.03,-5.15,3.65,-3.39,mat(0x6a6a98,.6),-.08);
+box(1.3,.82,.08,4.9,3.65,-3.45,mat(0x3f4560,.5,.15),.1);
+box(.95,.5,.03,4.9,3.65,-3.39,mat(0x8a775f,.6),.1);
+
+/* =========================================================
+   3) PROCEDURAL 3D CHARACTER
+   ========================================================= */
+const character = new THREE.Group();
+character.position.set(0,.05,.3);
+scene.add(character);
+
+const skin = mat(0xf0c7b1,.62);
+const hair = mat(0x2b2031,.72);
+const shirt = mat(0x7568c9,.8);
+const shirt2 = mat(0x5d56a9,.82);
+const dark = mat(0x242637,.75);
+const white = mat(0xffffff,.34);
+const irisMat = new THREE.MeshStandardMaterial({color:0x4d6f8f,roughness:.28,metalness:.05});
+const mouthMat = mat(0x8e3f56,.46);
+
+const body = new THREE.Mesh(new THREE.CapsuleGeometry(.66,1.15,8,24), shirt);
+body.position.y=1.25; body.scale.z=.72; body.castShadow=true; character.add(body);
+
+const neck = cyl(.22,.24,.25,0,2.02,0,skin); neck.parent=character; neck.position.set(0,2.02,0);
+
+const head = new THREE.Mesh(new THREE.SphereGeometry(.78,40,32), skin);
+head.scale.set(1,.98,.86); head.position.set(0,2.68,.02); head.castShadow=true; character.add(head);
+
+const hairCap = new THREE.Mesh(new THREE.SphereGeometry(.81,40,24,0,Math.PI*2,0,Math.PI*.62), hair);
+hairCap.scale.set(1.01,1.12,.98); hairCap.position.set(0,2.91,.01); hairCap.castShadow=true; character.add(hairCap);
+
+const fringe = new THREE.Mesh(new THREE.CapsuleGeometry(.22,.62,8,16),hair);
+fringe.rotation.z=-.25; fringe.rotation.x=.15; fringe.position.set(-.3,3.04,.57); fringe.castShadow=true; character.add(fringe);
+
+function eye(side){
+  const group = new THREE.Group();
+  group.position.set(side*.30,2.73,.72);
+  const sclera = new THREE.Mesh(new THREE.SphereGeometry(.17,24,16),white);
+  sclera.scale.z=.48; group.add(sclera);
+  const iris = new THREE.Mesh(new THREE.SphereGeometry(.085,20,14),irisMat);
+  iris.position.z=.075; iris.scale.z=.45; group.add(iris);
+  const pupil = new THREE.Mesh(new THREE.SphereGeometry(.04,16,12),dark);
+  pupil.position.z=.125; pupil.scale.z=.4; group.add(pupil);
+  const lid = new THREE.Mesh(new THREE.SphereGeometry(.176,24,16),skin);
+  lid.scale.set(1.02,.32,.5); lid.position.z=.05; lid.position.y=.12; lid.visible=false; group.add(lid);
+  character.add(group);
+  return {group,iris,pupil,lid};
+}
+const leftEye=eye(-1), rightEye=eye(1);
+
+function brow(side){
+  const b=box(.31,.055,.055,side*.30,2.96,.70,dark,-side*.18); b.parent=character;
+  b.position.set(side*.30,2.96,.70); return b;
+}
+const leftBrow=brow(-1), rightBrow=brow(1);
+
+const nose = new THREE.Mesh(new THREE.SphereGeometry(.10,18,12),skin);
+nose.scale.set(.65,.75,1); nose.position.set(0,2.56,.72); character.add(nose);
+
+const mouth = new THREE.Mesh(new THREE.SphereGeometry(.15,20,14),mouthMat);
+mouth.scale.set(1.55,.34,.42); mouth.position.set(0,2.38,.71); character.add(mouth);
+
+function limb(radius,length,material,x,y,z){
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,8,16),material);
+  m.position.set(x,y,z); m.castShadow=true; character.add(m); return m;
+}
+const leftArm=limb(.16,.82,shirt2,-.77,1.28,.02);
+const rightArm=limb(.16,.82,shirt2,.77,1.28,.02);
+leftArm.rotation.z=-.12; rightArm.rotation.z=.12;
+const leftHand=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),skin); leftHand.position.set(-.84,.78,.03); leftHand.scale.y=.82; leftHand.castShadow=true; character.add(leftHand);
+const rightHand=new THREE.Mesh(new THREE.SphereGeometry(.18,20,16),skin); rightHand.position.set(.84,.78,.03); rightHand.scale.y=.82; rightHand.castShadow=true; character.add(rightHand);
+
+const leftLeg=limb(.19,.82,dark,-.31,.34,.02);
+const rightLeg=limb(.19,.82,dark,.31,.34,.02);
+const leftShoe=box(.40,.18,.68,dark?-.31:-.31,.0,.12,mat(0x202231,.65),0);
+const rightShoe=box(.40,.18,.68,.31,0,.12,mat(0x202231,.65),0);
+leftShoe.parent=character; rightShoe.parent=character;
+leftLeg.parent=character; rightLeg.parent=character; leftArm.parent=character; rightArm.parent=character; leftHand.parent=character; rightHand.parent=character;
+
+/* ground shadow */
+const shadow = new THREE.Mesh(
+  new THREE.CircleGeometry(1.1,48),
+  new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.27})
+);
+shadow.rotation.x=-Math.PI/2; shadow.position.set(0,.025,.3); scene.add(shadow);
+
+let blinkTimer=2.5;
+let blinkProgress=0;
+let isBlinking=false;
+let eyeTargetX=0;
+let eyeTargetY=0;
+let currentEyeX=0;
+let currentEyeY=0;
+
+function setBlink(v){
+  leftEye.lid.visible=v; rightEye.lid.visible=v;
+}
+function triggerBlink(){
+  if(isBlinking) return;
+  isBlinking=true; blinkProgress=0;
+}
+function updateBlink(dt){
+  if(!isBlinking){
+    blinkTimer-=dt;
+    if(blinkTimer<=0){
+      triggerBlink();
+      blinkTimer=2.2+Math.random()*4.5;
+    }
+    return;
+  }
+  blinkProgress += dt*9;
+  if(blinkProgress<1) setBlink(true);
+  else { setBlink(false); isBlinking=false; }
+}
+setInterval(()=>{ eyeTargetX=(Math.random()*2-1)*.14; eyeTargetY=(Math.random()*2-1)*.08; }, 1800);
+
+/* =========================================================
+   4) EMOTIONS + REACTION ENGINE
+   ========================================================= */
+const EMOTIONS = {
+  neutral:{label:"Neutral",emoji:"😐",mouth:0.00,brow:0.00,head:0.00,color:"#dfe4ef"},
+  happy:{label:"Happy",emoji:"🙂",mouth:.95,brow:.12,head:-.02,color:"#66e3a3"},
+  excited:{label:"Excited",emoji:"🤩",mouth:1.20,brow:.27,head:0.04,color:"#ffe08a"},
+  love:{label:"Warm",emoji:"🥰",mouth:.80,brow:.18,head:-.06,color:"#ff94b5"},
+  sad:{label:"Sad",emoji:"😔",mouth:-.80,brow:-.22,head:-.10,color:"#86a8ff"},
+  angry:{label:"Angry",emoji:"😠",mouth:-.45,brow:-.60,head:.05,color:"#ff7288"},
+  surprised:{label:"Surprised",emoji:"😳",mouth:.55,brow:.65,head:.03,color:"#c9a7ff"},
+  sleepy:{label:"Sleepy",emoji:"😴",mouth:-.08,brow:-.08,head:-.12,color:"#9fa6d3"},
+  thinking:{label:"Thinking",emoji:"🤔",mouth:.05,brow:.15,head:.06,color:"#b6d8ff"},
+  amused:{label:"Amused",emoji:"😂",mouth:1.10,brow:.15,head:-.04,color:"#ffd166"}
+};
+let emotionNow = "happy";
+let emotionUntil = 0;
+let emotionBlend = 1;
+
+function setEmotion(name, duration=3000){
+  if(!EMOTIONS[name]) name="neutral";
+  emotionNow=name;
+  emotionUntil=performance.now()+duration;
+  emotionBlend=0;
+  memory.lastEmotion=name;
+  saveMemory();
+  document.getElementById("moodText").textContent=EMOTIONS[name].label;
+  document.getElementById("emotionPill").textContent=`${EMOTIONS[name].emoji} ${EMOTIONS[name].label}`;
+  document.getElementById("emotionPill").style.boxShadow=`0 10px 35px ${EMOTIONS[name].color}33`;
+}
+function weightedScore(text, dict){
+  let score=0;
+  for(const [word,val] of Object.entries(dict)){
+    const re=new RegExp("\\b"+word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+    if(re.test(text)) score += val;
+  }
+  return score;
+}
+
+/* Large-ish vocabulary across life topics. */
+const WORDS = {
+  excited:{
+    success:4, won:5, winner:5, achievement:4, achieved:4, milestone:4, promotion:4,
+    accomplished:4, finished:2, passed:4, pass:3, launched:4, launch:3, breakthrough:5,
+    amazing:3, awesome:3, fantastic:3, incredible:3, brilliant:3, excellent:3
+  },
+  happy:{
+    good:2, great:2, nice:2, enjoy:2, enjoyed:2, fun:2, smile:2, smiling:2, happy:3,
+    joy:3, joyful:3, love:2, lovely:2, cute:2, beautiful:2, wonderful:3, thanks:2,
+    thank:2, grateful:3, gratitude:3, lucky:2, proud:3, chill:2
+  },
+  love:{
+    adore:4, adorable:3, sweet:2, sweetheart:2, favorite:2, favourite:2, lovely:2,
+    heart:2, warm:2, kindness:2, kind:2
+  },
+  sad:{
+    sad:4, sadness:4, lonely:4, alone:2, cry:4, crying:4, tears:4, depressed:5,
+    upset:4, hurt:4, disappointed:4, disappointment:4, miss:3, missing:3, failed:4,
+    failure:4, lost:3, terrible:3, awful:3, horrible:3, bad:2
+  },
+  angry:{
+    angry:5, anger:5, hate:5, hated:5, annoying:4, annoyed:4, stupid:3, idiot:3,
+    mad:4, furious:5, rage:5, pissed:5, unfair:3, frustrating:4, frustrated:4
+  },
+  surprised:{
+    wow:3, really:2, seriously:2, unbelievable:4, no_way:4, impossible:3, suddenly:2,
+    unexpected:3, surprise:4, shocked:4
+  },
+  sleepy:{
+    tired:4, sleepy:5, sleep:3, exhausted:5, fatigue:4, bedtime:3, yawn:4, boring:2, bored:2
+  },
+  thinking:{
+    think:2, thinking:2, idea:2, question:2, why:2, how:2, maybe:1, plan:2, planning:2,
+    problem:2, puzzle:2, decision:2, decide:2
+  },
+  amused:{
+    lol:5, haha:5, hahaha:5, joke:4, funny:4, hilarious:5, meme:4, comedy:4, bruh:3,
+    lmao:5, rofl:5, ridiculous:3
+  }
+};
+
+const TOPICS = {
+  school:["school","exam","test","homework","teacher","class","lesson","study","studying","grade","math","science","history","english","biology","physics"],
+  work:["work","job","office","meeting","deadline","client","career","business","project","coding","code","programming","developer","design","task"],
+  success:["success","won","win","winner","achievement","goal","passed","finished","completed","launched","milestone","promotion"],
+  routine:["morning","breakfast","lunch","dinner","sleep","wake","woke","shower","walk","exercise","gym","night","today","tomorrow","yesterday"],
+  food:["food","pizza","burger","rice","pasta","coffee","tea","breakfast","lunch","dinner","cook","cooking"],
+  music:["music","guitar","piano","song","sing","concert","playlist","band"],
+  games:["game","gaming","play","played","minecraft","chess","uno","football","soccer"],
+  friends:["friend","friends","family","brother","sister","birthday","party","visit"],
+  tech:["computer","phone","laptop","internet","app","website","javascript","python","ai","robot","technology"],
+  travel:["travel","trip","flight","airport","hotel","city","country","vacation","holiday"],
+  nature:["weather","rain","sun","sunny","snow","beach","mountain","forest","flower"]
+};
+
+const RESPONSES = {
+  greeting:[
+    "Hey! 👋 I’m listening.",
+    "Hello! 😊 Nice to see you.",
+    "Hi there! What’s happening today?"
+  ],
+  success:[
+    "That deserves a proud little moment. ✨",
+    "Nice! That sounds like a real win.",
+    "Okay, that is definitely worth celebrating. 😄"
+  ],
+  school:[
+    "School mode activated. 📚",
+    "Sounds like a study kind of day.",
+    "One step at a time — you’ve got this."
+  ],
+  work:[
+    "Projects everywhere. 💻 Keep the momentum.",
+    "Sounds productive. What are you working on?",
+    "Work mode detected. ⚡"
+  ],
+  routine:[
+    "Daily routine detected. ☀️",
+    "A little routine can make a big difference.",
+    "That sounds like a normal day with a story hiding inside it."
+  ],
+  tech:[
+    "Tech talk? I’m interested. 🤖",
+    "That sounds like a fun build.",
+    "Code, ideas, and a little chaos — classic. 😄"
+  ],
+  funny:[
+    "😂 Okay, that one got me.",
+    "I’m officially amused.",
+    "That has strong meme energy."
+  ],
+  food:[
+    "Now I’m thinking about food. 😄",
+    "Important question: was it actually good?",
+    "Food topic accepted. 🍕"
+  ],
+  music:[
+    "Music makes almost any routine better. 🎵",
+    "That sounds like a good soundtrack for the day.",
+    "What kind of vibe: calm, energetic, or dramatic? 🎸"
+  ],
+  neutral:[
+    "Hmm… I’m processing that.",
+    "Interesting. Tell me a little more.",
+    "I’m here. Keep going.",
+    "That sounds like something worth talking about."
+  ]
+};
+
+function normalize(text){
+  return text.toLowerCase()
+    .replace(/[’']/g,"'")
+    .replace(/[^a-z0-9_\s]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function detectTopics(text){
+  const t=normalize(text), out=[];
+  for(const [topic, list] of Object.entries(TOPICS)){
+    let hits=0;
+    for(const w of list) if(new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i").test(t)) hits++;
+    if(hits) out.push([topic,hits]);
+  }
+  out.sort((a,b)=>b[1]-a[1]);
+  return out.map(x=>x[0]);
+}
+function chooseEmotion(text){
+  const t=normalize(text);
+  let scores={};
+  for(const [emo,dict] of Object.entries(WORDS)) scores[emo]=weightedScore(t,dict);
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  if(sorted[0][1]<=0){
+    if(/[?]/.test(text)) return "thinking";
+    return "neutral";
+  }
+  return sorted[0][0];
+}
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generateResponse(text, emo, topics){
+  const t=normalize(text);
+  if(/\b(hello|hi|hey|good morning|good evening|good night)\b/i.test(t)) return pick(RESPONSES.greeting);
+  if(emo==="amused") return pick(RESPONSES.funny);
+  if(emo==="excited" || topics.includes("success")) return pick(RESPONSES.success);
+  if(topics.includes("school")) return pick(RESPONSES.school);
+  if(topics.includes("work")) return pick(RESPONSES.work);
+  if(topics.includes("tech")) return pick(RESPONSES.tech);
+  if(topics.includes("routine")) return pick(RESPONSES.routine);
+  if(topics.includes("food")) return pick(RESPONSES.food);
+  if(topics.includes("music")) return pick(RESPONSES.music);
+  if(emo==="sad") return "I’m staying right here with you. Take it easy. 🌙";
+  if(emo==="angry") return "Okay… that definitely sounds frustrating. 😶";
+  if(emo==="sleepy") return "Sounds like your energy bar needs a refill. 😴";
+  if(emo==="surprised") return "Whoa. That sounds unexpected. 👀";
+  if(emo==="love") return "That’s a warm message. 💛";
+  return pick(RESPONSES.neutral);
+}
+
+function rememberTopics(topics){
+  const now=Date.now();
+  for(const topic of topics){
+    memory.topics[topic]=(memory.topics[topic]||0)+1;
+  }
+  if(topics.length){
+    memory.memories.push({topics,ts:now});
+    if(memory.memories.length>50) memory.memories.shift();
+  }
+}
+
+/* =========================================================
+   5) CHAT UI
+   ========================================================= */
+const messagesEl=document.getElementById("messages");
+const input=document.getElementById("input");
+
+function addBubble(role,text,ts=Date.now()){
+  const wrap=document.createElement("div");
+  const bubble=document.createElement("div");
+  bubble.className=`bubble ${role==="you"?"you":"her"}`;
+  bubble.textContent=text;
+  const meta=document.createElement("div");
+  meta.className="meta";
+  meta.textContent=new Date(ts).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  wrap.appendChild(bubble); wrap.appendChild(meta);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function renderChat(){
+  messagesEl.innerHTML="";
+  for(const m of memory.chat) addBubble(m.role,m.text,m.ts);
+}
+function processMessage(text){
+  if(!text.trim()) return;
+  const ts=Date.now();
+  const topics=detectTopics(text);
+  const emo=chooseEmotion(text);
+  memory.messageCount=(memory.messageCount||0)+1;
+  memory.chat.push({role:"you",text:text.trim(),mood:emo,topics,ts});
+  rememberTopics(topics);
+  setEmotion(emo, emo==="neutral"?3500:5200);
+  const response=generateResponse(text,emo,topics);
+  memory.chat.push({role:"her",text:response,mood:emo,ts:ts+1});
+  if(memory.chat.length>80) memory.chat=memory.chat.slice(-80);
+  saveMemory();
+  addBubble("you",text.trim(),ts);
+  setTimeout(()=>addBubble("her",response,ts+1),120);
+  input.value="";
+}
+
+document.getElementById("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  processMessage(input.value);
+});
+document.getElementById("chips").addEventListener("click",e=>{
+  if(e.target.classList.contains("chip")){
+    input.value=e.target.textContent.replace(/\s*☀️|\s*😂/g,"").trim();
+    input.focus();
+  }
+});
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  memory.chat=[];
+  memory.messageCount=0;
+  saveMemory();
+  renderChat();
+  addBubble("her","Fresh start. I’m here. 🙂");
+});
+renderChat();
+
+/* =========================================================
+   6) MEMORY MODAL
+   ========================================================= */
+const modal=document.getElementById("modalBackdrop");
+const area=document.getElementById("memoryArea");
+document.getElementById("memoryBtn").addEventListener("click",()=>{
+  area.value=JSON.stringify(memory,null,2);
+  modal.style.display="flex";
+});
+document.getElementById("closeModal").addEventListener("click",()=>modal.style.display="none");
+document.getElementById("resetMemory").addEventListener("click",()=>{
+  memory=structuredClone(defaultMemory);
+  saveMemory();
+  renderChat();
+  area.value=JSON.stringify(memory,null,2);
+  setEmotion("happy",3000);
+});
+document.getElementById("saveMemory").addEventListener("click",()=>{
+  try{
+    const parsed=JSON.parse(area.value);
+    if(!parsed || typeof parsed!=="object") throw new Error();
+    memory=parsed;
+    if(!Array.isArray(memory.chat)) memory.chat=[];
+    if(!memory.topics) memory.topics={};
+    saveMemory();
+    renderChat();
+    modal.style.display="none";
+  }catch{
+    alert("Invalid JSON.");
+  }
+});
+modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none"});
+
+/* =========================================================
+   7) CHARACTER ANIMATION
+   ========================================================= */
+let idleTime=0;
+let facialTarget={mouth:0,brow:0,head:0};
+let lastEmotion="neutral";
+
+function updateFace(dt){
+  const e=EMOTIONS[emotionNow] || EMOTIONS.neutral;
+  facialTarget=e;
+  const speed=7*dt;
+  emotionBlend=Math.min(1,emotionBlend+speed);
+
+  mouth.scale.y += ((.34 + e.mouth*.11)-mouth.scale.y)*speed;
+  mouth.scale.x += ((1.55 + e.mouth*.42)-mouth.scale.x)*speed;
+
+  const browY=2.96 + e.brow*.10;
+  const browRot=-.18 - e.brow*.40;
+  leftBrow.position.y += (browY-leftBrow.position.y)*speed;
+  rightBrow.position.y += (browY-rightBrow.position.y)*speed;
+  leftBrow.rotation.z += (-browRot-leftBrow.rotation.z)*speed;
+  rightBrow.rotation.z += (browRot-rightBrow.rotation.z)*speed;
+
+  head.rotation.z += (e.head-head.rotation.z)*speed;
+
+  /* eyes follow a slowly moving invisible focus point */
+  currentEyeX += (eyeTargetX-currentEyeX)*Math.min(1,dt*3.5);
+  currentEyeY += (eyeTargetY-currentEyeY)*Math.min(1,dt*3.5);
+  for(const eyeObj of [leftEye,rightEye]){
+    eyeObj.iris.position.x += (currentEyeX-eyeObj.iris.position.x)*Math.min(1,dt*8);
+    eyeObj.pupil.position.x += (currentEyeX-eyeObj.pupil.position.x)*Math.min(1,dt*8);
+    eyeObj.iris.position.y += (currentEyeY-eyeObj.iris.position.y)*Math.min(1,dt*8);
+    eyeObj.pupil.position.y += (currentEyeY-eyeObj.pupil.position.y)*Math.min(1,dt*8);
+  }
+
+  if(Date.now()>emotionUntil && emotionNow!=="happy"){
+    setEmotion("happy",3500);
+  }
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.04);
+  idleTime+=dt;
+
+  updateBlink(dt);
+  updateFace(dt);
+
+  const bob=Math.sin(idleTime*1.55)*.025;
+  character.position.y=.05+bob;
+  shadow.scale.setScalar(1+Math.sin(idleTime*1.55)*.035);
+
+  leftArm.rotation.z=-.12 + Math.sin(idleTime*1.7)*.025;
+  rightArm.rotation.z=.12 - Math.sin(idleTime*1.7)*.025;
+
+  /* occasional tiny look toward chat side */
+  character.rotation.y += ((emotionNow==="thinking"?-.06:0)-character.rotation.y)*dt*1.5;
+
+  renderer.render(scene,camera);
+}
+animate();
+
+/* =========================================================
+   8) INTERACTION: CLICK CHARACTER => SURPRISE/AMUSED
+   ========================================================= */
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+renderer.domElement.addEventListener("pointerdown",e=>{
+  const r=renderer.domElement.getBoundingClientRect();
+  pointer.x=((e.clientX-r.left)/r.width)*2-1;
+  pointer.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects(character.children,true);
+  if(hits.length){
+    setEmotion(Math.random()<.5?"surprised":"amused",3000);
+    eyeTargetX=(pointer.x)*.2;
+    eyeTargetY=(pointer.y)*.12;
+  }
+});
+
+/* =========================================================
+   9) RESIZE
+   ========================================================= */
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+/* gentle initial state */
+setEmotion(memory.lastEmotion && EMOTIONS[memory.lastEmotion]?memory.lastEmotion:"happy",4500);
+</script>
+</body>
+</html>

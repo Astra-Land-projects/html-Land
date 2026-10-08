@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Pirate Adventure</title>
+
+<style>
+*{box-sizing:border-box;user-select:none}
+
+body{
+margin:0;
+min-height:100vh;
+background:#071c2b;
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center;
+}
+
+#game{
+width:min(900px,95vw);
+text-align:center;
+}
+
+h1{
+color:#ffd45c;
+}
+
+canvas{
+width:100%;
+background:#087da3;
+border:2px solid #3ec5df;
+border-radius:15px;
+}
+
+button{
+padding:11px 18px;
+margin:5px;
+background:#272016;
+color:white;
+border:1px solid #a9833e;
+border-radius:8px;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🏴‍☠️ ASTRA PIRATE ADVENTURE</h1>
+
+<div>
+❤️ <span id="hp">100</span>
+&nbsp; | &nbsp;
+💰 <span id="gold">0</span>
+&nbsp; | &nbsp;
+💣 <span id="ammo">20</span>
+&nbsp; | &nbsp;
+☠️ <span id="kills">0</span>
+</div>
+
+<canvas id="c" width="850" height="450"></canvas>
+
+<button onclick="restart()">🔄 Restart</button>
+
+<p>
+WASD / Arrow Keys = Move Ship
+&nbsp; | &nbsp;
+SPACE = Fire Cannon
+</p>
+
+</div>
+
+<script>
+
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+
+const W=850,H=450;
+
+let keys={};
+
+let enemies=[];
+let bullets=[];
+let treasures=[];
+
+let hp=100;
+let gold=0;
+let ammo=20;
+let kills=0;
+
+let spawnTimer=0;
+let game=true;
+
+const ship={
+x:150,
+y:225,
+w:70,
+h:40,
+speed:4
+};
+
+onkeydown=e=>{
+
+keys[e.key.toLowerCase()]=true;
+
+if(e.code==="Space")
+  fire();
+};
+
+onkeyup=e=>{
+keys[e.key.toLowerCase()]=false;
+};
+
+function restart(){
+
+hp=100;
+gold=0;
+ammo=20;
+kills=0;
+
+enemies=[];
+bullets=[];
+treasures=[];
+
+spawnTimer=0;
+game=true;
+
+ship.x=150;
+ship.y=225;
+}
+
+function fire(){
+
+if(!game||ammo<=0)
+  return;
+
+ammo--;
+
+bullets.push({
+
+  x:ship.x+35,
+  y:ship.y,
+
+  vx:8
+});
+}
+
+function spawnEnemy(){
+
+enemies.push({
+
+  x:W+80,
+  y:50+Math.random()*350,
+
+  w:70,
+  h:40,
+
+  hp:60,
+
+  speed:1.3+Math.random()
+});
+}
+
+function spawnTreasure(){
+
+treasures.push({
+
+  x:W+30,
+  y:50+Math.random()*350
+});
+}
+
+function collision(a,b){
+
+return Math.abs(a.x-b.x)<
+  (a.w+b.w)/2 &&
+  Math.abs(a.y-b.y)<
+  (a.h+b.h)/2;
+}
+
+function update(){
+
+if(!game)return;
+
+let dx=0,dy=0;
+
+if(keys.w||keys.arrowup)dy--;
+if(keys.s||keys.arrowdown)dy++;
+if(keys.a||keys.arrowleft)dx--;
+if(keys.d||keys.arrowright)dx++;
+
+const l=Math.hypot(dx,dy)||1;
+
+ship.x+=dx/l*ship.speed;
+ship.y+=dy/l*ship.speed;
+
+ship.x=Math.max(45,Math.min(W-45,ship.x));
+ship.y=Math.max(30,Math.min(H-30,ship.y));
+
+// bullets
+
+bullets.forEach(b=>{
+  b.x+=b.vx;
+});
+
+bullets=
+  bullets.filter(b=>b.x<W+30);
+
+// enemy spawning
+
+spawnTimer++;
+
+if(spawnTimer>100){
+
+  spawnTimer=0;
+
+  spawnEnemy();
+
+  if(Math.random()<.35)
+   spawnTreasure();
+}
+
+enemies.forEach(e=>{
+  e.x-=e.speed;
+});
+
+treasures.forEach(t=>{
+  t.x-=2;
+});
+
+// enemy collisions
+
+for(let i=enemies.length-1;i>=0;i--){
+
+  const e=enemies[i];
+
+  if(
+   Math.abs(e.x-ship.x)<60 &&
+   Math.abs(e.y-ship.y)<45
+  ){
+
+   hp-=.4;
+  }
+
+  for(let j=bullets.length-1;j>=0;j--){
+
+   const b=bullets[j];
+
+   if(
+    Math.abs(b.x-e.x)<45 &&
+    Math.abs(b.y-e.y)<30
+   ){
+
+    e.hp-=35;
+
+    bullets.splice(j,1);
+
+    if(e.hp<=0){
+
+     kills++;
+     gold+=20;
+
+     enemies.splice(i,1);
+
+     break;
+    }
+   }
+  }
+}
+
+// treasure
+
+for(let i=treasures.length-1;i>=0;i--){
+
+  const t=treasures[i];
+
+  if(
+   Math.abs(t.x-ship.x)<45 &&
+   Math.abs(t.y-ship.y)<40
+  ){
+
+   gold+=50;
+   treasures.splice(i,1);
+  }
+}
+
+enemies=
+  enemies.filter(e=>e.x>-100);
+
+treasures=
+  treasures.filter(t=>t.x>-50);
+
+if(hp<=0)
+  game=false;
+
+updateUI();
+}
+
+function updateUI(){
+
+document.getElementById("hp").textContent=hp|0;
+document.getElementById("gold").textContent=gold;
+document.getElementById("ammo").textContent=ammo;
+document.getElementById("kills").textContent=kills;
+}
+
+function draw(){
+
+// ocean
+
+ctx.fillStyle="#087da3";
+ctx.fillRect(0,0,W,H);
+
+// waves
+
+ctx.strokeStyle="rgba(255,255,255,.12)";
+ctx.lineWidth=2;
+
+for(let y=20;y<H;y+=35){
+
+  ctx.beginPath();
+
+  for(let x=0;x<W;x+=30){
+
+   ctx.lineTo(
+    x,
+    y+Math.sin(x/30)*4
+   );
+  }
+
+  ctx.stroke();
+}
+
+// treasure
+
+treasures.forEach(t=>{
+
+  ctx.fillStyle="#ffd43b";
+
+  ctx.fillRect(
+   t.x-12,
+   t.y-10,
+   24,
+   20
+  );
+
+  ctx.fillStyle="#7b4c19";
+
+  ctx.fillRect(
+   t.x-12,
+   t.y-2,
+   24,
+   4
+  );
+});
+
+// enemies
+
+enemies.forEach(e=>{
+
+  ctx.save();
+
+  ctx.translate(e.x,e.y);
+
+  ctx.fillStyle="#6c3023";
+
+  ctx.beginPath();
+
+  ctx.moveTo(-35,-18);
+  ctx.lineTo(35,-18);
+  ctx.lineTo(25,18);
+  ctx.lineTo(-25,18);
+
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle="#111";
+
+  ctx.fillRect(
+   -5,-55,
+   5,38
+  );
+
+  ctx.fillStyle="#222";
+
+  ctx.beginPath();
+
+  ctx.moveTo(0,-52);
+  ctx.lineTo(30,-25);
+  ctx.lineTo(0,-25);
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  // HP
+
+  ctx.fillStyle="#222";
+  ctx.fillRect(-30,-30,60,5);
+
+  ctx.fillStyle="#5cff68";
+
+  ctx.fillRect(
+   -30,
+   -30,
+   60*(e.hp/60),
+   5
+  );
+
+  ctx.restore();
+});
+
+// player ship
+
+ctx.save();
+
+ctx.translate(
+  ship.x,
+  ship.y
+);
+
+ctx.fillStyle="#633d25";
+
+ctx.beginPath();
+
+ctx.moveTo(-35,-18);
+ctx.lineTo(35,-18);
+ctx.lineTo(25,20);
+ctx.lineTo(-25,20);
+ctx.closePath();
+
+ctx.fill();
+
+// sail
+
+ctx.fillStyle="#eee";
+
+ctx.beginPath();
+
+ctx.moveTo(0,-60);
+ctx.lineTo(28,-15);
+ctx.lineTo(0,-15);
+ctx.closePath();
+
+ctx.fill();
+
+ctx.strokeStyle="#111";
+ctx.lineWidth=5;
+
+ctx.beginPath();
+
+ctx.moveTo(0,-60);
+ctx.lineTo(0,20);
+
+ctx.stroke();
+
+ctx.restore();
+
+// bullets
+
+bullets.forEach(b=>{
+
+  ctx.fillStyle="#ffd76a";
+
+  ctx.beginPath();
+
+  ctx.arc(
+   b.x,
+   b.y,
+   6,
+   0,
+   Math.PI*2
+  );
+
+  ctx.fill();
+});
+
+if(!game){
+
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+
+  ctx.fillStyle="#ff5b65";
+  ctx.font="bold 46px Arial";
+
+  ctx.fillText(
+   "SHIP DESTROYED",
+   W/2,210
+  );
+
+  ctx.fillStyle="#fff";
+  ctx.font="20px Arial";
+
+  ctx.fillText(
+   `Gold: ${gold} • Ships defeated: ${kills}`,
+   W/2,250
+  );
+}
+}
+
+function loop(){
+
+update();
+draw();
+
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+
+</script>
+
+</body>
+</html>

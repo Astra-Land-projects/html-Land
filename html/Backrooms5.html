@@ -1,0 +1,2147 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NOCLIP — Classic</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    user-select:none;
+}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
+
+canvas{
+    display:block;
+    width:100vw;
+    height:100vh;
+    touch-action:none;
+}
+
+/* INTRO / END */
+
+.screen{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#eee;
+    background:#050505;
+}
+
+.panel{
+    width:min(700px,90vw);
+    padding:30px;
+}
+
+.title{
+    font-size:clamp(42px,9vw,85px);
+    letter-spacing:12px;
+    margin:0 0 15px;
+}
+
+.subtitle{
+    color:#aaa;
+    letter-spacing:3px;
+}
+
+button{
+    margin-top:25px;
+    padding:14px 30px;
+    border:1px solid #aaa;
+    background:#eee;
+    color:#000;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* HUD */
+
+#hud{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    pointer-events:none;
+    color:white;
+    text-shadow:0 2px 7px #000;
+}
+
+#level{
+    position:absolute;
+    top:18px;
+    left:18px;
+    letter-spacing:3px;
+    font-weight:bold;
+}
+
+#objective{
+    position:absolute;
+    top:44px;
+    left:18px;
+    font-size:12px;
+    color:#ddd;
+}
+
+#crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:6px;
+    height:6px;
+    border:1px solid white;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    opacity:.65;
+}
+
+#message{
+    position:absolute;
+    top:16%;
+    width:100%;
+    text-align:center;
+    font-weight:bold;
+    letter-spacing:5px;
+    opacity:0;
+    transition:opacity .2s;
+}
+
+#stats{
+    position:absolute;
+    left:18px;
+    bottom:18px;
+    width:180px;
+    font-size:11px;
+}
+
+.bar{
+    height:7px;
+    background:#222;
+    border:1px solid #777;
+    margin:4px 0 8px;
+}
+
+.fill{
+    height:100%;
+    width:100%;
+}
+
+#healthFill{
+    background:#ddd;
+}
+
+#staminaFill{
+    background:#aaa;
+}
+
+#batteryFill{
+    background:#d4b64c;
+}
+
+#cameraText{
+    position:absolute;
+    right:18px;
+    top:18px;
+    font-size:11px;
+    letter-spacing:2px;
+}
+
+/* VHS */
+
+#vhs{
+    position:fixed;
+    inset:0;
+    z-index:15;
+    pointer-events:none;
+    opacity:.25;
+    mix-blend-mode:screen;
+}
+
+.scanline{
+    position:absolute;
+    left:0;
+    width:100%;
+    height:1px;
+    background:rgba(255,255,255,.15);
+    animation:scan 5s linear infinite;
+}
+
+@keyframes scan{
+    from{top:-2px}
+    to{top:100%}
+}
+
+#noise{
+    position:absolute;
+    inset:0;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,.02) 0px,
+        rgba(255,255,255,.02) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+}
+
+/* MOBILE */
+
+#mobile{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:10;
+    pointer-events:none;
+}
+
+.control{
+    position:absolute;
+    width:58px;
+    height:58px;
+    border:1px solid #aaa;
+    border-radius:50%;
+    background:#1118;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:auto;
+}
+
+#up{left:78px;bottom:130px}
+#down{left:78px;bottom:20px}
+#left{left:15px;bottom:75px}
+#right{left:141px;bottom:75px}
+
+#run{
+    right:18px;
+    bottom:20px;
+    width:70px;
+    height:70px;
+}
+
+#light{
+    right:105px;
+    bottom:20px;
+}
+
+@media(max-width:800px),(pointer:coarse){
+    #mobile{
+        display:block;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+
+<!-- INTRO -->
+
+<div id="intro" class="screen">
+
+<div class="panel">
+
+<h1 class="title">NOCLIP</h1>
+
+<p class="subtitle">
+FIELD RECORDING // 01
+</p>
+
+<p>
+A strange anomaly has been detected.
+<br>
+The wall is not behaving normally.
+</p>
+
+<p>
+Move toward the marked point.
+<br>
+Press <b>E</b> to calibrate the device.
+</p>
+
+<button id="begin">
+BEGIN RECORDING
+</button>
+
+</div>
+
+</div>
+
+
+<!-- END -->
+
+<div id="ending" class="screen" style="display:none">
+
+<div class="panel">
+
+<h1 class="title">ESCAPED</h1>
+
+<p class="subtitle">
+THE RECORDING ENDS HERE.
+</p>
+
+<button onclick="location.reload()">
+RESTART
+</button>
+
+</div>
+
+</div>
+
+
+<!-- HUD -->
+
+<div id="hud">
+
+<div id="level">
+FIELD TEST
+</div>
+
+<div id="objective">
+Locate the unstable wall.
+</div>
+
+<div id="crosshair"></div>
+
+<div id="message"></div>
+
+<div id="cameraText">
+REC ● 00:00:00
+</div>
+
+<div id="stats">
+
+HEALTH <span id="healthText">100</span>
+
+<div class="bar">
+<div id="healthFill" class="fill"></div>
+</div>
+
+
+STAMINA <span id="staminaText">100</span>
+
+<div class="bar">
+<div id="staminaFill" class="fill"></div>
+</div>
+
+
+BATTERY <span id="batteryText">100</span>
+
+<div class="bar">
+<div id="batteryFill" class="fill"></div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- VHS -->
+
+<div id="vhs">
+
+<div id="noise"></div>
+
+<div class="scanline"></div>
+
+</div>
+
+
+<!-- MOBILE -->
+
+<div id="mobile">
+
+<div class="control" id="up">▲</div>
+<div class="control" id="down">▼</div>
+<div class="control" id="left">◀</div>
+<div class="control" id="right">▶</div>
+
+<div class="control" id="run">
+RUN
+</div>
+
+<div class="control" id="light">
+☼
+</div>
+
+</div>
+
+
+<script>
+
+"use strict";
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+document.getElementById("game");
+
+const ctx =
+canvas.getContext("2d");
+
+let W =
+innerWidth;
+
+let H =
+innerHeight;
+
+let DPR =
+Math.min(devicePixelRatio || 1,2);
+
+
+function resize(){
+
+    W=innerWidth;
+    H=innerHeight;
+
+    DPR =
+    Math.min(
+        devicePixelRatio || 1,
+        2
+    );
+
+    canvas.width =
+    W*DPR;
+
+    canvas.height =
+    H*DPR;
+
+    ctx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+}
+
+
+addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio=null;
+
+
+function beep(
+    frequency=100,
+    duration=.15,
+    volume=.04
+){
+
+    if(!audio)
+        return;
+
+    const oscillator =
+    audio.createOscillator();
+
+    const gain =
+    audio.createGain();
+
+    const now =
+    audio.currentTime;
+
+    oscillator.type="sine";
+
+    oscillator.frequency.value=
+    frequency;
+
+    gain.gain.setValueAtTime(
+        volume,
+        now
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        now+duration
+    );
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        audio.destination
+    );
+
+    oscillator.start();
+
+    oscillator.stop(
+        now+duration
+    );
+}
+
+
+function ambience(){
+
+    if(!audio)
+        return;
+
+    const oscillator =
+    audio.createOscillator();
+
+    const gain =
+    audio.createGain();
+
+    oscillator.type="sine";
+
+    oscillator.frequency.value=48;
+
+    gain.gain.value=.008;
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        audio.destination
+    );
+
+    oscillator.start();
+}
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let started=false;
+
+let intro=true;
+
+let noclip=false;
+
+let running=false;
+
+let gameTime=0;
+
+let flashlight=true;
+
+let keys={};
+
+let touch={
+    up:false,
+    down:false,
+    left:false,
+    right:false,
+    run:false
+};
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+const player={
+
+    x:3.5,
+
+    y:5.5,
+
+    angle:0,
+
+    health:100,
+
+    stamina:100,
+
+    battery:100
+
+};
+
+
+/* =========================================================
+   INTRO WORLD
+========================================================= */
+
+const introWorld=[
+
+"1111111111111111111111111",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1000000000000000000000001",
+
+"1111111111111111111111111"
+
+];
+
+
+function introWall(x,y){
+
+    return (
+        y<0 ||
+        y>=introWorld.length ||
+        x<0 ||
+        x>=introWorld[0].length ||
+        introWorld[y][x]==="1"
+    );
+}
+
+
+/* =========================================================
+   BACKROOMS MAZE
+========================================================= */
+
+const SIZE=41;
+
+let maze=[];
+
+
+function createMaze(){
+
+    maze =
+    Array.from(
+        {length:SIZE},
+        ()=>Array(SIZE).fill(1)
+    );
+
+
+    let stack=[
+        [1,1]
+    ];
+
+
+    maze[1][1]=0;
+
+
+    while(stack.length){
+
+        const current =
+        stack[stack.length-1];
+
+        const x=current[0];
+
+        const y=current[1];
+
+
+        const directions=[
+
+            [2,0],
+            [-2,0],
+            [0,2],
+            [0,-2]
+
+        ].sort(
+            ()=>Math.random()-.5
+        );
+
+
+        let carved=false;
+
+
+        for(
+            const direction
+            of directions
+        ){
+
+            const nx=
+            x+direction[0];
+
+            const ny=
+            y+direction[1];
+
+
+            if(
+
+                nx>0 &&
+                ny>0 &&
+                nx<SIZE-1 &&
+                ny<SIZE-1 &&
+                maze[ny][nx]===1
+
+            ){
+
+                maze[
+                    y+direction[1]/2
+                ][
+                    x+direction[0]/2
+                ]=0;
+
+
+                maze[ny][nx]=0;
+
+
+                stack.push(
+                    [nx,ny]
+                );
+
+
+                carved=true;
+
+                break;
+            }
+        }
+
+
+        if(!carved)
+            stack.pop();
+    }
+
+
+    /*
+       Add some larger rooms.
+    */
+
+    for(
+        let i=0;
+        i<35;
+        i++
+    ){
+
+        const x=
+        2+
+        Math.floor(
+            Math.random()*(SIZE-4)
+        );
+
+        const y=
+        2+
+        Math.floor(
+            Math.random()*(SIZE-4)
+        );
+
+
+        if(
+            x>2 &&
+            y>2 &&
+            x<SIZE-3 &&
+            y<SIZE-3
+        ){
+
+            maze[y][x]=0;
+            maze[y][x+1]=0;
+            maze[y+1][x]=0;
+            maze[y+1][x+1]=0;
+        }
+    }
+
+
+    maze[SIZE-2][SIZE-2]=0;
+}
+
+
+/* =========================================================
+   BACKROOM COLLISION
+========================================================= */
+
+function backroomWall(x,y){
+
+    if(
+        x<0 ||
+        y<0 ||
+        x>=SIZE ||
+        y>=SIZE
+    )
+        return true;
+
+
+    return maze[
+        Math.floor(y)
+    ][
+        Math.floor(x)
+    ]===1;
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function message(
+    text,
+    seconds=.8
+){
+
+    const element =
+    document.getElementById(
+        "message"
+    );
+
+
+    element.textContent=text;
+
+    element.style.opacity="1";
+
+
+    clearTimeout(
+        message.timer
+    );
+
+
+    message.timer=
+    setTimeout(
+        ()=>{
+            element.style.opacity="0";
+        },
+        seconds*1000
+    );
+}
+
+
+/* =========================================================
+   INTRO RENDER
+========================================================= */
+
+function renderIntro(){
+
+    ctx.fillStyle="#777";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+       Floor
+    */
+
+    ctx.fillStyle="#454545";
+
+    ctx.fillRect(
+        0,
+        H*.55,
+        W,
+        H*.45
+    );
+
+
+    /*
+       Wall
+    */
+
+    ctx.fillStyle="#999";
+
+    ctx.fillRect(
+        W*.25,
+        H*.15,
+        W*.5,
+        H*.48
+    );
+
+
+    /*
+       Wall texture
+    */
+
+    ctx.strokeStyle=
+    "rgba(0,0,0,.12)";
+
+    for(
+        let x=W*.25;
+        x<W*.75;
+        x+=25
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            H*.15
+        );
+
+        ctx.lineTo(
+            x,
+            H*.63
+        );
+
+        ctx.stroke();
+    }
+
+
+    /*
+       Floor perspective.
+    */
+
+    ctx.strokeStyle=
+    "rgba(255,255,255,.08)";
+
+    for(
+        let i=0;
+        i<12;
+        i++
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            W/2,
+            H*.55
+        );
+
+        ctx.lineTo(
+            i*W/12,
+            H
+        );
+
+        ctx.stroke();
+    }
+
+
+    /*
+       Noclip point.
+    */
+
+    const px=W/2;
+
+    const py=H*.43;
+
+
+    ctx.strokeStyle=
+    "#e33";
+
+    ctx.lineWidth=2;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        px,
+        py,
+        22+
+        Math.sin(
+            gameTime*5
+        )*4,
+        0,
+        Math.PI*2
+    );
+
+    ctx.stroke();
+
+
+    ctx.fillStyle="#e33";
+
+    ctx.font="bold 12px Arial";
+
+    ctx.textAlign="center";
+
+    ctx.fillText(
+        "ANOMALY",
+        px,
+        py-32
+    );
+
+
+    /*
+       VHS distortion.
+    */
+
+    ctx.fillStyle=
+    "rgba(255,255,255,.025)";
+
+    for(
+        let i=0;
+        i<30;
+        i++
+    ){
+
+        ctx.fillRect(
+            0,
+            Math.random()*H,
+            W,
+            1
+        );
+    }
+}
+
+
+/* =========================================================
+   NOCLIP SEQUENCE
+========================================================= */
+
+let noclipProgress=0;
+
+
+function runNoclip(dt){
+
+    noclipProgress+=dt;
+
+
+    /*
+       Camera moves forward.
+    */
+
+    player.x +=
+    Math.cos(
+        player.angle
+    )*.65*dt;
+
+
+    player.y +=
+    Math.sin(
+        player.angle
+    )*.65*dt;
+
+
+    /*
+       Strong glitch.
+    */
+
+    if(
+        Math.random()<dt*12
+    ){
+
+        ctx.fillStyle=
+        "rgba(255,255,255,.08)";
+
+        ctx.fillRect(
+            0,
+            Math.random()*H,
+            W,
+            3+
+            Math.random()*20
+        );
+    }
+
+
+    if(
+        noclipProgress>2.8
+    ){
+
+        startBackrooms();
+    }
+}
+
+
+/* =========================================================
+   START BACKROOMS
+========================================================= */
+
+function startBackrooms(){
+
+    noclip=false;
+
+    running=true;
+
+    createMaze();
+
+
+    player.x=1.5;
+
+    player.y=1.5;
+
+    player.angle=0;
+
+
+    document.getElementById(
+        "level"
+    ).textContent=
+    "LEVEL 0 — THE YELLOW ROOMS";
+
+
+    document.getElementById(
+        "objective"
+    ).textContent=
+    "Find the exit. Do not trust the silence.";
+
+
+    message(
+        "WELCOME TO LEVEL 0",
+        2
+    );
+
+
+    beep(
+        65,
+        .8,
+        .08
+    );
+}
+
+
+/* =========================================================
+   RAYCAST
+========================================================= */
+
+function castRay(angle){
+
+    let x=player.x;
+
+    let y=player.y;
+
+    const dx=
+    Math.cos(angle)*.045;
+
+    const dy=
+    Math.sin(angle)*.045;
+
+    let distance=0;
+
+
+    while(
+        distance<40 &&
+        !backroomWall(x,y)
+    ){
+
+        x+=dx;
+
+        y+=dy;
+
+        distance+=.045;
+    }
+
+
+    return distance;
+}
+
+
+/* =========================================================
+   BACKROOM RENDER
+========================================================= */
+
+function renderBackrooms(){
+
+    /*
+       Ceiling.
+    */
+
+    ctx.fillStyle=
+    "#b9b48d";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H/2
+    );
+
+
+    /*
+       Floor.
+    */
+
+    ctx.fillStyle=
+    "#3c3327";
+
+    ctx.fillRect(
+        0,
+        H/2,
+        W,
+        H/2
+    );
+
+
+    const FOV=
+    Math.PI/3;
+
+
+    const rays=
+    Math.ceil(W/2);
+
+
+    for(
+        let i=0;
+        i<rays;
+        i++
+    ){
+
+        const angle=
+        player.angle-
+        FOV/2+
+        FOV*i/rays;
+
+
+        let distance=
+        castRay(angle);
+
+
+        distance *=
+        Math.cos(
+            angle-player.angle
+        );
+
+
+        const wallHeight=
+        Math.min(
+            H*1.8,
+            H/
+            (
+                Math.max(
+                    .05,
+                    distance
+                )*.72
+            )
+        );
+
+
+        const top=
+        (H-wallHeight)/2;
+
+
+        const shade=
+        Math.max(
+            .08,
+            Math.min(
+                1,
+                1-distance/18
+            )
+        );
+
+
+        /*
+           Fluorescent flicker.
+        */
+
+        const flicker=
+        .86+
+        .14*
+        Math.sin(
+            gameTime*13
+        )+
+        .04*
+        Math.sin(
+            gameTime*31
+        );
+
+
+        const r=
+        Math.floor(
+            125*shade*flicker
+        )+30;
+
+
+        const g=
+        Math.floor(
+            111*shade*flicker
+        )+25;
+
+
+        const b=
+        Math.floor(
+            54*shade*flicker
+        )+10;
+
+
+        ctx.fillStyle=
+        `rgb(${r},${g},${b})`;
+
+
+        ctx.fillRect(
+            i*2,
+            top,
+            3,
+            wallHeight
+        );
+
+
+        /*
+           Wallpaper seams.
+        */
+
+        if(
+            i%24===0 &&
+            distance<10
+        ){
+
+            ctx.fillStyle=
+            "rgba(50,35,10,.18)";
+
+            ctx.fillRect(
+                i*2,
+                top,
+                1,
+                wallHeight
+            );
+        }
+    }
+
+
+    /*
+       Floor darkness.
+    */
+
+    const floorGradient=
+    ctx.createLinearGradient(
+        0,
+        H/2,
+        0,
+        H
+    );
+
+
+    floorGradient.addColorStop(
+        0,
+        "rgba(0,0,0,.05)"
+    );
+
+    floorGradient.addColorStop(
+        1,
+        "rgba(0,0,0,.75)"
+    );
+
+
+    ctx.fillStyle=
+    floorGradient;
+
+    ctx.fillRect(
+        0,
+        H/2,
+        W,
+        H/2
+    );
+
+
+    /*
+       Carpet texture.
+    */
+
+    ctx.strokeStyle=
+    "rgba(150,120,80,.10)";
+
+    for(
+        let i=0;
+        i<60;
+        i++
+    ){
+
+        const y=
+        H/2+
+        Math.random()*
+        H/2;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            Math.random()*W,
+            y
+        );
+
+        ctx.lineTo(
+            Math.random()*W,
+            y+1
+        );
+
+        ctx.stroke();
+    }
+
+
+    /*
+       Distance fog.
+    */
+
+    const fog=
+    ctx.createLinearGradient(
+        0,
+        0,
+        0,
+        H
+    );
+
+
+    fog.addColorStop(
+        0,
+        "rgba(210,195,120,.10)"
+    );
+
+    fog.addColorStop(
+        .5,
+        "rgba(120,105,60,.03)"
+    );
+
+    fog.addColorStop(
+        1,
+        "rgba(0,0,0,.25)"
+    );
+
+
+    ctx.fillStyle=fog;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+       Flashlight.
+    */
+
+    if(flashlight){
+
+        const light=
+        ctx.createRadialGradient(
+            W/2,
+            H/2,
+            15,
+            W/2,
+            H/2,
+            Math.min(W,H)*.75
+        );
+
+
+        light.addColorStop(
+            0,
+            "rgba(255,255,240,.14)"
+        );
+
+        light.addColorStop(
+            .3,
+            "rgba(255,255,220,.03)"
+        );
+
+        light.addColorStop(
+            1,
+            "rgba(0,0,0,.70)"
+        );
+
+
+        ctx.fillStyle=light;
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+    }
+}
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+function update(dt){
+
+    gameTime+=dt;
+
+
+    if(intro)
+        return;
+
+
+    if(noclip){
+
+        runNoclip(dt);
+
+        return;
+    }
+
+
+    if(!running)
+        return;
+
+
+    let forward=
+    (keys["w"]||touch.up?1:0)-
+    (keys["s"]||touch.down?1:0);
+
+
+    let strafe=
+    (keys["d"]||touch.right?1:0)-
+    (keys["a"]||touch.left?1:0);
+
+
+    const sprint=
+    (keys["shift"]||touch.run) &&
+    player.stamina>1;
+
+
+    const speed=
+    (sprint?3.1:1.8)*dt;
+
+
+    if(
+        forward||
+        strafe
+    ){
+
+        const length=
+        Math.hypot(
+            forward,
+            strafe
+        );
+
+
+        forward/=length;
+
+        strafe/=length;
+
+
+        const nx=
+        player.x+
+        (
+            Math.cos(
+                player.angle
+            )*forward-
+            Math.sin(
+                player.angle
+            )*strafe
+        )*speed;
+
+
+        const ny=
+        player.y+
+        (
+            Math.sin(
+                player.angle
+            )*forward+
+            Math.cos(
+                player.angle
+            )*strafe
+        )*speed;
+
+
+        if(
+            !backroomWall(
+                nx,
+                player.y
+            )
+        )
+            player.x=nx;
+
+
+        if(
+            !backroomWall(
+                player.x,
+                ny
+            )
+        )
+            player.y=ny;
+
+
+        if(sprint)
+            player.stamina-=30*dt;
+        else
+            player.stamina+=16*dt;
+
+    }else{
+
+        player.stamina+=22*dt;
+    }
+
+
+    player.stamina=
+    Math.max(
+        0,
+        Math.min(
+            100,
+            player.stamina
+        )
+    );
+
+
+    if(flashlight){
+
+        player.battery-=
+        1.15*dt;
+
+
+        if(
+            player.battery<=0
+        ){
+
+            player.battery=0;
+
+            flashlight=false;
+
+            message(
+                "FLASHLIGHT DEAD",
+                1
+            );
+        }
+    }
+
+
+    /*
+       Exit.
+    */
+
+    const exitDistance=
+    Math.hypot(
+        player.x-(SIZE-2.5),
+        player.y-(SIZE-2.5)
+    );
+
+
+    if(
+        exitDistance<1
+    ){
+
+        running=false;
+
+        document.getElementById(
+            "ending"
+        ).style.display="flex";
+
+        beep(
+            300,
+            .7,
+            .08
+        );
+    }
+
+
+    updateHUD();
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD(){
+
+    document.getElementById(
+        "healthText"
+    ).textContent=
+    Math.ceil(
+        player.health
+    );
+
+
+    document.getElementById(
+        "staminaText"
+    ).textContent=
+    Math.ceil(
+        player.stamina
+    );
+
+
+    document.getElementById(
+        "batteryText"
+    ).textContent=
+    Math.ceil(
+        player.battery
+    );
+
+
+    document.getElementById(
+        "healthFill"
+    ).style.width=
+    player.health+"%";
+
+
+    document.getElementById(
+        "staminaFill"
+    ).style.width=
+    player.stamina+"%";
+
+
+    document.getElementById(
+        "batteryFill"
+    ).style.width=
+    player.battery+"%";
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+addEventListener(
+    "keydown",
+    event=>{
+
+        keys[
+            event.key.toLowerCase()
+        ]=true;
+
+
+        const key=
+        event.key.toLowerCase();
+
+
+        if(
+            ["w","a","s","d","shift"," "]
+            .includes(key)
+        ){
+
+            event.preventDefault();
+        }
+
+
+        /*
+           Noclip calibration.
+        */
+
+        if(
+            key==="e" &&
+            intro &&
+            started &&
+            !noclip
+        ){
+
+            intro=false;
+
+            noclip=true;
+
+            noclipProgress=0;
+
+            document.getElementById(
+                "intro"
+            ).style.display="none";
+
+
+            message(
+                "CALIBRATING...",
+                1
+            );
+
+
+            beep(
+                500,
+                .2,
+                .06
+            );
+
+            return;
+        }
+
+
+        /*
+           Flashlight.
+        */
+
+        if(
+            key==="f" &&
+            !intro &&
+            !noclip
+        ){
+
+            flashlight=
+            !flashlight;
+        }
+
+    }
+);
+
+
+addEventListener(
+    "keyup",
+    event=>{
+
+        keys[
+            event.key.toLowerCase()
+        ]=false;
+
+    }
+);
+
+
+/* =========================================================
+   MOUSE LOOK
+========================================================= */
+
+let pointerLocked=false;
+
+
+canvas.addEventListener(
+    "click",
+    ()=>{
+
+        if(
+            running &&
+            canvas.requestPointerLock
+        ){
+
+            canvas.requestPointerLock();
+        }
+
+    }
+);
+
+
+document.addEventListener(
+    "pointerlockchange",
+    ()=>{
+
+        pointerLocked=
+        document.pointerLockElement===
+        canvas;
+
+    }
+);
+
+
+addEventListener(
+    "mousemove",
+    event=>{
+
+        if(
+            pointerLocked &&
+            running
+        ){
+
+            player.angle+=
+            event.movementX*.0023;
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MOBILE LOOK
+========================================================= */
+
+let touchId=null;
+
+let previousTouchX=0;
+
+
+canvas.addEventListener(
+    "touchstart",
+    event=>{
+
+        if(!running)
+            return;
+
+
+        const t=
+        event.changedTouches[0];
+
+
+        touchId=
+        t.identifier;
+
+
+        previousTouchX=
+        t.clientX;
+
+    },
+    {passive:true}
+);
+
+
+canvas.addEventListener(
+    "touchmove",
+    event=>{
+
+        for(
+            const t
+            of event.changedTouches
+        ){
+
+            if(
+                t.identifier===
+                touchId
+            ){
+
+                player.angle+=
+                (
+                    t.clientX-
+                    previousTouchX
+                )*.006;
+
+
+                previousTouchX=
+                t.clientX;
+            }
+        }
+
+    },
+    {passive:true}
+);
+
+
+canvas.addEventListener(
+    "touchend",
+    event=>{
+
+        for(
+            const t
+            of event.changedTouches
+        ){
+
+            if(
+                t.identifier===
+                touchId
+            ){
+
+                touchId=null;
+            }
+        }
+
+    },
+    {passive:true}
+);
+
+
+/* =========================================================
+   MOBILE BUTTONS
+========================================================= */
+
+function bind(
+    id,
+    property
+){
+
+    const element=
+    document.getElementById(id);
+
+
+    element.addEventListener(
+        "touchstart",
+        event=>{
+
+            event.preventDefault();
+
+            touch[property]=true;
+
+        },
+        {passive:false}
+    );
+
+
+    element.addEventListener(
+        "touchend",
+        event=>{
+
+            event.preventDefault();
+
+            touch[property]=false;
+
+        },
+        {passive:false}
+    );
+
+
+    element.addEventListener(
+        "touchcancel",
+        ()=>{
+            touch[property]=false;
+        }
+    );
+}
+
+
+bind("up","up");
+bind("down","down");
+bind("left","left");
+bind("right","right");
+bind("run","run");
+
+
+document.getElementById(
+    "light"
+).onclick=()=>{
+
+    flashlight=
+    !flashlight;
+};
+
+
+/* =========================================================
+   BEGIN
+========================================================= */
+
+document.getElementById(
+    "begin"
+).onclick=
+async()=>{
+
+    started=true;
+
+
+    try{
+
+        audio=
+        new(
+            window.AudioContext||
+            window.webkitAudioContext
+        )();
+
+
+        await audio.resume();
+
+        ambience();
+
+    }catch(error){}
+
+
+    /*
+       Position before wall.
+    */
+
+    player.x=3.5;
+
+    player.y=5.5;
+
+    player.angle=0;
+
+
+    message(
+        "FIND THE ANOMALY",
+        1.2
+    );
+
+};
+
+
+/* =========================================================
+   RENDER LOOP
+========================================================= */
+
+let last=
+performance.now();
+
+
+function loop(now){
+
+    const dt=
+    Math.min(
+        .05,
+        (now-last)/1000
+    );
+
+
+    last=now;
+
+
+    update(dt);
+
+
+    if(intro){
+
+        renderIntro();
+
+    }else if(noclip){
+
+        /*
+           During Noclip:
+           distorted yellow transition.
+        */
+
+        ctx.fillStyle=
+        "#b8aa62";
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+
+
+        const glitch=
+        Math.sin(
+            gameTime*20
+        );
+
+
+        ctx.fillStyle=
+        `rgba(255,255,255,${.04+
+        Math.abs(glitch)*.08})`;
+
+
+        ctx.fillRect(
+            0,
+            0,
+            W,
+            H
+        );
+
+
+        for(
+            let i=0;
+            i<20;
+            i++
+        ){
+
+            ctx.fillRect(
+                Math.random()*W,
+                Math.random()*H,
+                Math.random()*180,
+                1+
+                Math.random()*5
+            );
+        }
+
+
+    }else{
+
+        renderBackrooms();
+    }
+
+
+    /*
+       Recording timer.
+    */
+
+    const seconds=
+    Math.floor(gameTime);
+
+
+    const hh=
+    String(
+        Math.floor(
+            seconds/3600
+        )
+    ).padStart(2,"0");
+
+
+    const mm=
+    String(
+        Math.floor(
+            seconds%3600/60
+        )
+    ).padStart(2,"0");
+
+
+    const ss=
+    String(
+        seconds%60
+    ).padStart(2,"0");
+
+
+    document.getElementById(
+        "cameraText"
+    ).textContent=
+    `REC ● ${hh}:${mm}:${ss}`;
+
+
+    requestAnimationFrame(loop);
+}
+
+
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+</html>
+```

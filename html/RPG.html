@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra RPG Adventure</title>
+
+<style>
+*{box-sizing:border-box;user-select:none}
+
+body{
+margin:0;
+min-height:100vh;
+background:#080b12;
+color:white;
+font-family:Arial;
+display:grid;
+place-items:center;
+}
+
+#game{
+width:min(850px,95vw);
+text-align:center;
+}
+
+h1{color:#8ed6ff}
+
+canvas{
+width:100%;
+background:#17321f;
+border:2px solid #416b4b;
+border-radius:15px;
+}
+
+#stats{
+padding:10px;
+}
+
+button{
+padding:11px 18px;
+margin:5px;
+background:#15253a;
+color:white;
+border:1px solid #3e668d;
+border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🧙 ASTRA RPG ADVENTURE</h1>
+
+<div id="stats">
+❤️ <span id="hp">100</span>
+&nbsp; | &nbsp;
+⭐ Level <span id="level">1</span>
+&nbsp; | &nbsp;
+💰 <span id="gold">0</span>
+&nbsp; | &nbsp;
+☠️ <span id="kills">0</span>
+</div>
+
+<canvas id="c" width="800" height="450"></canvas>
+
+<button onclick="restart()">🔄 New Adventure</button>
+
+<p>WASD / Arrow Keys = Move | SPACE = Attack</p>
+
+</div>
+
+<script>
+
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+
+const W=800,H=450;
+
+let keys={};
+let enemies=[];
+let coins=[];
+let hp=100;
+let level=1;
+let gold=0;
+let kills=0;
+let xp=0;
+let attackCD=0;
+let spawnTimer=0;
+let game=true;
+
+const player={
+x:400,
+y:225,
+r:18,
+speed:3.5
+};
+
+onkeydown=e=>{
+keys[e.key.toLowerCase()]=true;
+
+if(e.code==="Space")
+  attack();
+};
+
+onkeyup=e=>{
+keys[e.key.toLowerCase()]=false;
+};
+
+function restart(){
+
+enemies=[];
+coins=[];
+
+hp=100;
+level=1;
+gold=0;
+kills=0;
+xp=0;
+
+attackCD=0;
+spawnTimer=0;
+
+player.x=400;
+player.y=225;
+
+game=true;
+}
+
+function spawnEnemy(){
+
+enemies.push({
+
+  x:30+Math.random()*740,
+  y:30+Math.random()*390,
+
+  r:17,
+
+  hp:25+level*7,
+
+  speed:.5+level*.03
+});
+}
+
+function attack(){
+
+if(!game||attackCD>0)return;
+
+attackCD=25;
+
+for(let i=enemies.length-1;i>=0;i--){
+
+  const e=enemies[i];
+
+  if(
+   Math.hypot(
+    e.x-player.x,
+    e.y-player.y
+   )<65
+  ){
+
+   e.hp-=35;
+
+   if(e.hp<=0){
+
+    kills++;
+
+    xp+=20;
+
+    if(Math.random()<.6)
+     coins.push({
+      x:e.x,
+      y:e.y
+     });
+
+    enemies.splice(i,1);
+   }
+  }
+}
+}
+
+function update(){
+
+if(!game)return;
+
+let dx=0,dy=0;
+
+if(keys.w||keys.arrowup)dy--;
+if(keys.s||keys.arrowdown)dy++;
+if(keys.a||keys.arrowleft)dx--;
+if(keys.d||keys.arrowright)dx++;
+
+const l=Math.hypot(dx,dy)||1;
+
+player.x+=dx/l*player.speed;
+player.y+=dy/l*player.speed;
+
+player.x=Math.max(20,Math.min(W-20,player.x));
+player.y=Math.max(20,Math.min(H-20,player.y));
+
+if(attackCD>0)
+  attackCD--;
+
+spawnTimer++;
+
+if(spawnTimer>70){
+
+  spawnTimer=0;
+  spawnEnemy();
+}
+
+// Level up
+
+if(xp>=level*100){
+
+  xp=0;
+  level++;
+
+  hp=Math.min(
+   100,
+   hp+30
+  );
+}
+
+enemies.forEach(e=>{
+
+  const a=Math.atan2(
+   player.y-e.y,
+   player.x-e.x
+  );
+
+  e.x+=Math.cos(a)*e.speed;
+  e.y+=Math.sin(a)*e.speed;
+
+  if(
+   Math.hypot(
+    e.x-player.x,
+    e.y-player.y
+   )<35
+  ){
+   hp-=.2;
+  }
+});
+
+for(let i=coins.length-1;i>=0;i--){
+
+  if(
+   Math.hypot(
+    coins[i].x-player.x,
+    coins[i].y-player.y
+   )<30
+  ){
+
+   gold+=10;
+   coins.splice(i,1);
+  }
+}
+
+if(hp<=0)
+  game=false;
+
+updateUI();
+}
+
+function updateUI(){
+
+document.getElementById("hp").textContent=hp|0;
+document.getElementById("level").textContent=level;
+document.getElementById("gold").textContent=gold;
+document.getElementById("kills").textContent=kills;
+}
+
+function draw(){
+
+ctx.fillStyle="#17321f";
+ctx.fillRect(0,0,W,H);
+
+// grass
+
+ctx.fillStyle="#1e4428";
+
+for(let i=0;i<100;i++){
+
+  const x=i*83%W;
+  const y=i*47%H;
+
+  ctx.fillRect(x,y,3,3);
+}
+
+// coins
+
+coins.forEach(g=>{
+
+  ctx.fillStyle="#ffd43b";
+
+  ctx.beginPath();
+  ctx.arc(
+   g.x,g.y,
+   8,0,Math.PI*2
+  );
+  ctx.fill();
+});
+
+// enemies
+
+enemies.forEach(e=>{
+
+  ctx.fillStyle="#b84252";
+
+  ctx.beginPath();
+  ctx.arc(
+   e.x,e.y,
+   e.r,0,Math.PI*2
+  );
+  ctx.fill();
+
+  ctx.fillStyle="#222";
+
+  ctx.fillRect(
+   e.x-7,e.y-4,5,5
+  );
+
+  ctx.fillRect(
+   e.x+3,e.y-4,5,5
+  );
+});
+
+// player
+
+ctx.fillStyle="#6fdcff";
+
+ctx.beginPath();
+ctx.arc(
+  player.x,
+  player.y,
+  player.r,
+  0,
+  Math.PI*2
+);
+ctx.fill();
+
+// sword
+
+if(attackCD>10){
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=6;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+   player.x,
+   player.y
+  );
+
+  ctx.lineTo(
+   player.x+45,
+   player.y-25
+  );
+
+  ctx.stroke();
+}
+
+if(!game){
+
+  ctx.fillStyle="#000b";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign="center";
+
+  ctx.fillStyle="#ff5965";
+  ctx.font="bold 45px Arial";
+
+  ctx.fillText(
+   "ADVENTURE OVER",
+   W/2,210
+  );
+
+  ctx.fillStyle="#fff";
+  ctx.font="20px Arial";
+
+  ctx.fillText(
+   `Level ${level} • Kills ${kills} • Gold ${gold}`,
+   W/2,250
+  );
+}
+}
+
+function loop(){
+
+update();
+draw();
+
+requestAnimationFrame(loop);
+}
+
+restart();
+loop();
+
+</script>
+
+</body>
+</html>

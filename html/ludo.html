@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA Ludo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle,#273653,#080c16 70%);color:#fff;font-family:system-ui,Tahoma;min-height:100vh;display:grid;place-items:center}
+.wrap{width:min(850px,95vw);padding:16px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px}.controls{display:flex;gap:7px}.btn{padding:9px 12px;border:1px solid #ffffff20;border-radius:10px;background:#ffffff0c;color:#fff;cursor:pointer}.active,.btn:hover{background:#6272e8}
+#status{text-align:center;color:#c3cbe0;margin:10px}.board{width:min(82vw,600px);aspect-ratio:1;margin:auto;display:grid;grid-template-columns:repeat(15,1fr);grid-template-rows:repeat(15,1fr);background:#161d2e;border:7px solid #121827;border-radius:16px;overflow:hidden}
+.cell{border:1px solid #0002;display:grid;place-items:center;font-size:13px}.path{background:#f0eadc;color:#111}.red{background:#ef5d6a}.blue{background:#55a7ef}.green{background:#5ec77d}.yellow{background:#f4ca55}.home{background:#20283b}
+.token{width:72%;height:72%;border-radius:50%;border:2px solid #fff;box-shadow:0 3px 6px #0007;cursor:pointer}
+.dice{display:block;margin:12px auto 0;width:90px;height:48px;border:0;border-radius:13px;background:linear-gradient(135deg,#6575ff,#9b5cff);color:#fff;font-size:18px;font-weight:900;cursor:pointer}.dice:disabled{opacity:.4}
+.info{text-align:center;font-size:12px;color:#8f9ab2;margin-top:9px}
+</style></head><body><div class="wrap">
+<div class="top"><h1>🎲 ASTRA Ludo</h1><div class="controls"><button id="bot" class="btn active">🤖 Bot</button><button id="human" class="btn">👤 Player</button><button id="new" class="btn">↻ New</button></div></div>
+<div id="status"></div><div id="board"></div><button id="roll" class="dice">🎲 Roll</button><div class="info">قانون ساده و سریع: برای خارج شدن مهره ۶ بیاور؛ با رسیدن به خانه آخر برنده می‌شوی.</div>
+</div>
+<script>
+const N=52, path=[];for(let i=0;i<N;i++)path.push(i);
+let players,turn=0,dice=0,mode="bot",busy=false;
+function reset(){players=[{name:"You",color:"red",pos:[-1,-1,-1,-1]},{name:mode==="bot"?"Bot":"Player 2",color:"blue",pos:[-1,-1,-1,-1]}];turn=0;dice=0;busy=false;render()}
+function cellIndex(i){let r=7,c=7;const side=14;let k=i%N;if(k<14){r=0;c=k+1}else if(k<27){c=14;r=k-13}else if(k<40){r=14;c=40-k}else{c=0;r=52-k}return r*15+c}
+function render(){let board=document.getElementById("board");board.innerHTML="";let cells=Array(225).fill(0);for(let i=0;i<N;i++)cells[cellIndex(i)]="path";players.forEach((pl,pi)=>pl.pos.forEach((p,j)=>{if(p>=0){let idx=cellIndex((p+pi*26)%N);cells[idx]||(cells[idx]=[]);if(!Array.isArray(cells[idx]))cells[idx]=[];cells[idx].push([pi,j,pl.color])}}));cells.forEach((v,i)=>{let d=document.createElement("div");d.className="cell "+(v==="path"?"path":"home");if(Array.isArray(v)){v.forEach(([pi,j,col])=>{let t=document.createElement("div");t.className="token";t.style.background=col;t.onclick=()=>piece(j);d.appendChild(t)})}board.appendChild(d)});document.getElementById("status").textContent=`نوبت: ${players[turn].name}${dice?" • تاس: "+dice:""}`;document.getElementById("roll").disabled=busy||turn!==0&&mode==="bot"||!!dice}
+function roll(){if(busy||dice)return;dice=1+Math.floor(Math.random()*6);render();let moves=players[turn].pos.map((p,i)=>(p<0?(dice===6):(p+dice<=N-1))).map((v,i)=>v?i:-1).filter(i=>i>=0);if(!moves.length){setTimeout(()=>{dice=0;turn=1-turn;render();if(mode==="bot"&&turn===1)setTimeout(bot,450)},600)}}
+function piece(i){if(!dice||busy)return;let p=players[turn].pos[i];let valid=p<0?dice===6:p+dice<=N-1;if(!valid)return;players[turn].pos[i]=p<0?0:p+dice;dice=0;if(players[turn].pos[i]===N-1){alert(players[turn].name+" wins! 🏆");reset();return}turn=1-turn;render();if(mode==="bot"&&turn===1)setTimeout(bot,450)}
+function bot(){if(!dice)roll();setTimeout(()=>{let opts=players[1].pos.map((p,i)=>(p<0?dice===6:p+dice<=N-1)?i:-1).filter(i=>i>=0);if(opts.length)piece(opts[Math.floor(Math.random()*opts.length)])},700)}
+document.getElementById("roll").onclick=roll;document.getElementById("new").onclick=reset;
+document.getElementById("bot").onclick=()=>{mode="bot";bot.classList.add("active");human.classList.remove("active");reset()};
+document.getElementById("human").onclick=()=>{mode="human";human.classList.add("active");bot.classList.remove("active");reset()};
+reset();
+</script></body></html>

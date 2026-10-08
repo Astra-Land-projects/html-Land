@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Virtual School</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10131a;font-family:Arial,sans-serif;color:#fff}
+#game{position:fixed;inset:0}canvas{display:block}
+#hud{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;z-index:5}
+.panel{background:rgba(10,14,22,.78);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:12px;padding:9px 12px;font-size:13px}
+#status{color:#9fe6a0}.warn{color:#ffd166}
+#help{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:5;pointer-events:none}
+#login{position:fixed;inset:0;background:linear-gradient(135deg,#10131a,#18243b);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{width:min(92vw,420px);padding:26px;border-radius:20px;background:rgba(20,26,39,.95);box-shadow:0 20px 60px #0008;border:1px solid #ffffff1c}
+.card h1{margin:0 0 8px;font-size:30px}.card p{color:#b9c2d0;line-height:1.5}
+input,button{font:inherit;border-radius:12px;border:0;padding:13px}
+input{width:100%;background:#0c111b;color:#fff;border:1px solid #ffffff22;margin:10px 0}
+button{cursor:pointer;background:#fff;color:#111;font-weight:bold}.primary{width:100%;margin-top:8px}
+#touch{display:none;position:fixed;inset:0;z-index:8;pointer-events:none}
+#joy{position:absolute;left:22px;bottom:24px;width:120px;height:120px;border-radius:50%;background:#ffffff18;border:2px solid #ffffff35;pointer-events:auto;touch-action:none}
+#knob{position:absolute;left:35px;top:35px;width:46px;height:46px;border-radius:50%;background:#ffffff55}
+.touchBtns{position:absolute;right:20px;bottom:25px;display:flex;gap:10px;align-items:end;pointer-events:auto}
+.tbtn{width:62px;height:62px;border-radius:50%;background:#ffffff22;color:white;border:1px solid #ffffff44}
+#interact{width:76px;height:76px}
+#dialog{position:fixed;left:50%;bottom:18%;transform:translateX(-50%);z-index:9;display:none;max-width:min(90vw,600px);background:#101522eF;padding:16px 20px;border-radius:15px;border:1px solid #ffffff22}
+@media (pointer:coarse){#touch{display:block}}
+@media(max-width:600px){#help{display:none}.panel{font-size:11px;padding:7px 9px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+  <div class="panel">🏫 <b>Virtual School</b> · <span id="room">Courtyard</span></div>
+  <div class="panel">👥 <span id="players">1/4</span> · <span id="status">Connecting...</span></div>
+</div>
+<div id="help" class="panel">WASD / Arrow Keys · Mouse Camera · Shift Run · Space Jump · E Interact</div>
+
+<div id="login">
+  <div class="card">
+    <h1>🏫 Virtual School</h1>
+    <p>Enter your name and join the school. Up to 4 real players can be online at once.</p>
+    <input id="name" maxlength="18" placeholder="Your name" autocomplete="off">
+    <button class="primary" id="join">Enter School</button>
+    <p style="font-size:12px;margin-bottom:0">The server address is configured automatically from this page.</p>
+  </div>
+</div>
+
+<div id="touch">
+  <div id="joy"><div id="knob"></div></div>
+  <div class="touchBtns">
+    <button class="tbtn" id="run">🏃</button>
+    <button class="tbtn" id="jump">⬆️</button>
+    <button class="tbtn" id="interact">E</button>
+  </div>
+</div>
+<div id="dialog"></div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.module.js';
+
+const game=document.getElementById('game');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8fc8f4);
+scene.fog=new THREE.Fog(0x8fc8f4,70,220);
+
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+game.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x526070,2.1));
+const sun=new THREE.DirectionalLight(0xffffff,2.2); sun.position.set(60,100,30); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+
+const world=new THREE.Group(); scene.add(world);
+const colliders=[];
+function box(name,x,y,z,w,h,d,color,solid=true){
+  const g=new THREE.Group(); g.name=name;
+  const m=new THREE.MeshStandardMaterial({color});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  mesh.position.set(x,y+h/2,z); mesh.castShadow=true; mesh.receiveShadow=true; g.add(mesh); world.add(g);
+  if(solid) colliders.push({x1:x-w/2,x2:x+w/2,z1:z-d/2,z2:z+d/2,y:h});
+  return g;
+}
+function textSprite(txt,color='#ffffff',scale=.85){
+  const c=document.createElement('canvas'); c.width=512;c.height=128;
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+  ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;
+  ctx.strokeStyle='#000';ctx.lineWidth=7;ctx.strokeText(txt,256,64);ctx.fillText(txt,256,64);
+  const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(scale*4,scale,1);return s;
+}
+function building(label,x,z,w,d,color){
+  box(label,x,0,z,w,10,d,color,true);
+  const sign=textSprite(label);sign.position.set(x,11,z-d/2-.1);world.add(sign);
+  // door recess/visual
+  box('Door',x,0,z-d/2-.25,3.2,4,.25,0x3a2b23,false);
+}
+function floor(){
+  const m=new THREE.MeshStandardMaterial({color:0x78a96c});
+  const p=new THREE.Mesh(new THREE.PlaneGeometry(240,240),m);p.rotation.x=-Math.PI/2;p.receiveShadow=true;world.add(p);
+  box('Main road',0,-.03,0,240,.05,10,0x555b63,false);
+  box('Cross road',0,-.02,0,10,.05,240,0x555b63,false);
+}
+floor();
+building('MAIN BUILDING',0,-45,52,28,0xd6d9df);
+building('SCIENCE LAB',65,-10,34,26,0xb9d5d8);
+building('LIBRARY',65,40,34,26,0xe0c7a6);
+building('ADMIN OFFICE',-65,-10,34,26,0xd8c0d8);
+building('COMPUTER LAB',-65,40,34,26,0xb8cbe7);
+building('SPORTS HALL',0,60,52,28,0xd2c7a9);
+building('ART & MUSIC',0,5,34,22,0xe4b9a8);
+building('CAFETERIA',-65,70,34,24,0xc7d7a9);
+
+// benches, trees and lamps
+for(let i=0;i<18;i++){
+  const x=(i%6)*24-60, z=Math.floor(i/6)*32-5;
+  const trunk=box('tree',x,0,z,1.2,5,1.2,0x71472d,false);
+  const crown=new THREE.Mesh(new THREE.SphereGeometry(4.2,12,8),new THREE.MeshStandardMaterial({color:0x2d7d46}));
+  crown.position.set(x,8,z);crown.castShadow=true;world.add(crown);
+}
+for(let i=0;i<8;i++){
+  const x=i%2?52:-52,z=i*18-65;
+  box('bench',x,1,z,5,1,1.2,0x7b5135,false);
+}
+
+// player model
+function makeHuman(color){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({color});
+  const skin=new THREE.MeshStandardMaterial({color:0xf0c7a4});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.65,1.2,4,8),mat);body.position.y=1.55;body.castShadow=true;g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.55,12,10),skin);head.position.y=3.05;head.castShadow=true;g.add(head);
+  const limb=new THREE.MeshStandardMaterial({color:0x303846});
+  for(const sx of [-.32,.32]){
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.18,.9,4,6),limb);leg.position.set(sx,0.55,0);leg.castShadow=true;g.add(leg);
+    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.85,4,6),skin);arm.position.set(sx*2,1.7,0);arm.rotation.z=sx>0?-0.15:0.15;arm.castShadow=true;g.add(arm);
+  }
+  return g;
+}
+const me={id:'local',name:'',mesh:null,pos:new THREE.Vector3(0,0,20),velY:0,rot:0};
+const players=new Map();players.set('local',me);
+const colors=[0x4f83cc,0xcc6688,0x65a66b,0xc59b4a];
+function addRemote(id,name,color){
+  const p={id,name,mesh:makeHuman(color),pos:new THREE.Vector3(),target:new THREE.Vector3(),rot:0,targetRot:0};
+  p.mesh.add(textSprite(name,'#fff')).children.at(-1).position.y=4.3;
+  world.add(p.mesh);players.set(id,p);return p;
+}
+function removeRemote(id){const p=players.get(id);if(p&&p.mesh)world.remove(p.mesh);players.delete(id)}
+
+const npcs=[];
+function addNPC(name,x,z,color=0x8a6fc2){
+  const p={name,mesh:makeHuman(color),base:new THREE.Vector3(x,0,z),target:new THREE.Vector3(x,0,z),timer:0};
+  p.mesh.add(textSprite(name,'#ffe9a6'));p.mesh.children.at(-1).position.y=4.3;world.add(p.mesh);npcs.push(p);
+}
+[['Teacher',-8,-45,0x9b6b52],['Principal',-65,-14,0x6b6b9b],['Librarian',65,35,0x6b9b7a],['Coach',0,60,0x9b7b4d],['Student',12,18,0x5f7db3],['Student',-15,25,0xc26a87],['Student',28,-5,0x6da77d],['Student',-35,-25,0xc39a58]].forEach(v=>addNPC(...v));
+
+const keys={};let running=false;
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();jump()} if(e.key.toLowerCase()==='e') interact()});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.getElementById('run').onpointerdown=()=>running=true;document.getElementById('run').onpointerup=()=>running=false;
+document.getElementById('jump').onpointerdown=jump;document.getElementById('interact').onpointerdown=interact;
+
+let yaw=0,pitch=.38,drag=false,lastX=0,lastY=0;
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'){drag=true;lastX=e.clientX;lastY=e.clientY}});
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{if(drag){yaw-=(e.clientX-lastX)*.006;pitch=Math.max(.12,Math.min(.85,pitch-(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY}});
+
+let joy={x:0,y:0,active:false};
+const joyEl=document.getElementById('joy'),knob=document.getElementById('knob');
+joyEl.addEventListener('pointerdown',e=>{joy.active=true;joyEl.setPointerCapture(e.pointerId);updateJoy(e)});
+joyEl.addEventListener('pointermove',e=>{if(joy.active)updateJoy(e)});
+joyEl.addEventListener('pointerup',()=>{joy.active=false;joy.x=joy.y=0;knob.style.transform='translate(0,0)'});
+function updateJoy(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=37;const l=Math.hypot(dx,dy);if(l>max){dx*=max/l;dy*=max/l}joy.x=dx/max;joy.y=dy/max;knob.style.transform=`translate(${dx}px,${dy}px)`}
+
+function blocked(x,z){
+  const r=.65;
+  return colliders.some(c=>x+r>c.x1&&x-r<c.x2&&z+r>c.z1&&z-r<c.z2);
+}
+function jump(){if(me.pos.y<.05)me.velY=8}
+function move(dt){
+  let sx=0,sz=0;
+  if(keys.w||keys.arrowup)sz-=1;if(keys.s||keys.arrowdown)sz+=1;if(keys.a||keys.arrowleft)sx-=1;if(keys.d||keys.arrowright)sx+=1;
+  if(Math.hypot(joy.x,joy.y)>.05){sx=joy.x;sz=joy.y}
+  const len=Math.hypot(sx,sz)||1;sx/=len;sz/=len;
+  const speed=(keys.shift||running)?9:5.5;
+  const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const v=forward.multiplyScalar(sz).add(right.multiplyScalar(sx)).multiplyScalar(speed*dt);
+  const nx=me.pos.x+v.x,nz=me.pos.z+v.z;
+  if(!blocked(nx,me.pos.z))me.pos.x=nx;if(!blocked(me.pos.x,nz))me.pos.z=nz;
+  me.rot=Math.atan2(v.x,v.z)||me.rot;
+  me.velY-=20*dt;me.pos.y=Math.max(0,me.pos.y+me.velY*dt);if(me.pos.y===0)me.velY=0;
+  me.mesh.position.copy(me.pos);me.mesh.rotation.y=me.rot;
+}
+function interact(){
+  let nearest=null,dist=4;
+  for(const n of npcs){const d=me.pos.distanceTo(n.mesh.position);if(d<dist){dist=d;nearest=n}}
+  if(nearest){const d=document.getElementById('dialog');d.textContent=`${nearest.name}: Welcome to Virtual School! Press E near me to interact.`;d.style.display='block';setTimeout(()=>d.style.display='none',3500)}
+}
+function updateNPCs(dt){
+  for(const n of npcs){
+    n.timer-=dt;
+    if(n.timer<=0){n.timer=2+Math.random()*4;n.target.set(n.base.x+(Math.random()*10-5),0,n.base.z+(Math.random()*10-5))}
+    const v=n.target.clone().sub(n.mesh.position);v.y=0;
+    if(v.length()>.2){v.normalize().multiplyScalar(dt*1.1);n.mesh.position.add(v);n.mesh.rotation.y=Math.atan2(v.x,v.z)}
+  }
+}
+function updateCamera(){
+  const target=me.pos.clone().add(new THREE.Vector3(0,2.0,0));
+  const dist=7.5;
+  const off=new THREE.Vector3(Math.sin(yaw)*dist,dist*Math.sin(pitch),Math.cos(yaw)*dist);
+  camera.position.lerp(target.clone().add(off),.12);camera.lookAt(target);
+}
+function sendState(){
+  if(!socket||socket.readyState!==1)return;
+  socket.send(JSON.stringify({type:'state',x:me.pos.x,y:me.pos.y,z:me.pos.z,rotation:me.rot}));
+}
+let lastSend=0;
+function animate(t){
+  requestAnimationFrame(animate);const dt=Math.min(.05,(t-(animate.last||t))/1000);animate.last=t;
+  if(me.mesh)move(dt);updateNPCs(dt);updateCamera();
+  if(t-lastSend>50){lastSend=t;sendState()}
+  for(const p of players.values())if(p!==me&&p.mesh){p.mesh.position.lerp(p.target,.25);p.mesh.rotation.y=THREE.MathUtils.lerp(p.mesh.rotation.y,p.targetRot,.25)}
+  renderer.render(scene,camera);
+}
+animate(0);
+
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+
+let socket=null;
+const login=document.getElementById('login'),nameInput=document.getElementById('name');
+nameInput.value='Arya';
+document.getElementById('join').onclick=join;
+nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')join()});
+function join(){
+  const name=(nameInput.value.trim()||'Player').slice(0,18);me.name=name;
+  me.mesh=makeHuman(colors[0]);me.mesh.add(textSprite(name,'#fff'));me.mesh.children.at(-1).position.y=4.3;world.add(me.mesh);
+  login.style.display='none';
+  const proto=location.protocol==='https:'?'wss':'ws';
+  const url=`${proto}://${location.host}`;
+  socket=new WebSocket(url);
+  socket.onopen=()=>{document.getElementById('status').textContent='Online';socket.send(JSON.stringify({type:'join',name}))};
+  socket.onclose=()=>document.getElementById('status').textContent='Offline';
+  socket.onerror=()=>document.getElementById('status').textContent='Connection error';
+  socket.onmessage=e=>{
+    let m;try{m=JSON.parse(e.data)}catch{return}
+    if(m.type==='welcome'){me.id=m.id;document.getElementById('players').textContent=`${m.count}/4`;for(const p of m.players){if(p.id!==m.id)addRemote(p.id,p.name,colors[p.slot%colors.length])}}
+    if(m.type==='playerJoined'){addRemote(m.id,m.name,colors[m.slot%colors.length]);document.getElementById('players').textContent=`${m.count}/4`}
+    if(m.type==='playerLeft'){removeRemote(m.id);document.getElementById('players').textContent=`${m.count}/4`}
+    if(m.type==='state'){const p=players.get(m.id);if(p){p.target.set(m.x,m.y,m.z);p.targetRot=m.rotation}}
+    if(m.type==='full'){alert('The school is full. Maximum 4 real players.');location.reload()}
+  };
+}
+</script>
+</body>
+</html>

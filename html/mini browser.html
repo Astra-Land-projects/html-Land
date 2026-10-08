@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Astra Mini Browser</title>
+
+<style>
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+height:100vh;
+background:#101217;
+color:#eee;
+font-family:Arial,sans-serif;
+overflow:hidden;
+}
+
+.browser{
+height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+/* TOP */
+
+.top{
+background:#181b22;
+border-bottom:1px solid #30343d;
+}
+
+.tabs{
+height:42px;
+display:flex;
+align-items:center;
+gap:5px;
+padding:5px;
+overflow-x:auto;
+}
+
+.tab{
+min-width:170px;
+max-width:220px;
+height:34px;
+padding:8px 12px;
+background:#242831;
+border-radius:8px 8px 0 0;
+display:flex;
+justify-content:space-between;
+cursor:pointer;
+}
+
+.tab.active{
+background:#303641;
+}
+
+.newtab{
+border:0;
+background:#303641;
+color:white;
+width:34px;
+height:32px;
+border-radius:8px;
+font-size:20px;
+cursor:pointer;
+}
+
+.toolbar{
+display:flex;
+gap:8px;
+align-items:center;
+padding:8px;
+}
+
+.toolbar button{
+width:36px;
+height:34px;
+border:0;
+border-radius:8px;
+background:#292e37;
+color:white;
+cursor:pointer;
+}
+
+.address{
+flex:1;
+height:36px;
+border:0;
+border-radius:18px;
+background:#252a33;
+color:white;
+padding:0 16px;
+outline:none;
+}
+
+.bookmark{
+background:#252a33;
+color:white;
+border:0;
+border-radius:8px;
+padding:8px 12px;
+}
+
+/* CONTENT */
+
+.content{
+flex:1;
+background:#fff;
+color:#111;
+overflow:auto;
+}
+
+.page{
+min-height:100%;
+padding:40px;
+}
+
+.home{
+max-width:850px;
+margin:auto;
+text-align:center;
+padding-top:80px;
+}
+
+.logo{
+font-size:65px;
+font-weight:bold;
+}
+
+.logo span{
+color:#6d8cff;
+}
+
+.search{
+width:min(600px,90%);
+height:50px;
+border-radius:25px;
+border:1px solid #ccc;
+padding:0 20px;
+font-size:17px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+margin-top:35px;
+}
+
+.card{
+padding:25px;
+border:1px solid #ddd;
+border-radius:15px;
+cursor:pointer;
+transition:.2s;
+}
+
+.card:hover{
+transform:translateY(-4px);
+box-shadow:0 8px 25px #0002;
+}
+
+iframe{
+width:100%;
+height:100%;
+min-height:calc(100vh - 100px);
+border:0;
+}
+
+.history{
+max-width:800px;
+margin:auto;
+}
+
+.history div{
+padding:15px;
+border-bottom:1px solid #ddd;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="browser">
+
+<div class="top">
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="toolbar">
+
+   <button onclick="back()">←</button>
+   <button onclick="forward()">→</button>
+   <button onclick="reload()">⟳</button>
+
+   <input
+    id="address"
+    class="address"
+    placeholder="Search or enter address"
+    onkeydown="addressKey(event)"
+   >
+
+   <button onclick="bookmark()" class="bookmark">
+    ⭐
+   </button>
+
+  </div>
+
+</div>
+
+<div class="content" id="content"></div>
+
+</div>
+
+<script>
+
+let tabs=[
+{
+  title:"New Tab",
+  url:"home"
+}
+];
+
+let active=0;
+
+let historyList=
+JSON.parse(localStorage.getItem("astraHistory")||"[]");
+
+let bookmarks=
+JSON.parse(localStorage.getItem("astraBookmarks")||"[]");
+
+function render(){
+
+const tabsEl=document.getElementById("tabs");
+
+tabsEl.innerHTML="";
+
+tabs.forEach((t,i)=>{
+
+  const div=document.createElement("div");
+
+  div.className="tab "+(i===active?"active":"");
+
+  div.innerHTML=`
+   <span>${escapeHTML(t.title)}</span>
+   <span onclick="closeTab(event,${i})">×</span>
+  `;
+
+  div.onclick=()=>{
+
+   active=i;
+   render();
+
+  };
+
+  tabsEl.appendChild(div);
+
+});
+
+const t=tabs[active];
+
+document.getElementById("address").value=
+  t.url==="home"?"":t.url;
+
+renderPage(t.url);
+}
+
+function renderPage(url){
+
+const content=document.getElementById("content");
+
+if(url==="home"){
+
+  content.innerHTML=`
+
+   <div class="page home">
+
+    <div class="logo">
+     A<span>STRA</span>
+    </div>
+
+    <p>Mini Browser Simulator</p>
+
+    <input
+     class="search"
+     placeholder="Search Astra..."
+     onkeydown="homeSearch(event)"
+    >
+
+    <div class="cards">
+
+     <div class="card" onclick="navigate('https://www.google.com')">
+      🔎 Search
+     </div>
+
+     <div class="card" onclick="showHistory()">
+      🕘 History
+     </div>
+
+     <div class="card" onclick="showBookmarks()">
+      ⭐ Bookmarks
+     </div>
+
+     <div class="card" onclick="showAbout()">
+      ℹ️ About
+     </div>
+
+    </div>
+
+   </div>
+  `;
+
+  return;
+}
+
+if(url==="history"){
+  showHistory();
+  return;
+}
+
+if(url==="bookmarks"){
+  showBookmarks();
+  return;
+}
+
+if(url==="about"){
+  showAbout();
+  return;
+}
+
+/*
+  External pages are displayed through iframe.
+  Some sites block embedding, which is normal browser security behavior.
+*/
+
+content.innerHTML=`
+
+  <iframe
+   src="${escapeAttr(normalize(url))}"
+   sandbox="allow-scripts allow-forms allow-popups allow-same-origin">
+  </iframe>
+
+`;
+
+addHistory(url);
+}
+
+function navigate(url){
+
+if(!url)return;
+
+if(
+  !url.startsWith("http://") &&
+  !url.startsWith("https://")
+){
+
+  if(url.includes(".")){
+   url="https://"+url;
+  }else{
+   url="https://www.google.com/search?q="+
+    encodeURIComponent(url);
+  }
+}
+
+tabs[active].url=url;
+tabs[active].title=
+  url.replace(/^https?:\/\//,"").slice(0,22);
+
+render();
+}
+
+function addressKey(e){
+
+if(e.key==="Enter")
+  navigate(e.target.value.trim());
+}
+
+function homeSearch(e){
+
+if(e.key==="Enter")
+  navigate(e.target.value);
+}
+
+function newTab(){
+
+tabs.push({
+  title:"New Tab",
+  url:"home"
+});
+
+active=tabs.length-1;
+
+render();
+}
+
+function closeTab(e,i){
+
+e.stopPropagation();
+
+tabs.splice(i,1);
+
+if(!tabs.length)
+  tabs.push({title:"New Tab",url:"home"});
+
+active=Math.min(active,tabs.length-1);
+
+render();
+}
+
+function addHistory(url){
+
+if(url==="home")return;
+
+historyList.unshift({
+  url,
+  time:new Date().toLocaleString()
+});
+
+historyList=
+  historyList.slice(0,30);
+
+localStorage.setItem(
+  "astraHistory",
+  JSON.stringify(historyList)
+);
+}
+
+function showHistory(){
+
+tabs[active]={
+  title:"History",
+  url:"history"
+};
+
+const content=document.getElementById("content");
+
+content.innerHTML=`
+  <div class="page history">
+   <h1>🕘 History</h1>
+   ${
+    historyList.length?
+    historyList.map(h=>`
+     <div onclick="navigate('${escapeAttr(h.url)}')">
+      <b>${escapeHTML(h.url)}</b>
+      <small>${h.time}</small>
+     </div>
+    `).join("")
+    :
+    "<p>No history yet.</p>"
+   }
+  </div>
+`;
+
+document.getElementById("address").value="";
+}
+
+function bookmark(){
+
+const url=tabs[active].url;
+
+if(url==="home")return;
+
+if(!bookmarks.includes(url))
+  bookmarks.push(url);
+
+localStorage.setItem(
+  "astraBookmarks",
+  JSON.stringify(bookmarks)
+);
+
+alert("⭐ Bookmarked!");
+}
+
+function showBookmarks(){
+
+tabs[active]={
+  title:"Bookmarks",
+  url:"bookmarks"
+};
+
+document.getElementById("content").innerHTML=`
+
+  <div class="page history">
+
+   <h1>⭐ Bookmarks</h1>
+
+   ${
+    bookmarks.length?
+    bookmarks.map(u=>`
+     <div onclick="navigate('${escapeAttr(u)}')">
+      ${escapeHTML(u)}
+     </div>
+    `).join("")
+    :
+    "<p>No bookmarks.</p>"
+   }
+
+  </div>
+`;
+
+document.getElementById("address").value="";
+}
+
+function showAbout(){
+
+document.getElementById("content").innerHTML=`
+
+  <div class="page home">
+
+   <h1>🌐 Astra Mini Browser</h1>
+
+   <p>
+    A browser interface built with pure HTML,
+    CSS and JavaScript.
+   </p>
+
+   <p>
+    No external packages required.
+   </p>
+
+  </div>
+`;
+}
+
+function back(){
+history.back();
+}
+
+function forward(){
+history.forward();
+}
+
+function reload(){
+render();
+}
+
+function normalize(url){
+return url;
+}
+
+function escapeHTML(s){
+return String(s)
+  .replaceAll("&","&amp;")
+  .replaceAll("<","&lt;")
+  .replaceAll(">","&gt;");
+}
+
+function escapeAttr(s){
+return String(s)
+  .replaceAll("'","%27")
+  .replaceAll('"',"%22");
+}
+
+render();
+
+</script>
+
+</body>
+</html>

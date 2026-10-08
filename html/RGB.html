@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGB Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            cursor: default;
+        }
+
+        /* Animated RGB Border Around Screen */
+        .rgb-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .rgb-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 8px solid transparent;
+            border-image: linear-gradient(var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000) 1;
+            animation: rotateRGB 4s linear infinite;
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes rotateRGB {
+            to {
+                --angle: 360deg;
+            }
+        }
+
+        /* Canvas for Interactive Mouse Trail */
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- RGB Border Effect -->
+    <div class="rgb-border"></div>
+
+    <!-- Mouse Particle Canvas -->
+    <canvas id="trailCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('trailCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let particles = [];
+        let hue = 0;
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 8 + 3;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.speedY = (Math.random() - 0.5) * 2;
+                this.color = `hsl(${hue}, 100%, 50%)`;
+                this.alpha = 1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.alpha -= 0.02;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Add particles on mouse movement
+        window.addEventListener('mousemove', (e) => {
+            for (let i = 0; i < 4; i++) {
+                particles.push(new Particle(e.clientX, e.clientY));
+            }
+            hue = (hue + 5) % 360;
+        });
+
+        // Animation Loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                if (particles[i].alpha <= 0 || particles[i].size <= 0.2) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

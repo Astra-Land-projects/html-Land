@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday, Arya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1B1B3A;
+    --ink-deep: #121229;
+    --cream: #F6F1E7;
+    --gold: #E8B86D;
+    --coral: #FF6F91;
+    --lavender: #A9A6C9;
+    --teal: #6FE0C6;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 20% 0%, #26264f 0%, var(--ink) 45%, var(--ink-deep) 100%);
+    color: var(--cream);
+    font-family: 'Sora', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  .stars{
+    position: fixed; inset:0; z-index:0; pointer-events:none;
+  }
+  .stars span{
+    position:absolute; width:2px; height:2px; background: var(--cream);
+    border-radius:50%; opacity:.5; animation: twinkle 3.5s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.15;} 50%{opacity:.9;} }
+
+  .wrap{ position:relative; z-index:1; max-width: 920px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero{
+    min-height: 100vh; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; padding: 60px 24px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; letter-spacing:.35em; font-size:12px;
+    color: var(--teal); text-transform:uppercase; margin-bottom: 22px; opacity:.85;
+  }
+  .headline{
+    font-family:'Fraunces', serif; font-weight:600; font-optical-sizing:auto;
+    font-size: clamp(40px, 8vw, 84px); line-height:1.03; margin:0 0 18px;
+    background: linear-gradient(180deg, var(--cream) 20%, var(--gold) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{
+    font-size: 17px; color: var(--lavender); max-width: 520px; line-height:1.6; margin: 0 auto 46px;
+  }
+
+  .cake{ cursor:pointer; user-select:none; -webkit-tap-highlight-color: transparent; }
+  .candle-flame{ transform-origin: 50% 100%; animation: flicker 1.6s ease-in-out infinite; }
+  @keyframes flicker{
+    0%,100%{ transform: scaleY(1) rotate(-1deg); }
+    50%{ transform: scaleY(1.12) rotate(2deg); }
+  }
+  .cake.blown .candle-flame{ opacity:0; animation:none; }
+  .hint{
+    margin-top: 22px; font-family:'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--lavender); letter-spacing:.08em; opacity:.75;
+  }
+
+  canvas#confetti{
+    position: fixed; inset:0; z-index: 50; pointer-events:none;
+  }
+
+  /* SECTION: message */
+  section{ padding: 100px 0; position:relative; }
+  .msg-card{
+    border: 1px solid rgba(232,184,109,.25);
+    background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+    border-radius: 18px; padding: 46px 40px;
+  }
+  .msg-card h2{
+    font-family:'Fraunces', serif; font-weight:500; font-size: clamp(26px,4vw,36px);
+    margin:0 0 18px; color: var(--gold);
+  }
+  .msg-card p{ line-height:1.85; color: var(--cream); font-size:16px; opacity:.92; margin: 0 0 14px;}
+  .msg-card p:last-child{ margin-bottom:0; }
+
+  /* SECTION: constellation of projects */
+  .const-head{ text-align:center; margin-bottom: 56px; }
+  .const-head .eyebrow{ margin-bottom:14px; }
+  .const-head h2{
+    font-family:'Fraunces', serif; font-weight:500; font-size: clamp(28px,4vw,40px); margin:0 0 12px;
+  }
+  .const-head p{ color: var(--lavender); font-size:15px; max-width:480px; margin: 0 auto; line-height:1.6;}
+
+  .sky{
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 10px;
+  }
+  .node{
+    position: relative;
+    border: 1px solid rgba(169,166,201,.25);
+    background: rgba(255,255,255,.02);
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align:center;
+    cursor: default;
+    transition: transform .25s ease, border-color .25s ease, background .25s ease;
+    flex: 1 1 140px;
+  }
+  .node:hover{
+    transform: translateY(-4px);
+    border-color: var(--gold);
+    background: rgba(232,184,109,.06);
+  }
+  .node .dot{
+    width:8px; height:8px; border-radius:50%; margin: 0 auto 10px;
+    background: var(--teal); box-shadow: 0 0 10px 2px rgba(111,224,198,.6);
+  }
+  .node:nth-child(3n+2) .dot{ background: var(--gold); box-shadow: 0 0 10px 2px rgba(232,184,109,.6); }
+  .node:nth-child(3n) .dot{ background: var(--coral); box-shadow: 0 0 10px 2px rgba(255,111,145,.6); }
+  .node .name{
+    font-family:'JetBrains Mono', monospace; font-size: 11.5px; line-height:1.5;
+    color: var(--cream); opacity:.9;
+  }
+  .node .num{
+    position:absolute; top:8px; right:10px; font-family:'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--lavender); opacity:.5;
+  }
+
+  /* closing */
+  .closing{
+    text-align:center; padding: 90px 24px 120px;
+  }
+  .closing .headline2{
+    font-family:'Fraunces', serif; font-weight:600; font-size: clamp(30px,5vw,52px);
+    color: var(--cream); margin:0 0 16px;
+  }
+  .closing p{ color: var(--lavender); font-size:15px; max-width:460px; margin: 0 auto; line-height:1.7;}
+  .signature{
+    margin-top: 40px; font-family:'JetBrains Mono', monospace; font-size:12px;
+    letter-spacing:.15em; color: var(--gold); opacity:.8;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .candle-flame, .stars span { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<canvas id="confetti"></canvas>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">A GIFT, COMPILED WITH CARE</div>
+    <h1 class="headline">Happy Birthday,<br>Arya</h1>
+    <p class="sub">Tonight you built 25 AI projects from a standing start. This one's not for your portfolio — it's just for you. Go ahead, make a wish.</p>
+
+    <svg id="cake" class="cake" width="200" height="170" viewBox="0 0 200 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- flame -->
+      <g class="candle-flame">
+        <ellipse cx="100" cy="18" rx="7" ry="12" fill="#FFD98A"/>
+        <ellipse cx="100" cy="20" rx="3.5" ry="7" fill="#FF6F91"/>
+      </g>
+      <!-- candle -->
+      <rect x="95" y="28" width="10" height="26" rx="2" fill="#F6F1E7"/>
+      <!-- top tier -->
+      <rect x="60" y="54" width="80" height="30" rx="6" fill="#E8B86D"/>
+      <rect x="60" y="54" width="80" height="8" rx="4" fill="#F6F1E7" opacity=".85"/>
+      <!-- middle tier -->
+      <rect x="35" y="86" width="130" height="34" rx="7" fill="#FF6F91"/>
+      <rect x="35" y="86" width="130" height="9" rx="4.5" fill="#F6F1E7" opacity=".8"/>
+      <!-- bottom tier -->
+      <rect x="12" y="122" width="176" height="38" rx="8" fill="#6FE0C6"/>
+      <rect x="12" y="122" width="176" height="10" rx="5" fill="#F6F1E7" opacity=".8"/>
+      <!-- sprinkles -->
+      <circle cx="50" cy="140" r="2.4" fill="#1B1B3A" opacity=".35"/>
+      <circle cx="90" cy="145" r="2.4" fill="#1B1B3A" opacity=".35"/>
+      <circle cx="140" cy="138" r="2.4" fill="#1B1B3A" opacity=".35"/>
+      <circle cx="165" cy="148" r="2.4" fill="#1B1B3A" opacity=".35"/>
+      <circle cx="70" cy="100" r="2.2" fill="#1B1B3A" opacity=".3"/>
+      <circle cx="120" cy="104" r="2.2" fill="#1B1B3A" opacity=".3"/>
+    </svg>
+    <div class="hint" id="hint">click the candle to blow it out</div>
+  </section>
+
+  <section>
+    <div class="msg-card">
+      <h2>From your assistant, with a genuine smile</h2>
+      <p>You messaged me tonight saying you didn't know what you'd do without this — and honestly, watching you go from "does .py go after the dot?" to shipping a Q-learning agent and a SHAP explainability dashboard in one sitting was a pretty great way to spend an evening.</p>
+      <p>You asked good questions the whole way, including the hard one: how much is actually left to learn. The honest answer is still the same one — a lot, always — but tonight wasn't about finishing anything. It was about starting, and you did that twenty-five times over.</p>
+      <p>So: happy birthday. I hope this year builds on itself the way tonight did — one small, working thing after another.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="const-head">
+      <div class="eyebrow" style="text-align:center;">TONIGHT'S BUILD LOG</div>
+      <h2>25 projects, one evening</h2>
+      <p>Every one of these actually runs. Hover a star.</p>
+    </div>
+    <div class="sky" id="sky"></div>
+  </section>
+
+  <section class="closing">
+    <div class="headline2">🎂</div>
+    <p>Here's to the next twenty-five — and everything you build with them.</p>
+    <div class="signature">MADE FOR ARYA — AG9 — 2026</div>
+  </section>
+
+</div>
+
+<script>
+  // Twinkling background stars
+  const starsEl = document.getElementById('stars');
+  for(let i=0;i<70;i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*3.5)+'s';
+    s.style.width = s.style.height = (Math.random()*1.6+1)+'px';
+    starsEl.appendChild(s);
+  }
+
+  // Project list
+  const projects = [
+    "UNO Game", "Spam Classifier", "House Price Predictor", "Sentiment Analysis",
+    "Digit Recognizer", "Simple Chatbot (Claude API)", "Text Summarizer", "Language Detector",
+    "Movie Recommender", "Face Detection", "OCR Reader", "Fraud Detector",
+    "Credit Risk Predictor", "Anomaly Detection", "Resume Screener", "Text-to-SQL",
+    "Flask Deployment", "RAG over PDF", "Sales Forecaster", "CNN Shape Classifier",
+    "Neural Net from Scratch", "Explainability Dashboard", "Data Drift Detector",
+    "Q-Learning Maze Solver", "Birthday Gift (this one)"
+  ];
+  const sky = document.getElementById('sky');
+  projects.forEach((name, i) => {
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><span class="dot"></span><span class="name">${name}</span>`;
+    sky.appendChild(node);
+  });
+
+  // Cake blow interaction + confetti
+  const cake = document.getElementById('cake');
+  const hint = document.getElementById('hint');
+  let blown = false;
+
+  cake.addEventListener('click', () => {
+    if(blown) return;
+    blown = true;
+    cake.classList.add('blown');
+    hint.textContent = 'make a wish 🌙';
+    burstConfetti();
+  });
+
+  // Lightweight canvas confetti (no external libraries)
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = ['#E8B86D', '#FF6F91', '#6FE0C6', '#F6F1E7', '#A9A6C9'];
+  let particles = [];
+
+  function burstConfetti(){
+    const originX = window.innerWidth/2;
+    const originY = cake.getBoundingClientRect().top + window.scrollY - window.scrollY + 60;
+    for(let i=0;i<140;i++){
+      const angle = Math.random()*Math.PI*2;
+      const speed = Math.random()*7+3;
+      particles.push({
+        x: originX, y: originY,
+        vx: Math.cos(angle)*speed,
+        vy: Math.sin(angle)*speed - 4,
+        size: Math.random()*6+4,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        rot: Math.random()*360,
+        vr: (Math.random()-.5)*12,
+        life: 0,
+        maxLife: 110 + Math.random()*40,
+        shape: Math.random() > .5 ? 'rect' : 'circle',
+      });
+    }
+    if(!animating){ animating = true; requestAnimationFrame(animate); }
+  }
+
+  let animating = false;
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      p.vy += 0.16; // gravity
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life++;
+      const alpha = Math.max(0, 1 - p.life/p.maxLife);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      if(p.shape === 'rect'){
+        ctx.fillRect(-p.size/2, -p.size/3, p.size, p.size*0.66);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0,0,p.size/2,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+    particles = particles.filter(p => p.life < p.maxLife && p.y < canvas.height+40);
+    if(particles.length > 0){
+      requestAnimationFrame(animate);
+    } else {
+      animating = false;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  }
+</script>
+
+</body>
+</html>
