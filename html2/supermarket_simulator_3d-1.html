@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#14251e">
+<title>Supermarket Simulator 3D</title>
+<style>
+:root{--glass:rgba(12,24,20,.86);--glass2:rgba(20,38,31,.96);--line:rgba(255,255,255,.14);--gold:#ffdb62;--mint:#a9f0bd;--text:#f7f8f2;--muted:#b8c8bd;--red:#ff9393;--blue:#9bd9ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9ccfe8;color:var(--text);font-family:Inter,Arial,Helvetica,sans-serif}body{user-select:none;-webkit-user-select:none}button,input{font:inherit}#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%;outline:none}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px #06110b35;backdrop-filter:blur(10px)}#loading{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 50% 25%,#385d43,#0a1610 70%);display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.loading-card{max-width:600px}.loading-title{font-size:clamp(28px,5vw,46px);font-weight:950;color:var(--gold);letter-spacing:1.5px}.loading-copy{color:#d5e5d8;line-height:1.8;font-size:13px;margin-top:12px}.spinner{width:34px;height:34px;margin:20px auto;border:3px solid #fff3;border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+#hud{position:fixed;inset:0;display:none;pointer-events:none}#topbar{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:stretch;justify-content:space-between;gap:8px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:10px;padding:8px 12px;min-width:185px}.brand-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#ffe88c,#e5a91e);color:#1c2e20;font-size:22px}.brand strong{display:block;font-size:12px;letter-spacing:1px}.brand small{display:block;font-size:10px;color:var(--muted);margin-top:3px}.stat{display:flex;gap:8px;align-items:center;padding:8px 12px;min-width:105px}.stat-icon{font-size:19px}.stat small{display:block;font-size:9px;color:var(--muted);margin-bottom:3px}.stat strong{font-size:14px;white-space:nowrap}.money{color:var(--gold)}
+#leftPanel,#rightPanel{position:absolute;top:88px;width:222px;padding:12px;max-height:calc(100vh - 190px);overflow:hidden}#leftPanel{left:12px}#rightPanel{right:12px;width:235px}#leftPanel h3,#rightPanel h3{font-size:12px;letter-spacing:.6px;color:var(--gold);margin:0 0 9px}.stock-row{display:flex;justify-content:space-between;gap:7px;padding:5px 0;font-size:10px;border-bottom:1px solid #fff0;color:#e5eee7}.stock-row span:last-child{color:var(--mint);font-weight:bold}.tiny-muted{font-size:10px;line-height:1.7;color:var(--muted)}.sep{height:1px;background:var(--line);margin:10px 0}.task{font-size:10px;line-height:1.6;padding:7px 8px;margin:5px 0;border-radius:8px;background:#ffffff08;border:1px solid #ffffff0b}.task.done{color:var(--mint);background:#77df9b12}.task strong{display:block;color:#fff;font-size:11px}.meter{height:5px;border-radius:99px;background:#fff1;overflow:hidden;margin-top:6px}.meter>div{height:100%;width:0;background:var(--gold);transition:width .2s}#crosshair{position:absolute;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);border:2px solid #ffffffdd;border-radius:50%;box-shadow:0 0 6px #000a}#crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff}#crosshair:before{width:2px;height:5px;top:-6px;left:4px}#crosshair:after{height:2px;width:5px;left:-6px;top:4px}#targetPrompt{position:absolute;left:50%;bottom:95px;transform:translateX(-50%);max-width:min(92vw,520px);min-width:225px;text-align:center;padding:10px 15px;border-radius:11px;background:#07120edf;border:1px solid #ffffff25;line-height:1.65;font-size:12px;display:none}#targetPrompt b{color:var(--gold)}#toast{position:absolute;top:18%;left:50%;transform:translateX(-50%);max-width:min(90vw,520px);padding:10px 15px;border-radius:11px;background:#0a1912ec;border:1px solid #ffffff25;text-align:center;font-size:12px;line-height:1.7;opacity:0;transition:opacity .2s}#toast.show{opacity:1}#heldTag{position:absolute;left:12px;bottom:12px;padding:9px 12px;font-size:11px;min-width:160px}#heldTag .muted{color:var(--muted)}#controlsHint{position:absolute;right:12px;bottom:12px;padding:8px 11px;font-size:10px;color:var(--muted);line-height:1.9}kbd{display:inline-block;border:1px solid #ffffff40;border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:white;background:#fff1;margin:0 2px;font:inherit}
+#overlay,#pcModal,#pauseModal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#06130bdc;backdrop-filter:blur(9px);z-index:60}#pcModal,#pauseModal{display:none;z-index:70}.dialog{width:min(760px,100%);max-height:92vh;overflow:auto;padding:clamp(20px,4vw,34px);background:linear-gradient(150deg,#1b3729f7,#0d1d15fa);border:1px solid #ffffff22;border-radius:22px;box-shadow:0 25px 100px #0008}.hero{text-align:center;margin-bottom:16px}.hero-emoji{font-size:44px}.hero h1{margin:8px 0;color:var(--gold);font-size:clamp(27px,5vw,43px);line-height:1.15;letter-spacing:.7px}.hero p{max-width:650px;margin:12px auto;color:#d1dfd5;font-size:13px;line-height:1.8}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.feature{padding:12px 9px;border:1px solid #ffffff16;border-radius:12px;background:#ffffff08;text-align:center}.feature span{display:block;font-size:24px;margin-bottom:6px}.feature strong{display:block;font-size:11px}.feature small{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.6}.control-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.control-item{padding:9px 11px;border-radius:9px;background:#ffffff09;font-size:11px;line-height:1.7}.control-item b{color:var(--gold)}.btn-row{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:18px}.btn{border:1px solid #ffffff28;border-radius:10px;padding:10px 14px;background:#ffffff0d;color:#fff;font-weight:750;font-size:11px;cursor:pointer;transition:transform .15s,background .15s}.btn:hover{transform:translateY(-1px);background:#ffffff1a}.btn.primary{background:linear-gradient(135deg,#ffe783,#f2b92e);border-color:#ffe783;color:#26321e}.btn.primary:hover{background:#fff09c}.btn.danger{color:#ffaaaa}.note{font-size:10px!important;color:#9fb4a5!important;text-align:center;margin-top:13px!important;line-height:1.8!important}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:13px}.modal-head h2{margin:0;color:var(--gold);font-size:22px}.balance{font-size:13px;color:var(--mint);font-weight:bold}.pc-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}.tab{padding:8px 11px;border:1px solid #ffffff20;border-radius:9px;background:#ffffff09;color:#fff;font-size:10px;cursor:pointer}.tab.active{background:#ffe477;color:#26321e;border-color:#ffe477}.item-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.item-card{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #ffffff18;border-radius:12px;background:#ffffff08;min-height:78px}.item-emoji{font-size:27px}.item-main{flex:1;min-width:0}.item-main strong{display:block;font-size:11px}.item-main small{display:block;margin-top:4px;color:var(--muted);font-size:10px;line-height:1.5}.item-card .btn{padding:7px 9px;font-size:10px}.staff-card{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid #ffffff18;border-radius:12px;margin:8px 0;background:#ffffff06}.staff-emoji{font-size:28px}.staff-info{flex:1}.staff-info strong{font-size:12px}.staff-info p{margin:4px 0;color:var(--muted);font-size:10px;line-height:1.6}.status-pill{border-radius:99px;padding:5px 8px;font-size:9px;background:#a8f1bd20;color:var(--mint);white-space:nowrap}.price-line{display:grid;grid-template-columns:110px 1fr 55px;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ffffff10;font-size:11px}.price-line input{width:100%;accent-color:var(--gold)}.price-line strong{color:var(--gold);text-align:right}.section-title{margin:17px 0 8px;color:var(--gold);font-size:12px}.city-label{position:absolute;top:70px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;color:#fff9;text-shadow:0 2px 4px #0008;pointer-events:none}
+#mobileControls{display:none;position:absolute;inset:0;pointer-events:none}.joystick{position:absolute;left:18px;bottom:22px;width:114px;height:114px;border:1px solid #ffffff45;border-radius:50%;background:#0e2119ae;pointer-events:auto;touch-action:none}.joystick:before{content:"";position:absolute;inset:23px;border:1px dashed #fff5;border-radius:50%}.stick{position:absolute;left:35px;top:35px;width:42px;height:42px;border:2px solid #ffffffaa;border-radius:50%;background:#ffdc62dd;box-shadow:0 3px 10px #0006}.mobile-actions{position:absolute;right:18px;bottom:24px;display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:auto}.mob-btn{width:61px;height:61px;border-radius:50%;border:1px solid #ffffff55;background:#0d2119dd;color:#fff;font-size:10px;font-weight:bold;touch-action:manipulation}.mob-btn.action{width:74px;height:74px;background:#ffdc62e8;color:#24311e}.mob-btn:active{transform:scale(.96)}#mobileLookHint{position:absolute;right:12px;top:45%;writing-mode:vertical-rl;font-size:9px;color:#ffffff8a}
+@media(max-width:760px){#topbar{top:6px;left:6px;right:6px;gap:5px}.brand{min-width:130px;padding:6px 8px;gap:6px}.brand-icon{width:28px;height:28px;font-size:17px}.brand strong{font-size:9px}.brand small{font-size:8px}.stat{min-width:69px;padding:6px 7px;gap:5px}.stat-icon{font-size:14px}.stat small{font-size:8px}.stat strong{font-size:11px}#leftPanel{top:72px;left:6px;width:147px;padding:9px;max-height:40vh}#rightPanel{top:72px;right:6px;width:155px;padding:9px;max-height:40vh}#leftPanel h3,#rightPanel h3{font-size:9px;margin-bottom:6px}.stock-row{font-size:8px;padding:4px 0}.task{font-size:8px;padding:5px}.task strong{font-size:9px}#heldTag{left:6px;bottom:145px;min-width:125px;padding:7px;font-size:9px}#controlsHint{display:none}#targetPrompt{bottom:135px;min-width:200px;padding:8px;font-size:10px}#toast{top:24%;font-size:10px}.feature-grid{grid-template-columns:repeat(2,1fr)}.item-grid{grid-template-columns:1fr}.dialog{padding:19px;border-radius:18px}.hero h1{font-size:28px}.hero p{font-size:11px}.control-grid{grid-template-columns:1fr 1fr}.control-item{font-size:9px;padding:7px}.modal-head h2{font-size:18px}.price-line{grid-template-columns:83px 1fr 47px;gap:7px;font-size:10px}#mobileControls{display:block}.city-label{top:130px;font-size:8px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="loading"><div class="loading-card"><div class="loading-title">SUPERMARKET SIMULATOR 3D</div><div class="loading-copy">Building your store, stocking the shelves, and preparing the town...</div><div class="spinner"></div><div class="loading-copy" style="font-size:11px">The Three.js library is loaded from a CDN, so an internet connection is required.</div></div></div>
+<div id="hud">
+  <div id="topbar">
+    <div class="brand panel"><div class="brand-icon">▦</div><div><strong>SUPERMARKET SIMULATOR</strong><small>Store & Small-Town Delivery</small></div></div>
+    <div class="stat panel"><span class="stat-icon">💵</span><div><small>Cash</small><strong class="money" id="cashStat">$700</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">🛍️</span><div><small>Customers Served</small><strong id="servedStat">0</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">📦</span><div><small>Deliveries</small><strong id="deliveryStat">0</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">🏪</span><div><small>Store Level</small><strong id="levelStat">1</strong></div></div>
+  </div>
+  <div id="leftPanel" class="panel"><h3>📦 STORE INVENTORY</h3><div id="inventoryList"></div><div class="sep"></div><h3>🧑‍💼 TEAM</h3><div id="teamList" class="tiny-muted"></div><div class="sep"></div><div class="tiny-muted">Carry a carton to its matching shelf and press <b>E</b> to restock 5 units.</div></div>
+  <div id="rightPanel" class="panel"><h3>🎯 STORE TASKS</h3><div id="taskList"></div><div class="sep"></div><h3>🚚 DELIVERY ROUTE</h3><div id="deliveryInfo" class="tiny-muted">No active delivery. Visit the dispatch station to accept a local order.</div><div class="meter"><div id="deliveryMeter"></div></div><div class="sep"></div><div class="tiny-muted">A compact town surrounds your store. Deliveries are optional side jobs; running the shop is your main business.</div></div>
+  <div class="city-label" id="districtLabel">MARKET STREET</div><div id="crosshair"></div><div id="targetPrompt"></div><div id="toast"></div><div id="heldTag" class="panel"><span class="muted">Hands:</span> <strong id="heldValue">Empty</strong></div>
+  <div id="controlsHint" class="panel"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · Mouse to look<br><kbd>E</kbd> Interact · <kbd>Q</kbd> Return carton · <kbd>Shift</kbd> Run · <kbd>Esc</kbd> Pause</div>
+  <div id="mobileControls"><div id="joystick" class="joystick"><div id="stick" class="stick"></div></div><div id="mobileLookHint">Drag the right side to look</div><div class="mobile-actions"><button id="mobileRun" class="mob-btn">RUN</button><button id="mobileInteract" class="mob-btn action">INTERACT</button></div></div>
+</div>
+<div id="overlay"><div class="dialog"><div class="hero"><div class="hero-emoji">🏪 📦 🛵</div><h1>SUPERMARKET SIMULATOR 3D</h1><p>Build a real hands-on business in a small 3D town. Walk through your store, order cartons on the computer, carry boxes, stock shelves, ring up customers, hire staff, expand your shop, and take optional delivery jobs to nearby homes.</p></div><div class="feature-grid"><div class="feature"><span>📦</span><strong>Hands-On Stocking</strong><small>Pick up cartons, carry them, and refill the matching shelves yourself.</small></div><div class="feature"><span>🛒</span><strong>Run Your Store</strong><small>Customers shop, line up, and pay at your checkout.</small></div><div class="feature"><span>🚚</span><strong>Small-Town Delivery</strong><small>Accept a parcel job and deliver it to a nearby house for extra cash.</small></div><div class="feature"><span>🧑‍🍳</span><strong>Hire Employees</strong><small>Recruit cashiers, stockers, and delivery drivers.</small></div><div class="feature"><span>🧊</span><strong>More Products</strong><small>Sell groceries, chilled drinks, produce, snacks, and frozen food.</small></div><div class="feature"><span>🏗️</span><strong>Expand the Store</strong><small>Unlock a new wing with more shelves and cold-storage products.</small></div></div><div class="control-grid"><div class="control-item"><b>Move:</b> WASD or the mobile joystick</div><div class="control-item"><b>Look:</b> Mouse movement or drag the right screen area</div><div class="control-item"><b>Interact:</b> E or the Interact button</div><div class="control-item"><b>Return carton:</b> Q (when carrying a carton)</div><div class="control-item"><b>Run:</b> Shift or the Run button</div><div class="control-item"><b>Pause:</b> Escape</div></div><div class="btn-row"><button id="startBtn" class="btn primary">OPEN THE STORE</button><button id="resetBtn" class="btn">NEW STORE</button></div><p class="note">Single HTML file · Procedural 3D models · Autosaves locally in this browser · Internet required for Three.js</p></div></div>
+<div id="pcModal"><div class="dialog"><div class="modal-head"><h2>STORE MANAGEMENT</h2><div class="balance" id="pcBalance">$700</div></div><div class="pc-tabs"><button class="tab active" data-tab="orders">Order Stock</button><button class="tab" data-tab="staff">Employees</button><button class="tab" data-tab="prices">Product Prices</button><button class="tab" data-tab="upgrades">Store Upgrades</button></div><div id="pcContent"></div><div class="btn-row"><button id="closePcBtn" class="btn primary">RETURN TO STORE</button></div></div></div>
+<div id="pauseModal"><div class="dialog" style="max-width:500px;text-align:center"><div class="hero"><div class="hero-emoji">⏸️</div><h1>GAME PAUSED</h1><p>Your store is waiting. Take a breath, then jump back in.</p></div><div class="btn-row"><button id="resumeBtn" class="btn primary">RESUME</button><button id="saveBtn" class="btn">SAVE GAME</button><button id="quitBtn" class="btn danger">BACK TO TITLE</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const loading = $('loading');
+if (!window.THREE) { loading.innerHTML = '<div class="loading-card"><div class="loading-title">THREE.JS COULD NOT LOAD</div><div class="loading-copy">Please check your internet connection and reload this single HTML file.</div></div>'; return; }
+
+const productDefs = {
+  bread:{name:'Bread',emoji:'🍞',price:4,orderCost:24,color:0xd39a50,units:8},
+  milk:{name:'Milk',emoji:'🥛',price:5,orderCost:30,color:0xf0f4f4,units:8},
+  soda:{name:'Soda',emoji:'🥤',price:3,orderCost:22,color:0xe74d4d,units:8},
+  snacks:{name:'Snacks',emoji:'🍪',price:4,orderCost:20,color:0xe6b044,units:8},
+  produce:{name:'Produce',emoji:'🍎',price:6,orderCost:28,color:0x65b959,units:8},
+  frozen:{name:'Frozen Food',emoji:'🧊',price:8,orderCost:42,color:0x70c6ee,units:8}
+};
+const state = {
+  cash:700, served:0, deliveries:0, level:1, day:1, dayTimer:0, storeSales:0,
+  stock:{bread:8,milk:8,soda:8,snacks:8,produce:8,frozen:8}, cartons:{bread:1,milk:1,soda:1,snacks:1,produce:1,frozen:1},
+  staff:{cashier:false,stocker:false,driver:false}, prices:{bread:4,milk:5,soda:3,snacks:4,produce:6,frozen:8},
+  activeDelivery:null, deliveryIndex:0, customerIds:0, shopOpen:false, autosave:0,
+  targetSales:10, saleProgress:0, customersLost:0
+};
+const savedKey = 'marketStreetStoreSave_v1';
+function loadSave(){try{const raw=localStorage.getItem(savedKey);if(!raw)return;const d=JSON.parse(raw);if(!d||d.version!==1)return;for(const k of ['cash','served','deliveries','level','day','storeSales','targetSales','saleProgress','customersLost'])if(Number.isFinite(d[k]))state[k]=d[k];for(const k of Object.keys(state.stock))if(Number.isFinite(d.stock?.[k]))state.stock[k]=Math.max(0,d.stock[k]);for(const k of Object.keys(state.cartons))if(Number.isFinite(d.cartons?.[k]))state.cartons[k]=Math.max(0,d.cartons[k]);for(const k of Object.keys(state.staff))state.staff[k]=!!d.staff?.[k];for(const k of Object.keys(state.prices))if(Number.isFinite(d.prices?.[k]))state.prices[k]=Math.max(1,d.prices[k]);}catch(e){console.warn('Save could not be loaded',e);}}
+function saveGame(showMessage=false){try{localStorage.setItem(savedKey,JSON.stringify({version:1,cash:state.cash,served:state.served,deliveries:state.deliveries,level:state.level,day:state.day,storeSales:state.storeSales,stock:state.stock,cartons:state.cartons,staff:state.staff,prices:state.prices,targetSales:state.targetSales,saleProgress:state.saleProgress,customersLost:state.customersLost}));if(showMessage)toast('Game saved in this browser.');}catch(e){if(showMessage)toast('Browser storage is unavailable; progress may not persist.');}}
+loadSave();
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9ccfe8); scene.fog = new THREE.Fog(0x9ccfe8,55,145);
+const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,220); camera.position.set(0,1.68,4.7); camera.rotation.order='YXZ'; scene.add(camera);
+const renderer = new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(devicePixelRatio,1.7)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0; $('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xdff2ff,0x526347,2.0));
+const sun = new THREE.DirectionalLight(0xfff2d5,2.2); sun.position.set(-25,42,15); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); sun.shadow.camera.left=-55; sun.shadow.camera.right=55; sun.shadow.camera.top=55; sun.shadow.camera.bottom=-55; scene.add(sun);
+const mat = (color,roughness=.85,metalness=0) => new THREE.MeshStandardMaterial({color,roughness,metalness});
+const mats = {
+ grass:mat(0x73a95b), road:mat(0x4b5355), sidewalk:mat(0xc8c6b8), concrete:mat(0xbab9ad), wall:mat(0xf0e8d7), trim:mat(0x385d45), dark:mat(0x24332b), wood:mat(0x99633b), woodLight:mat(0xc18a50), metal:mat(0x607782,.42,.55), glass:new THREE.MeshStandardMaterial({color:0x92dbe9,roughness:.22,metalness:.2,transparent:true,opacity:.48}), white:mat(0xf1f4e9), black:mat(0x202a28), gold:mat(0xf7cd54), red:mat(0xb83c38), blue:mat(0x4b91b5), green:mat(0x3e8c51), roof:mat(0x5b625e)
+};
+const colliders=[]; const targets=[]; const furniture=[]; const shelves={}; const crateObjects=[]; const customers=[]; const deliveryHouses=[]; let held=null, heldMesh=null, heldShadow=null, currentTarget=null, currentTab='orders', gameStarted=false, paused=false, modalOpen=false, walkTime=0, customerSpawnTimer=5, cashierTimer=0, stockerTimer=0, driverTimer=0, toastTimer=0, pointerLocked=false, expandedBuilt=false, activeBeacon=null;
+const keys={}; const raycaster=new THREE.Raycaster(); const center=new THREE.Vector2(0,0); let yaw=0,pitch=0; let mobileRun=false; let joy={x:0,y:0,active:false}; let touchLook=null;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function boxMesh(w,h,d,material,x,y,z,parent=scene,cast=true,receive=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=receive;parent.add(m);return m;}
+function cylMesh(rt,rb,h,segments,material,x,y,z,parent=scene){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,segments),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
+function sphereMesh(r,material,x,y,z,parent=scene){const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
+function addCollider(x,z,w,d){colliders.push({x,z,w,d});}
+function trigger(label,action,x,y,z,w=1.2,h=1.3,d=1.1,meta={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false,side:THREE.DoubleSide}));m.position.set(x,y,z);m.userData={label,action,...meta};scene.add(m);targets.push(m);return m;}
+function wall(x,y,z,w,h,d,material=mat(0xede7d9),collide=true){boxMesh(w,h,d,material,x,y,z);if(collide)addCollider(x,z,w,d);}
+function textSign(text,x,y,z,w=4,h=.65){const c=document.createElement('canvas');c.width=1024;c.height=180;const ctx=c.getContext('2d');ctx.fillStyle='#254b35';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#ffdf66';ctx.font='900 72px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,c.width/2,c.height/2);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const mesh=boxMesh(w,h,.12, new THREE.MeshStandardMaterial({map:tex,emissive:0x142e20,emissiveIntensity:.3}),x,y,z);return mesh;}
+function makeTree(x,z,scale=1){cylMesh(.18*scale,.26*scale,1.7*scale,7,mat(0x765136),x,.85*scale,z);sphereMesh(.9*scale,mat(0x4b8b46),x,2.0*scale,z);sphereMesh(.65*scale,mat(0x67a94f),x+.35*scale,2.35*scale,z-.15*scale);}
+function makeHouse(x,z,color,index){const g=new THREE.Group();scene.add(g);const bodymat=mat(color),roofmat=mat([0x96534a,0x526d82,0x8e7b52,0x6d594e][index%4]);boxMesh(6,3.3,5,bodymat,x,1.65,z,g);const roof= new THREE.Mesh(new THREE.ConeGeometry(4.25,2.5,4),roofmat);roof.rotation.y=Math.PI/4;roof.position.set(x,4.35,z);roof.castShadow=true;g.add(roof);boxMesh(1.1,2,.12,mat(0x61432d),x,1,z+2.56,g);boxMesh(1.1,1.15,.13,mat(0xa5e1ee,.2),x-1.8,2,z+2.57,g);boxMesh(1.1,1.15,.13,mat(0xa5e1ee,.2),x+1.8,2,z+2.57,g);cylMesh(.11,.11,.12,10,mat(0xd1ac5e),x+.32,1,z+2.67,g);boxMesh(2.0,.25,.18,mat(0xede8d9),x,3.5,z+2.64,g);const sign=boxMesh(1.45,.36,.1,mat(0x31553c),x,3.5,z+2.72,g);if(index%2===0)sign.material=mat(0x426e8b);if(index===2)sign.material=mat(0x765044);return {x,z,group:g,door:{x,z:z+2.9},name:['Oak Street Home','Bluebell Cottage','Pine View House','Maple Corner'][index%4]};}
+function createWorld(){
+  boxMesh(180,.3,180,mats.grass,0,-.25,0,scene,false,true);
+  boxMesh(120,.16,9,mats.road,0,-.07,25,scene,false,true);boxMesh(120,.18,2.8,mats.sidewalk,0,-.01,18.95,scene,false,true);boxMesh(120,.18,2.8,mats.sidewalk,0,-.01,31.05,scene,false,true);
+  for(let x=-55;x<=55;x+=8){boxMesh(3,.018,.13,mat(0xe7db98),x,.025,25,scene,false,false);}
+  for(let x=-44;x<=44;x+=11){makeTree(x,16.2,.85);makeTree(x,34.2,.95);}
+  const houses=[makeHouse(-23,40,0xe8d2b0,0),makeHouse(-6,43,0xc9d7e1,1),makeHouse(18,41,0xdcc5a2,2),makeHouse(35,34,0xd5c6b7,3),makeHouse(28,14,0xe0d9be,1),makeHouse(-25,14,0xdabf9b,2)];
+  houses.forEach((h,i)=>{deliveryHouses.push({...h,index:i}); const hx=h.door.x, hz=h.door.z; const target=trigger('Delivery drop-off: '+h.name,'deliveryDrop',hx,1.1,hz,1.8,2.1,1.4,{houseIndex:i}); target.visible=true;});
+  // distant neighborhood silhouettes
+  for(let i=0;i<9;i++){const x=-48+i*12;boxMesh(5,5+(i%3),5,mat([0xc9b7a0,0xabbcbd,0xc9c7ad][i%3]),x,2.4,-38,scene,true,true);boxMesh(5.8,1.7,5.8,mat(0x756d61),x,5.5,-38,scene,true,true);}
+  // store floor and structure
+  boxMesh(20,.25,21,mat(0xa9a79b),0,.0,-1.5); //  y=.0, top floor ~.125
+  wall(-10,2.6,-1.5,.35,5.2,21,mats.wall);wall(10,2.6,-8.4,.35,5.2,7,mats.wall);wall(10,2.6,6.4,.35,5.2,5,mats.wall);wall(0,2.6,-12,20,5.2,.35,mats.wall);
+  wall(-6.5,2.5,8.85,7,5,.28,mats.wall);wall(6.5,2.5,8.85,7,5,.28,mats.wall);
+  boxMesh(20,.25,21,mats.roof,0,5.25,-1.5,scene,false,true); // roof; remove visually by using ceiling panels around openings
+  // hide the main ceiling for first-person visibility; add simple beams instead
+  scene.remove(scene.children[scene.children.length-1]);
+  for(const z of [-10,-5,0,5])boxMesh(20,.12,.18,mat(0xd3c8af),0,4.75,z,scene,false,false);
+  textSign('MARKET STREET GROCERS',0,4.1,8.67,7.2,.8);
+  // Front windows beside entrance
+  boxMesh(3.6,2.0,.08,mats.glass,-8.1,2.35,8.66);boxMesh(3.6,2.0,.08,mats.glass,8.1,2.35,8.66);
+  for(const x of [-9.85,9.85,-3,3])boxMesh(.23,5.2,.3,mats.trim,x,2.6,8.7);
+  boxMesh(20,.16,.5,mats.trim,0,5.18,8.72);boxMesh(20,.16,.5,mats.trim,0,.15,8.72);
+  // interior hanging lights
+  for(const x of [-6,0,6])for(const z of [-8,-2,4]){boxMesh(1.6,.12,.55,mat(0xfff5d5,.35),x,4.45,z);const l=new THREE.PointLight(0xfff0cf,12,12);l.position.set(x,4.2,z);scene.add(l);}
+  // road access path from store to street
+  boxMesh(7,.08,10,mat(0xb9b5a7),0,-.035,13.2,scene,false,true);boxMesh(7,.02,10,mat(0x777a75),0,.015,23,scene,false,false);
+  for(let z=18;z<28;z+=2)boxMesh(7,.025,.07,mat(0xd9d6c6),0,.04,z,scene,false,false);
+  // parking bays
+  for(const x of [-5,5]){boxMesh(3,.025,5,mat(0x535b5c),x,.035,17.5,scene,false,false);boxMesh(.06,.03,5,mat(0xe5dfbd),x-1.5,.055,17.5,scene,false,false);boxMesh(.06,.03,5,mat(0xe5dfbd),x+1.5,.055,17.5,scene,false,false);}
+  // store fixtures
+  buildCheckout(); buildShelves(); buildCoolers(); buildStockroom(); buildOfficeComputer(); buildDispatch(); buildOutsideBike();
+  // roadside props
+  for(const [x,z] of [[-12,11],[12,11],[-12,24],[12,24],[-34,23],[42,25]])makeTree(x,z,.8);
+}
+function buildCheckout(){
+  boxMesh(3.7,1.05,1.25,mats.wood,7.1,.6,3.25);boxMesh(3.82,.13,1.32,mats.woodLight,7.1,1.18,3.25);addCollider(7.1,3.25,3.85,1.35);
+  boxMesh(.75,.18,.48,mats.black,6.65,1.38,3.03);boxMesh(.6,.08,.35,mat(0x67a9bb,.3),6.65,1.5,3.03);boxMesh(.5,.07,.38,mat(0x303937),7.55,1.28,3.0);
+  const sign=boxMesh(1.5,.45,.12,mats.trim,7.1,2.2,3.5);textSign('CHECKOUT',7.1,2.2,3.4,1.4,.37);
+  trigger('Checkout register — serve the next customer','checkout',7.1,1.5,2.2,2.4,1.8,1.7);
+}
+function buildShelves(){
+  const layout=[{x:-5.3,z:-2.5,types:['bread','snacks']},{x:-1.1,z:-2.5,types:['soda','produce']},{x:3.1,z:-2.5,types:['bread','snacks']}];
+  layout.forEach((it,idx)=>makeShelf(it.x,it.z,it.types,idx));
+  // small impulse shelf near checkout
+  makeShelf(5.2,-.6,['snacks','soda'],3,1.1,2.4);
+}
+function makeShelf(x,z,types,index,width=1.25,depth=4.3){
+  const base=boxMesh(width,1.9,depth,mat(0x7c6045),x,1.0,z);boxMesh(width+.12,.13,depth+.12,mat(0xd5d0c1),x,1.93,z);addCollider(x,z,width+.28,depth+.25);
+  for(const y of [.6,1.15,1.7]){boxMesh(width,.07,depth,mat(0xe0d8c8),x,y,z);}
+  for(const side of [-1,1]){boxMesh(.09,2,depth+.15,mat(0x3d4c43),x+side*(width/2),1,z);}
+  const product=types[0];
+  const triggers=types.map((type,ti)=>{
+    const offset=(ti-(types.length-1)/2)*width*.34;
+    return trigger(productDefs[type].name+' shelf — stock cartons here','shelf',x+offset,1.1,z+depth/2+.36,width/types.length+.38,1.8,.85,{shelfIndex:index,product:type});
+  });
+  shelves[index]={x,z,types,triggers,meshes:[],width,depth};
+  refreshShelfVisual(index);
+}
+function refreshShelfVisual(index){const sh=shelves[index];if(!sh)return;for(const m of sh.meshes)scene.remove(m);sh.meshes=[];const levels=[.78,1.32,1.78];sh.types.forEach((type,ti)=>{const count=state.stock[type];const show=Math.min(5,Math.ceil(count/2));const zone=sh.width/sh.types.length;for(let row=0;row<3;row++){for(let i=0;i<show;i++){const w=Math.min(.19,zone*.35),h=.24,d=.28;const centerX=sh.x-sh.width/2+zone*(ti+.5);const spread=Math.min(zone*.58,.5);const x=centerX+(show===1?0:(i/(show-1)-.5)*spread);const z=sh.z-sh.depth*.31+row*(sh.depth*.31);const p=boxMesh(w,h,d,mat(productDefs[type].color),x,levels[row],z);sh.meshes.push(p);if(row===0&&i===0){const band=boxMesh(w+.01,.04,.025,mat(0xf4ecdc),x,levels[row]+.06,z+.15);sh.meshes.push(band);}}}});}
+function buildCoolers(){
+  const coolTypes=['milk','frozen'];
+  for(let i=0;i<3;i++){const x=-8.55,z=-6.4+i*3.9;boxMesh(1.75,3.1,3.35,mat(0x5a7780),x,1.55,z);boxMesh(1.55,2.75,3.13,new THREE.MeshStandardMaterial({color:0x9cdfea,roughness:.2,metalness:.2,transparent:true,opacity:.36}),x,1.6,z);for(let y=.7;y<2.7;y+=.65)boxMesh(1.42,.06,2.85,mat(0xd4eff0),x, y,z);boxMesh(1.9,.14,3.5,mat(0x435b61),x,3.15,z);addCollider(x,z,1.9,3.55);const type=coolTypes[i%2];trigger((type==='milk'?'Milk Cooler':'Frozen Food Freezer')+' — restock','shelf',x+.95,1.3,z+1.05,1,2,1.25,{product:type,shelfIndex:4+i});}
+  // glass lids / freezer island
+  for(const [x,z,type] of [[-3.6,-7.6,'frozen'],[.2,-7.6,'milk']]){boxMesh(2.5,1.05,1.35,mat(0x55717a),x,.53,z);boxMesh(2.38,.1,1.23,mats.glass,x,1.1,z);addCollider(x,z,2.55,1.45);trigger((type==='frozen'?'Frozen Food':'Milk')+' chest — restock','shelf',x,1,z+.9,2.2,1.3,.9,{product:type,shelfIndex:type==='frozen'?6:7});}
+}
+function buildStockroom(){
+  const positions=[[-6.8,-9.2],[-4.3,-9.2],[-1.8,-9.2],[.7,-9.2],[3.2,-9.2],[5.7,-9.2]];
+  Object.keys(productDefs).forEach((type,i)=>{const [x,z]=positions[i];const count=Math.min(5,state.cartons[type]||0);for(let level=0;level<count;level++)createCrate(type,x,z,level);});
+  boxMesh(16,.18,1.0,mats.wood,0,.4,-10.05);addCollider(0,-10.05,16,1.1);
+  textSign('STOCKROOM',0,3.25,-10.9,3.4,.5);
+}
+function createCrate(type,x,z,stackLevel=0){
+  const g=new THREE.Group();scene.add(g);g.position.set(x,.15+stackLevel*.88,z);boxMesh(.95,.82,.8,mat(0xa77747),0,.41,0,g);boxMesh(.98,.09,.84,mat(0xd2aa70),0,.82,0,g);boxMesh(.16,.84,.83,mat(0x755033),-.32,.41,0,g);boxMesh(.16,.84,.83,mat(0x755033),.32,.41,0,g);boxMesh(.43,.26,.025,mat(productDefs[type].color),0,.47,.415,g);const trig=trigger(productDefs[type].name+' carton — pick it up','carton',x,1.0+stackLevel*.88,z,1.2,1.6,1.15,{product:type,crateId:Math.random().toString(36).slice(2),stackLevel});trig.userData.crateGroup=g;crateObjects.push({type,x,z,stackLevel,group:g,trigger:trig});if(stackLevel===0)addCollider(x,z,1.0,.9);return g;
+}
+function removeCrateFromWorld(crate){scene.remove(crate.group);scene.remove(crate.trigger);const ti=targets.indexOf(crate.trigger);if(ti>=0)targets.splice(ti,1);const ci=crateObjects.indexOf(crate);if(ci>=0)crateObjects.splice(ci,1);const stillStacked=crateObjects.some(c=>c.x===crate.x&&c.z===crate.z);if(!stillStacked){const i=colliders.findIndex(c=>Math.abs(c.x-crate.x)<.01&&Math.abs(c.z-crate.z)<.01&&Math.abs(c.w-1.0)<.01&&Math.abs(c.d-.9)<.01);if(i>=0)colliders.splice(i,1);}}
+function buildOfficeComputer(){
+  boxMesh(2.7,.92,.95,mats.wood,-7.1,.52,4.8);boxMesh(2.8,.1,1.0,mats.woodLight,-7.1,1.03,4.8);addCollider(-7.1,4.8,2.9,1.05);
+  boxMesh(.95,.62,.12,mat(0x252c2b),-7.1,1.47,4.45);boxMesh(.83,.48,.035,mat(0x4d9d9b,.28),-7.1,1.48,4.365);boxMesh(.12,.33,.12,mat(0x444a44),-7.1,1.12,4.45);boxMesh(.5,.06,.3,mat(0x242b29),-6.45,1.12,4.5);
+  textSign('OFFICE / ORDERS',-7.1,2.25,4.7,2.5,.38);trigger('Store computer — order stock, hire staff, set prices, and expand','computer',-7.1,1.6,3.8,2.3,2.0,1.8);
+}
+function buildDispatch(){
+  boxMesh(2.2,.9,1.1,mat(0x42644a),7.6,.48,-5.8);boxMesh(2.3,.12,1.2,mat(0x6e9664),7.6,.98,-5.8);addCollider(7.6,-5.8,2.3,1.25);boxMesh(.9,.55,.6,mat(0xd7b176),7.6,1.3,-5.8);boxMesh(.55,.08,.08,mat(0x3b523e),7.6,1.56,-5.48);textSign('DELIVERY DISPATCH',7.5,2.1,-5.65,2.8,.4);trigger('Delivery dispatch — accept a local parcel job','dispatch',7.6,1.45,-4.65,2.2,2,1.4);
+}
+function buildOutsideBike(){
+  // A compact courier scooter parked outside the front entrance.
+  const x=4.3,z=11.6;cylMesh(.34,.34,.18,16,mat(0x202626),x-.7,.35,z);const wheel2=cylMesh(.34,.34,.18,16,mat(0x202626),x+.65,.35,z);wheel2.rotation.z=Math.PI/2;cylMesh(.25,.22,.65,10,mat(0x457d9b),x,.85,z);boxMesh(.65,.22,.6,mat(0xd5d8ce),x+.15,1.06,z-.05);boxMesh(.32,.16,.32,mat(0xe4b943),x+.2,1.34,z-.05);cylMesh(.04,.04,.85,8,mat(0x252c2c),x-.03,1.42,z-.25);boxMesh(.75,.07,.08,mat(0x222a28),x-.03,1.83,z-.25);boxMesh(.6,.3,.35,mat(0x2c5b45),x+.12,1.48,z+.24);boxMesh(.48,.17,.05,mat(0xf3c84c),x+.12,1.48,z+.43);trigger('Courier scooter — deliveries are ready here','bike',x,1.0,z-.1,1.8,1.8,1.8);
+}
+function addExpansion(){
+  if(expandedBuilt)return;expandedBuilt=true;
+  // Side wing: a connected new room with more cold storage and space for extra shelves.
+  boxMesh(10,.25,15,mat(0xb0aea1),15,.0,-1.5);wall(20,2.6,-1.5,.3,5.2,15,mat(0xf0e8d7));wall(15,2.6,-9,10,5.2,.3,mat(0xf0e8d7));wall(15,2.6,6,10,5.2,.3,mat(0xf0e8d7));wall(15,2.6,-1.5,.3,5.2,5,mat(0xf0e8d7));wall(15,2.6,4.3,.3,5.2,3.4,mat(0xf0e8d7));
+  boxMesh(10,.16,15,mat(0xb9c4c1),15,5.15,-1.5,scene,false,true);
+  for(let x=12;x<=18;x+=3){boxMesh(1.1,1.9,4.0,mat(0x607b80),x,1,-1.5);for(let y=.75;y<2.0;y+=.6)boxMesh(1.0,.07,3.9,mat(0xe2e5d8),x,y,-1.5);addCollider(x,-1.5,1.3,4.2);trigger('Expanded aisle — refill shelves','shelf',x,1.2,.85,1.3,2,.85,{product:x<15?'milk':'frozen',shelfIndex:8+Math.round(x)});}
+  // Expansion neon strip and sign
+  textSign('FRESH & FROZEN',15,3.8,5.75,4.2,.5);boxMesh(10,.08,.12,mat(0x85d4d3),15,4.65,-1.5);
+  addCollider(15,-9,10,.4);toast('Store expansion unlocked! The new Fresh & Frozen wing is open.');
+}
+
+createWorld();
+if(state.level>1)addExpansion();
+// Start the player facing the front checkout and entrance aisle.
+camera.position.set(0,1.68,5.1);yaw=0;pitch=0;camera.rotation.set(pitch,yaw,0,'YXZ');
+
+const heldGroup=new THREE.Group();camera.add(heldGroup);heldGroup.position.set(.46,-.43,-.85);heldGroup.rotation.set(-.15,-.25,0);heldMesh=boxMesh(.42,.35,.36,mat(0xa77747),0,0,0,heldGroup);boxMesh(.43,.06,.37,mat(0xd5ae6f),0,.18,0,heldGroup);boxMesh(.23,.13,.02,mat(0xf2e6cb),0,.02,.19,heldGroup);heldGroup.visible=false;
+function setHeld(item){held=item;if(item){heldGroup.visible=true;heldMesh.material.color.setHex(item.kind==='parcel'?0x6b956b:0xa77747);heldGroup.children[2].material.color.setHex(item.kind==='parcel'?0xf0d66f:(productDefs[item.product]?.color||0xf2e6cb));}else{heldGroup.visible=false;}updateHud();}
+function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');toastTimer=3.2;}
+function cash(n){state.cash=Math.round((state.cash+n)*100)/100;updateHud();}
+function updateHud(){
+  $('cashStat').textContent='$'+Math.floor(state.cash).toLocaleString('en-US');$('servedStat').textContent=state.served;$('deliveryStat').textContent=state.deliveries;$('levelStat').textContent=state.level;$('pcBalance').textContent='$'+Math.floor(state.cash).toLocaleString('en-US');
+  $('heldValue').textContent=!held?'Empty':held.kind==='parcel'?'Delivery Parcel':(productDefs[held.product]?.name+' Carton');
+  $('inventoryList').innerHTML=Object.keys(productDefs).map(k=>`<div class="stock-row"><span>${productDefs[k].emoji} ${productDefs[k].name}</span><span>${state.stock[k]} units · ${state.cartons[k]} cartons</span></div>`).join('');
+  const staffLabels={cashier:'Cashier',stocker:'Stocker',driver:'Delivery Driver'};$('teamList').innerHTML=Object.keys(staffLabels).map(k=>`${state.staff[k]?'✅':'▫️'} ${staffLabels[k]}${state.staff[k]?' · Hired':' · Not hired'}`).join('<br>');
+  const tasks=[];const stocked=Object.values(state.stock).filter(n=>n>0).length;tasks.push({name:'Stock the shelves',desc:`${stocked}/6 product types available`,done:stocked===6});tasks.push({name:'Serve 10 customers',desc:`${state.saleProgress}/10 customers served today`,done:state.saleProgress>=10});tasks.push({name:'Hire your first employee',desc:Object.values(state.staff).some(Boolean)?'Team member hired':'Use the store computer',done:Object.values(state.staff).some(Boolean)});tasks.push({name:'Expand the supermarket',desc:state.level>1?'New wing unlocked':'Upgrade cost: $900',done:state.level>1});$('taskList').innerHTML=tasks.map(t=>`<div class="task ${t.done?'done':''}"><strong>${t.done?'✓ ':''}${t.name}</strong>${t.desc}</div>`).join('');
+  if(state.activeDelivery){const h=deliveryHouses[state.activeDelivery.houseIndex];$('deliveryInfo').innerHTML=`<b style="color:var(--gold)">Active: ${h.name}</b><br>Travel to the glowing marker at the front door and press E to deliver.<br><span style="color:var(--mint)">Reward: $${state.activeDelivery.reward}</span>`;$('deliveryMeter').style.width='45%';}else{$('deliveryInfo').textContent='No active delivery. Visit the dispatch station inside your store or the courier scooter outside.';$('deliveryMeter').style.width='0%';}
+  Object.keys(shelves).forEach(i=>refreshShelfVisual(Number(i)));
+}
+
+function spawnCrateFromOrder(type){
+  const positions={bread:[-6.8,-9.2],milk:[-4.3,-9.2],soda:[-1.8,-9.2],snacks:[.7,-9.2],produce:[3.2,-9.2],frozen:[5.7,-9.2]};const [x,z]=positions[type];const level=crateObjects.filter(c=>c.type===type).length;createCrate(type,x,z,level);
+}
+function orderStock(type){const def=productDefs[type];const stackCount=crateObjects.filter(c=>c.type===type).length;if(stackCount>=5){toast('That stockroom stack is full. Pick up a carton before ordering another.');return;}if(state.cash<def.orderCost){toast('Not enough cash for this carton.');return;}cash(-def.orderCost);state.cartons[type]++;spawnCrateFromOrder(type);toast(`${def.name} carton ordered and delivered to the stockroom.`);saveGame();renderPc();}
+const staffDefs={cashier:{name:'Cashier',emoji:'🧾',cost:180,wage:25,desc:'Automatically serves customers at the checkout every few seconds.'},stocker:{name:'Stockroom Assistant',emoji:'📦',cost:140,wage:18,desc:'Uses available cartons to restock shelves for you over time.'},driver:{name:'Delivery Driver',emoji:'🛵',cost:220,wage:30,desc:'Completes occasional local delivery jobs for extra income.'}};
+function hireStaff(type){const def=staffDefs[type];if(state.staff[type]){toast('This employee is already on your team.');return;}if(state.cash<def.cost){toast('Not enough cash to hire this employee.');return;}cash(-def.cost);state.staff[type]=true;toast(`${def.name} hired! Daily wage: $${def.wage}.`);updateHud();renderPc();saveGame();}
+function setPrice(type,val){state.prices[type]=Number(val);updateHud();const el=$('priceValue-'+type);if(el)el.textContent='$'+Number(val).toFixed(0);saveGame();}
+function buyExpansion(){if(state.level>1){toast('Your supermarket is already expanded.');return;}if(state.cash<900){toast('The store expansion costs $900. Keep earning and try again.');return;}cash(-900);state.level=2;addExpansion();updateHud();renderPc();saveGame();}
+function renderPc(){ $('pcBalance').textContent='$'+Math.floor(state.cash).toLocaleString('en-US');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));const content=$('pcContent');
+  if(currentTab==='orders'){
+    content.innerHTML='<p class="tiny-muted">Order a carton here. It appears in the stockroom, where you must pick it up and carry it to the matching shelf. Each carton adds 5 units when stocked.</p><div class="item-grid">'+Object.keys(productDefs).map(k=>{const p=productDefs[k];return `<div class="item-card"><div class="item-emoji">${p.emoji}</div><div class="item-main"><strong>${p.name}</strong><small>$${p.orderCost} per carton<br>Sell price: $${state.prices[k]} · Shelf: ${state.stock[k]} units</small></div><button class="btn" data-order="${k}">Order $${p.orderCost}</button></div>`;}).join('')+'</div><div class="section-title">Cartons currently in your stockroom</div><p class="tiny-muted">'+Object.keys(productDefs).map(k=>`${productDefs[k].name}: ${state.cartons[k]}`).join(' · ')+'</p>';
+  }else if(currentTab==='staff'){
+    content.innerHTML='<p class="tiny-muted">Employees help your business run automatically, but you still control the store. Wages are charged at the start of each new workday.</p>'+Object.keys(staffDefs).map(k=>{const s=staffDefs[k];return `<div class="staff-card"><div class="staff-emoji">${s.emoji}</div><div class="staff-info"><strong>${s.name}</strong><p>${s.desc}<br>Hiring: $${s.cost} · Daily wage: $${s.wage}</p></div>${state.staff[k]?'<span class="status-pill">HIRED</span>':`<button class="btn" data-hire="${k}">Hire $${s.cost}</button>`}</div>`;}).join('');
+  }else if(currentTab==='prices'){
+    content.innerHTML='<p class="tiny-muted">Set the shelf price for each product. Higher prices increase revenue per sale, but customers may complain when prices are too high.</p>'+Object.keys(productDefs).map(k=>`<div class="price-line"><label>${productDefs[k].emoji} ${productDefs[k].name}</label><input type="range" min="1" max="15" step="1" value="${state.prices[k]}" data-price="${k}"><strong id="priceValue-${k}">$${state.prices[k]}</strong></div>`).join('')+'<p class="note">Recommended price ranges vary by product. Keep prices fair to build customer satisfaction.</p>';
+  }else{
+    content.innerHTML=`<div class="staff-card"><div class="staff-emoji">🏗️</div><div class="staff-info"><strong>Supermarket Expansion</strong><p>Unlock the Fresh & Frozen wing, additional shelves, and more room to grow. Cost: $900.</p></div>${state.level>1?'<span class="status-pill">UNLOCKED</span>':'<button class="btn" id="expandBtn">Expand $900</button>'}</div><div class="staff-card"><div class="staff-emoji">🧊</div><div class="staff-info"><strong>Cold Storage</strong><p>Milk coolers, frozen food chests, and dedicated product shelves are part of your store layout.</p></div><span class="status-pill">AVAILABLE</span></div><div class="staff-card"><div class="staff-emoji">🏡</div><div class="staff-info"><strong>Local Delivery Network</strong><p>Use the dispatch counter or courier scooter to deliver a parcel to one of the houses surrounding Market Street.</p></div><span class="status-pill">AVAILABLE</span></div>`;
+  }
+}
+function openPc(){modalOpen=true;$('pcModal').style.display='flex';if(document.pointerLockElement)document.exitPointerLock();renderPc();}
+function closePc(){modalOpen=false;$('pcModal').style.display='none';if(gameStarted&&!paused&&!isTouchDevice())renderer.domElement.requestPointerLock?.();}
+function openPause(){if(modalOpen)return;paused=true;$('pauseModal').style.display='flex';if(document.pointerLockElement)document.exitPointerLock();}
+function closePause(){paused=false;$('pauseModal').style.display='none';if(gameStarted&&!isTouchDevice())renderer.domElement.requestPointerLock?.();}
+function isTouchDevice(){return matchMedia('(pointer: coarse)').matches||navigator.maxTouchPoints>0;}
+
+function interact(target){if(!target)return;const act=target.userData.action;const data=target.userData;
+  if(act==='computer'){openPc();return;}
+  if(act==='carton'){
+    if(held){toast('Your hands are full. Press Q to drop what you are carrying first.');return;}
+    const crate=crateObjects.find(c=>c.trigger===target);if(!crate){toast('This carton is no longer available.');return;}
+    const higher=crateObjects.some(c=>c.type===crate.type&&c.x===crate.x&&c.z===crate.z&&c.stackLevel>crate.stackLevel);if(higher){toast('Pick up the top carton first.');return;}
+    removeCrateFromWorld(crate);state.cartons[crate.type]=Math.max(0,state.cartons[crate.type]-1);setHeld({kind:'carton',product:crate.type});toast(`${productDefs[crate.type].name} carton picked up. Take it to a matching shelf.`);saveGame();return;
+  }
+  if(act==='shelf'){
+    const type=data.product||'bread';if(!held){toast(`${productDefs[type].name} shelf: ${state.stock[type]} units. Pick up a matching carton from the stockroom to refill it.`);return;}
+    if(held.kind!=='carton'){toast('You are carrying a delivery parcel. Finish the delivery before stocking shelves.');return;}
+    if(held.product!==type){toast(`This shelf is for ${productDefs[type].name}. You are carrying ${productDefs[held.product].name}.`);return;}
+    state.stock[type]+=5;setHeld(null);toast(`${productDefs[type].name} shelf restocked with 5 units.`);refreshShelfVisual(data.shelfIndex);updateHud();saveGame();return;
+  }
+  if(act==='stockroom'){toast('Choose the labeled cartons along the stockroom counter. Aim at a carton and press E to pick it up.');return;}
+  if(act==='checkout'){checkoutCustomer();return;}
+  if(act==='dispatch'||act==='bike'){startDelivery();return;}
+  if(act==='deliveryDrop'){completeDelivery(data.houseIndex);return;}
+}
+function checkoutCustomer(){
+  if(held){toast('Put down the carton or finish your delivery before using the checkout.');return;}
+  const customer=customers.find(c=>c.state==='queue');if(!customer){toast('No customer is waiting at the checkout right now.');return;}
+  const type=customer.product;if(state.stock[type]<=0){state.customersLost++;customer.state='leaving';toast(`No ${productDefs[type].name} in stock. The customer leaves disappointed.`);updateHud();return;}
+  const price=state.prices[type];const satisfaction=price>productDefs[type].price*1.7?.7:1;state.stock[type]--;cash(price);state.served++;state.saleProgress++;state.storeSales++;customer.state='leaving';customer.leaveTarget={x:0,z:10.4};toast(`Sale complete: ${productDefs[type].name} for $${price}. ${satisfaction<1?'That price was a little high.':'Customer served!'}`);updateHud();refreshShelfVisual(customer.shelfIndex||0);saveGame();
+}
+function startDelivery(){
+  if(state.activeDelivery){toast('You already have a delivery. Follow the glowing marker to the customer’s house.');return;}
+  if(held){toast('Your hands are full. Drop the carton with Q before accepting a parcel.');return;}
+  const houseIndex=state.deliveryIndex%deliveryHouses.length;const h=deliveryHouses[houseIndex];state.activeDelivery={houseIndex,reward:65};state.deliveryIndex++;setHeld({kind:'parcel'});showBeacon(h);toast(`Parcel accepted for ${h.name}. Take it to the front door marked in gold.`);updateHud();saveGame();
+}
+function showBeacon(h){if(activeBeacon)scene.remove(activeBeacon);const g=new THREE.Group();g.position.set(h.door.x,0,h.door.z+.2);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.45,4.6,12,1,true),new THREE.MeshBasicMaterial({color:0xffdf52,transparent:true,opacity:.22,side:THREE.DoubleSide}));beam.position.y=2.3;g.add(beam);const ring=new THREE.Mesh(new THREE.TorusGeometry(.7,.08,8,28),new THREE.MeshBasicMaterial({color:0xffdf52}));ring.rotation.x=Math.PI/2;ring.position.y=.1;g.add(ring);scene.add(g);activeBeacon=g;}
+function completeDelivery(houseIndex){
+  if(!state.activeDelivery){toast('No active delivery. Accept a parcel at the dispatch station first.');return;}
+  if(state.activeDelivery.houseIndex!==houseIndex){toast('This is the wrong address. Follow the gold marker to the correct house.');return;}
+  if(!held||held.kind!=='parcel'){toast('You need to carry the delivery parcel to the door.');return;}
+  const h=deliveryHouses[houseIndex];const reward=state.activeDelivery.reward;cash(reward);state.deliveries++;setHeld(null);state.activeDelivery=null;if(activeBeacon){scene.remove(activeBeacon);activeBeacon=null;}toast(`Delivered to ${h.name}. You earned $${reward}!`);updateHud();saveGame();
+}
+
+function makeCustomer(id){
+  const group=new THREE.Group();scene.add(group);const palette=[0x4b91b5,0x9b6bbb,0xd77d49,0x477e63,0xc24b55,0x8d9789];const shirt=mat(palette[id%palette.length]);const skin=mat([0xe0b28e,0xb9815e,0xf0c6a0,0x986747][id%4]);cylMesh(.25,.29,.9,8,shirt,0,1.05,0,group);sphereMesh(.22,skin,0,1.68,0,group);cylMesh(.12,.12,.06,8,mat(0x3d332e),0,1.88,0,group);for(const dx of [-.12,.12]){cylMesh(.08,.08,.58,7,mat(0x333a45),dx,.36,0,group);}const armMaterial=shirt;for(const dx of [-.31,.31]){const arm=cylMesh(.075,.085,.65,7,armMaterial,dx,1.08,0,group);arm.rotation.z=dx<0?-.18:.18;}
+  const productKeys=Object.keys(productDefs).filter(k=>state.stock[k]>0);const product=productKeys[Math.floor(Math.random()*Math.max(productKeys.length,1))]||'bread';const shelfPositions=[{x:-5.3,z:.3},{x:-1.1,z:.3},{x:3.1,z:.3},{x:5.2,z:.8}];const shelfPos=shelfPositions[Math.floor(Math.random()*shelfPositions.length)];
+  const customer={id,group,product,state:'shopping',target:{x:shelfPos.x,z:shelfPos.z},shelfIndex:0,wait:0,queuePos:0,leaveTarget:null};group.position.set((Math.random()-.5)*3,0,8.2);customers.push(customer);return customer;
+}
+function moveCustomer(c,dt){if(c.state==='leaving'){const t=c.leaveTarget||{x:0,z:10.5};walkCustomerTo(c,t,dt,2.3);if(Math.hypot(c.group.position.x-t.x,c.group.position.z-t.z)<.45){scene.remove(c.group);const i=customers.indexOf(c);if(i>=0)customers.splice(i,1);}return;}
+  if(c.state==='shopping'){walkCustomerTo(c,c.target,dt,1.25);if(Math.hypot(c.group.position.x-c.target.x,c.group.position.z-c.target.z)<.55){c.state='toQueue';c.wait=0;}}
+  if(c.state==='toQueue'){const q=queuePosition(c);walkCustomerTo(c,q,dt,1.35);if(Math.hypot(c.group.position.x-q.x,c.group.position.z-q.z)<.45){c.state='queue';c.wait=0;}}
+  if(c.state==='queue'){c.wait+=dt;if(state.staff.cashier){c.autoCashier=(c.autoCashier||0)+dt;if(c.autoCashier>6.5){c.autoCashier=0;const first=customers.find(x=>x.state==='queue');if(first===c)checkoutCustomerAuto(c);}}}
+}
+function walkCustomerTo(c,t,dt,speed){const dx=t.x-c.group.position.x,dz=t.z-c.group.position.z,dist=Math.hypot(dx,dz);if(dist>.06){c.group.position.x+=dx/dist*speed*dt;c.group.position.z+=dz/dist*speed*dt;c.group.rotation.y=Math.atan2(dx,dz);}}
+function queuePosition(c){const idx=customers.filter(x=>x.state==='queue'||x.state==='toQueue'||x===c).indexOf(c);return {x:5.65,z:4.7+Math.max(0,idx)*.88};}
+function checkoutCustomerAuto(c){if(c.state!=='queue')return;const type=c.product;if(state.stock[type]<=0){state.customersLost++;c.state='leaving';c.leaveTarget={x:0,z:10.5};return;}cash(state.prices[type]);state.stock[type]--;state.served++;state.saleProgress++;state.storeSales++;c.state='leaving';c.leaveTarget={x:0,z:10.5};updateHud();refreshShelfVisual(c.shelfIndex||0);saveGame();toast(`Cashier served a customer: ${productDefs[type].name} · +$${state.prices[type]}`);}
+
+function spawnCustomerIfNeeded(dt){customerSpawnTimer-=dt;if(customerSpawnTimer<=0){const max=state.level>1?5:3;if(customers.length<max&&gameStarted&&!paused&&!modalOpen){makeCustomer(state.customerIds++);customerSpawnTimer=11+Math.random()*8;}else customerSpawnTimer=3;}}
+function checkCollisions(x,z){if(x<-55||x>55||z<-22||z>55)return true;for(const c of colliders){if(Math.abs(x-c.x)<c.w/2+.32&&Math.abs(z-c.z)<c.d/2+.32)return true;}return false;}
+function movePlayer(dt){let forward=0,right=0;if(keys.KeyW||keys.ArrowUp)forward+=1;if(keys.KeyS||keys.ArrowDown)forward-=1;if(keys.KeyD||keys.ArrowRight)right+=1;if(keys.KeyA||keys.ArrowLeft)right-=1;forward+=-joy.y;right+=joy.x;if(!forward&&!right)return;const len=Math.hypot(forward,right);forward/=len;right/=len;const run=keys.ShiftLeft||keys.ShiftRight||mobileRun;const speed=run?7.4:4.4;const dx=(Math.sin(yaw)*forward+Math.cos(yaw)*right)*speed*dt;const dz=(-Math.cos(yaw)*forward+Math.sin(yaw)*right)*speed*dt;const nx=camera.position.x+dx,nz=camera.position.z+dz;if(!checkCollisions(nx,camera.position.z))camera.position.x=nx;if(!checkCollisions(camera.position.x,nz))camera.position.z=nz;walkTime+=dt*speed;camera.position.y=1.68+Math.sin(walkTime*1.7)*Math.min(.028,Math.abs(forward)+Math.abs(right));}
+function updateTarget(){raycaster.setFromCamera(center,camera);const hits=raycaster.intersectObjects(targets,false);let target=null;for(const hit of hits){const d=hit.distance;if(d<3.5){target=hit.object;break;}}currentTarget=target;if(target){const prompt=$('targetPrompt');let message=target.userData.label||'Interact';if(target.userData.action==='carton')message=held?'Hands are full — press Q to drop':'Pick up '+productDefs[target.userData.product]?.name+' carton';if(target.userData.action==='shelf'){const type=target.userData.product;message=held?.kind==='carton'?`Stock ${productDefs[type]?.name} shelf`:`${productDefs[type]?.name} shelf · ${state.stock[type]} units`;if(held&&held.kind==='carton'&&held.product!==type)message=`Wrong shelf — this is ${productDefs[type]?.name}`;}
+  if(target.userData.action==='deliveryDrop'){const house=deliveryHouses[target.userData.houseIndex];message=state.activeDelivery&&state.activeDelivery.houseIndex===target.userData.houseIndex?'Deliver parcel to '+house.name:'House: '+house.name;}
+  if(target.userData.action==='dispatch'||target.userData.action==='bike')message=state.activeDelivery?'Delivery active — follow the gold marker':'Accept a local delivery job';
+  if(target.userData.action==='checkout')message='Press E to ring up the next customer';prompt.innerHTML='<b>[ E ]</b> '+message;prompt.style.display='block';}else $('targetPrompt').style.display='none';}
+function actionKey(){if(!gameStarted||paused||modalOpen)return;if(currentTarget)interact(currentTarget);}
+function updateWorld(dt){
+  if(!gameStarted||paused||modalOpen)return;movePlayer(dt);spawnCustomerIfNeeded(dt);for(const c of [...customers])moveCustomer(c,dt);
+  if(state.staff.stocker){stockerTimer+=dt;if(stockerTimer>16){stockerTimer=0;const types=Object.keys(productDefs).filter(k=>state.cartons[k]>0);if(types.length){const k=types[0];state.cartons[k]--;state.stock[k]+=5;const crate=crateObjects.filter(c=>c.type===k).sort((a,b)=>b.stackLevel-a.stackLevel)[0];if(crate){removeCrateFromWorld(crate);}refreshAllShelves();toast(`Stockroom assistant restocked ${productDefs[k].name}.`);updateHud();}}}
+  if(state.staff.driver){driverTimer+=dt;if(driverTimer>42){driverTimer=0;cash(35);state.deliveries++;toast('Your delivery driver completed a local order. +$35');updateHud();saveGame();}}
+  state.dayTimer+=dt;if(state.dayTimer>180){state.dayTimer=0;state.day++;for(const k of Object.keys(staffDefs)){if(state.staff[k])cash(-staffDefs[k].wage);}toast(`Workday ${state.day} started. Employee wages have been paid.`);saveGame();}
+  state.autosave+=dt;if(state.autosave>12){state.autosave=0;saveGame();}
+}
+function refreshAllShelves(){for(const i of Object.keys(shelves))refreshShelfVisual(Number(i));}
+
+function startGame(){gameStarted=true;paused=false;$('overlay').style.display='none';$('hud').style.display='block';loading.style.display='none';updateHud();if(!isTouchDevice())renderer.domElement.requestPointerLock?.();toast('Welcome to Market Street! Start by restocking and serving customers.');}
+function resetGame(){if(!confirm('Start a new store? This will erase the saved store in this browser.'))return;localStorage.removeItem(savedKey);location.reload();}
+$('startBtn').addEventListener('click',startGame);$('resetBtn').addEventListener('click',resetGame);$('closePcBtn').addEventListener('click',closePc);$('resumeBtn').addEventListener('click',closePause);$('saveBtn').addEventListener('click',()=>saveGame(true));$('quitBtn').addEventListener('click',()=>{saveGame();paused=false;gameStarted=false;$('pauseModal').style.display='none';$('hud').style.display='none';$('overlay').style.display='flex';if(document.pointerLockElement)document.exitPointerLock();});
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{currentTab=btn.dataset.tab;renderPc();}));$('pcContent').addEventListener('click',e=>{const order=e.target.closest('[data-order]');if(order){orderStock(order.dataset.order);return;}const hire=e.target.closest('[data-hire]');if(hire){hireStaff(hire.dataset.hire);return;}if(e.target.id==='expandBtn')buyExpansion();});$('pcContent').addEventListener('input',e=>{const k=e.target.dataset.price;if(k)setPrice(k,e.target.value);});
+window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='KeyE')actionKey();if(e.code==='KeyQ'&&gameStarted&&!modalOpen&&!paused){if(held?.kind==='parcel'&&state.activeDelivery){toast('Keep the delivery parcel with you until it reaches the correct address.');}else if(held?.kind==='carton'){const type=held.product;setHeld(null);state.cartons[type]++;spawnCrateFromOrder(type);toast('Carton returned to the stockroom.');saveGame();}else if(!held)toast('Your hands are already empty.');}if(e.code==='Escape'&&gameStarted){if(modalOpen)closePc();else if(paused)closePause();else openPause();}});window.addEventListener('keyup',e=>{keys[e.code]=false;});
+renderer.domElement.addEventListener('click',()=>{if(gameStarted&&!paused&&!modalOpen&&!isTouchDevice()&&!pointerLocked)renderer.domElement.requestPointerLock?.();});document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===renderer.domElement;});document.addEventListener('mousemove',e=>{if(pointerLocked&&gameStarted&&!paused&&!modalOpen){yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=clamp(pitch,-1.35,1.35);camera.rotation.set(pitch,yaw,0,'YXZ');}});
+// Touch controls: left-side joystick for movement, right-side drag for looking.
+const joyEl=$('joystick'),stickEl=$('stick');joyEl.addEventListener('pointerdown',e=>{joy.active=true;joyEl.setPointerCapture(e.pointerId);moveJoy(e);});joyEl.addEventListener('pointermove',e=>{if(joy.active)moveJoy(e);});function moveJoy(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(e.clientX-cx)/(r.width*.34),dy=(e.clientY-cy)/(r.height*.34);const len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len;}joy.x=dx;joy.y=dy;stickEl.style.transform=`translate(${dx*27}px,${dy*27}px)`;}function endJoy(){joy.active=false;joy.x=0;joy.y=0;stickEl.style.transform='translate(0,0)';}joyEl.addEventListener('pointerup',endJoy);joyEl.addEventListener('pointercancel',endJoy);$('mobileRun').addEventListener('pointerdown',()=>mobileRun=true);$('mobileRun').addEventListener('pointerup',()=>mobileRun=false);$('mobileRun').addEventListener('pointercancel',()=>mobileRun=false);$('mobileInteract').addEventListener('click',actionKey);
+renderer.domElement.addEventListener('pointerdown',e=>{if(!isTouchDevice()||!gameStarted||paused||modalOpen)return;if(e.clientX>innerWidth*.38){touchLook={x:e.clientX,y:e.clientY,id:e.pointerId};renderer.domElement.setPointerCapture(e.pointerId);}});renderer.domElement.addEventListener('pointermove',e=>{if(touchLook&&touchLook.id===e.pointerId){const dx=e.clientX-touchLook.x,dy=e.clientY-touchLook.y;touchLook.x=e.clientX;touchLook.y=e.clientY;yaw-=dx*.004;pitch=clamp(pitch-dy*.004,-1.35,1.35);camera.rotation.set(pitch,yaw,0,'YXZ');}});renderer.domElement.addEventListener('pointerup',e=>{if(touchLook&&touchLook.id===e.pointerId)touchLook=null;});renderer.domElement.addEventListener('pointercancel',()=>touchLook=null);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));});window.addEventListener('beforeunload',()=>saveGame());
+
+// Aim at the current interactive object and show its context prompt.
+const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.045);if(gameStarted&&!paused&&!modalOpen){updateWorld(dt);updateTarget();}else if(gameStarted&&!paused&&modalOpen){/* pause simulation while the management computer is open */}if(activeBeacon){activeBeacon.rotation.y+=dt*.75;const t=deliveryHouses[state.activeDelivery?.houseIndex||0];if(t){const d=Math.hypot(camera.position.x-t.door.x,camera.position.z-t.door.z);$('deliveryMeter').style.width=Math.round(clamp(1-d/50,0,1)*100)+'%';}}
+  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').classList.remove('show');}renderer.render(scene,camera);}
+// Three.js has finished building the world; reveal the title screen.
+loading.style.display='none';updateHud();animate();
+})();
+</script>
+</body>
+</html>

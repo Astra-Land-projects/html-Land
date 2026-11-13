@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>AG9 Line-Follower Robot Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#fbf5ea;--card:#fff;--ink:#2a1d10;--mut:#7a6a56;--acc:#d97706;--line:#e6d8c2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120d09;--card:#1c1510;--ink:#f6ead8;--mut:#b39d82;--acc:#ffb347;--line:#3a2d20}}
+:root[data-theme="dark"]{--bg:#120d09;--card:#1c1510;--ink:#f6ead8;--mut:#b39d82;--acc:#ffb347;--line:#3a2d20}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:12px}
+h1{font-size:19px;margin:4px 0 10px}h1 span{color:var(--acc)}
+canvas{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:#17120d}
+#cv.draw{touch-action:none;cursor:crosshair}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px}
+label{font-size:13px;color:var(--mut);display:block}label b{color:var(--ink);float:right}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+button,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+button.main{background:var(--acc);color:#1a0f05;border-color:var(--acc);font-weight:700}
+button.on{outline:2px solid var(--acc)}
+#st{display:flex;gap:14px;flex-wrap:wrap;font:14px ui-monospace,Menlo,monospace;margin-top:8px}
+p{color:var(--mut);font-size:13px;margin:8px 0 0}
+</style></head><body>
+<main>
+<h1>AG9 <span>Line-Follower Simulator</span></h1>
+<canvas id="cv" width="800" height="500"></canvas>
+<canvas id="ch" width="800" height="90" style="margin-top:8px"></canvas>
+<div id="st"><span id="s1">Ready</span><span id="s2">t = 0.0 s</span><span id="s3">error = 0.00</span></div>
+<div class="card"><div class="grid">
+<label>Kp <b id="v1"></b><input id="kp" type="range" min="0" max="80" step="1" value="20"></label>
+<label>Ki <b id="v2"></b><input id="ki" type="range" min="0" max="10" step="0.1" value="0"></label>
+<label>Kd <b id="v3"></b><input id="kd" type="range" min="0" max="20" step="0.5" value="2"></label>
+<label>Base speed (px/s) <b id="v4"></b><input id="sp" type="range" min="40" max="260" step="5" value="120"></label>
+</div>
+<div class="btns"><button id="go" class="main">Start</button><button id="rs">Reset</button>
+<select id="tk"><option value="oval">Oval track</option><option value="blob">Blob track</option><option value="wavy">Wavy track</option></select>
+<button id="dr">Draw track</button><select id="sm"><option value="1">1× speed</option><option value="2">2×</option><option value="4">4×</option></select></div>
+<p>Five IR sensors read the line, the error is their weighted average, and a PID controller steers: left wheel = base + u, right wheel = base − u. Tap “Draw track”, then drag on the arena to draw your own line (close the loop for continuous laps).</p></div>
+</main>
+<script>
+(function(){
+'use strict';
+var W=800,H=500,SX=[-24,-12,0,12,24],L=22,WB=30,MAXV=320;
+var R={x:0,y:0,th:0},C={prev:0,int:0,d:0,last:1};
+var err=0,lost=0,sens=[0,0,0,0,0];
+function cl(v){return Math.max(-MAXV,Math.min(MAXV,v))}
+function sensePos(i){var c=Math.cos(R.th),s=Math.sin(R.th);return [R.x+c*L-s*SX[i],R.y+s*L+c*SX[i]]}
+function step(dt,on,G){
+  var sum=0,n=0,i;
+  for(i=0;i<5;i++){var p=sensePos(i);sens[i]=on(p[0],p[1])?1:0;if(sens[i]){sum+=SX[i]/12;n++}}
+  if(n){err=sum/n;lost=0;if(err)C.last=err>0?1:-1}else{lost+=dt;err=C.last*2.5}
+  C.int=Math.max(-5,Math.min(5,C.int+err*dt));
+  C.d=0.7*C.d+0.3*((err-C.prev)/dt);C.prev=err;
+  var u=G.kp*err+G.ki*C.int*10+G.kd*C.d,l=cl(G.v+u),r=cl(G.v-u);
+  R.th+=(l-r)/WB*dt;var v=(l+r)/2;
+  R.x+=Math.cos(R.th)*v*dt;R.y+=Math.sin(R.th)*v*dt;return u}
+//--DOM--
+var $=function(i){return document.getElementById(i)};
+var cv=$('cv'),ctx=cv.getContext('2d'),chc=$('ch').getContext('2d');
+var tr=document.createElement('canvas'),vis=document.createElement('canvas');
+tr.width=vis.width=W;tr.height=vis.height=H;
+var tc=tr.getContext('2d',{willReadFrequently:true}),vc=vis.getContext('2d');
+var pts=[],closed=true,run=false,t=0,hist=[],drawing=false,drawMode=false,acc=0,last=0;
+function path(c){c.beginPath();pts.forEach(function(p,i){i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])});if(closed)c.closePath()}
+function paint(){
+  tc.fillStyle='#000';tc.fillRect(0,0,W,H);tc.strokeStyle='#fff';tc.lineWidth=14;tc.lineJoin=tc.lineCap='round';path(tc);tc.stroke();
+  vc.fillStyle='#17120d';vc.fillRect(0,0,W,H);vc.strokeStyle='#ffb347';vc.lineWidth=14;vc.lineJoin=vc.lineCap='round';path(vc);vc.stroke();
+  vc.strokeStyle='#17120d';vc.lineWidth=2;vc.setLineDash([8,10]);path(vc);vc.stroke();vc.setLineDash([])}
+function on(x,y){var d=tc.getImageData(Math.round(x),Math.round(y),1,1).data;return d[0]>128}
+function gen(n){
+  var a=[];for(var i=0;i<360;i++){var t=i/360*2*Math.PI,r=1;
+    if(n==='blob')r=1+.22*Math.cos(3*t);else if(n==='wavy')r=1+.1*Math.sin(6*t);
+    var rx=n==='oval'?310:300,ry=n==='oval'?175:170;
+    a.push([400+rx*r*Math.cos(t),250+ry*r*Math.sin(t)])}
+  return a}
+function reset(){
+  var p=pts[0],q=pts[Math.min(5,pts.length-1)];
+  R.x=p[0];R.y=p[1];R.th=Math.atan2(q[1]-p[1],q[0]-p[0]);
+  C.prev=0;C.int=0;C.d=0;C.last=1;t=0;lost=0;err=0;hist=[];run=false;$('go').textContent='Start';$('s1').textContent='Ready';draw()}
+function setTrack(n){pts=gen(n);closed=true;paint();reset()}
+function G(){return {kp:+$('kp').value,ki:+$('ki').value,kd:+$('kd').value,v:+$('sp').value}}
+function labels(){['kp','ki','kd','sp'].forEach(function(k,i){$('v'+(i+1)).textContent=$(k).value});}
+function draw(){
+  ctx.drawImage(vis,0,0);
+  ctx.save();ctx.translate(R.x,R.y);ctx.rotate(R.th);
+  ctx.fillStyle='#ff7a45';ctx.strokeStyle='#fff';ctx.lineWidth=2;
+  ctx.beginPath();ctx.roundRect?ctx.roundRect(-16,-15,32,30,6):ctx.rect(-16,-15,32,30);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#222';ctx.fillRect(-10,-19,20,5);ctx.fillRect(-10,14,20,5);
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(4,-6);ctx.lineTo(4,6);ctx.fill();
+  for(var i=0;i<5;i++){ctx.fillStyle=sens[i]?'#7bdc9a':'#555';ctx.beginPath();ctx.arc(L,SX[i],3.5,0,6.3);ctx.fill()}
+  ctx.restore();
+  chc.fillStyle='#17120d';chc.fillRect(0,0,W,90);chc.strokeStyle='#444';chc.beginPath();chc.moveTo(0,45);chc.lineTo(W,45);chc.stroke();
+  chc.strokeStyle='#ffb347';chc.lineWidth=2;chc.beginPath();
+  hist.forEach(function(e,i){var x=i/300*W,y=45-e*16;i?chc.lineTo(x,y):chc.moveTo(x,y)});chc.stroke();chc.lineWidth=1;
+  chc.fillStyle='#b39d82';chc.font='12px sans-serif';chc.fillText('sensor error',6,14);
+  $('s2').textContent='t = '+t.toFixed(1)+' s';$('s3').textContent='error = '+err.toFixed(2)}
+function loop(ts){
+  var dt=Math.min((ts-last)/1000,0.05);last=ts;
+  if(run){acc+=dt*(+$('sm').value);var g=G();
+    while(acc>=1/60){step(1/60,on,g);t+=1/60;acc-=1/60;hist.push(err);if(hist.length>300)hist.shift();
+      if(lost>1.2){run=false;$('go').textContent='Start';$('s1').textContent='Lost the line ✗';break}}
+    if(run)$('s1').textContent='Following ✓'}
+  draw();requestAnimationFrame(loop)}
+$('go').onclick=function(){if(lost>1.2)reset();run=!run;$('go').textContent=run?'Pause':'Start';if(!run)$('s1').textContent='Paused'};
+$('rs').onclick=reset;
+$('tk').onchange=function(){setTrack(this.value)};
+$('dr').onclick=function(){drawMode=!drawMode;this.classList.toggle('on',drawMode);cv.classList.toggle('draw',drawMode)};
+['kp','ki','kd','sp'].forEach(function(k){$(k).oninput=labels});
+function pos(e){var b=cv.getBoundingClientRect();return [(e.clientX-b.left)*W/b.width,(e.clientY-b.top)*H/b.height]}
+cv.addEventListener('pointerdown',function(e){if(!drawMode)return;drawing=true;cv.setPointerCapture(e.pointerId);pts=[pos(e)];run=false;paint();draw()});
+cv.addEventListener('pointermove',function(e){if(!drawing)return;var p=pos(e),q=pts[pts.length-1];
+  if(Math.hypot(p[0]-q[0],p[1]-q[1])>5){pts.push(p);paint();draw()}});
+function end(){if(!drawing)return;drawing=false;
+  if(pts.length<10){setTrack($('tk').value);return}
+  closed=Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<50;
+  paint();reset()}
+cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+labels();setTrack('oval');requestAnimationFrame(loop);
+})();
+</script></body></html>

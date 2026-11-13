@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="theme-color" content="#14261b" />
+<title>Lemonade Stand 3D | شبیه‌ساز فروش لیموناد</title>
+<style>
+  :root{--glass:rgba(12,24,20,.84);--glass2:rgba(20,38,31,.92);--line:rgba(255,255,255,.14);--gold:#ffda5c;--mint:#a7f3c2;--text:#f6f7ef;--muted:#b8c8bd;--red:#ff8585}
+  *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#a8d9ee;color:var(--text);font-family:Tahoma,Arial,sans-serif}body{user-select:none;-webkit-user-select:none}canvas{display:block;width:100%;height:100%;outline:none}
+  #game{position:fixed;inset:0}#loading{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 50% 30%,#2e563a,#0a1711 70%);display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}.load-card{max-width:560px}.load-title{font-size:clamp(28px,5vw,52px);font-weight:900;color:var(--gold);margin-bottom:12px}.load-text{color:#d9e8da;line-height:1.9}.spinner{width:32px;height:32px;border:3px solid #ffffff35;border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:18px auto}@keyframes spin{to{transform:rotate(360deg)}}
+  #hud{position:fixed;inset:0;pointer-events:none;display:none}.panel{background:var(--glass);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px #06110b30;backdrop-filter:blur(12px)}
+  #topbar{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:9px;align-items:stretch;justify-content:space-between;direction:rtl;flex-wrap:wrap}
+  .stat{padding:9px 13px;min-width:105px;display:flex;align-items:center;gap:8px}.stat-icon{font-size:20px}.stat small{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}.stat strong{font-size:15px;font-weight:900;white-space:nowrap}.money{color:var(--gold)}
+  #brand{padding:8px 14px;min-width:174px;display:flex;align-items:center;gap:10px}.brand-lemon{width:34px;height:34px;border-radius:50% 45% 50% 45%;background:linear-gradient(145deg,#fff49b,#efc623);box-shadow:inset -4px -4px 0 #ce9b12;display:grid;place-items:center;color:#6b5800;font-size:17px;transform:rotate(-20deg)}#brand strong{display:block;letter-spacing:1px;font-size:13px}#brand small{color:var(--muted);font-size:10px}
+  #leftPanel{position:absolute;top:94px;left:14px;width:220px;padding:13px;direction:rtl}#leftPanel h3,#rightPanel h3{font-size:13px;margin:0 0 10px;color:var(--gold)}.stock-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:5px 0;border-bottom:1px solid #ffffff0d;color:#e4ece5}.stock-row:last-child{border:0}.stock-row span:last-child{font-weight:bold;color:var(--mint)}#recipe-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.recipe-item{padding:7px 6px;border-radius:8px;background:#ffffff0a;font-size:10px;color:var(--muted)}.recipe-item.ready{color:#14261b;background:var(--mint);font-weight:bold}.section-sep{height:1px;background:var(--line);margin:11px 0}
+  #rightPanel{position:absolute;top:94px;right:14px;width:245px;padding:13px;direction:rtl}#orders{display:flex;flex-direction:column;gap:7px;max-height:210px;overflow:hidden}.order-card{background:#ffffff0a;border:1px solid #ffffff10;border-radius:10px;padding:8px 9px;font-size:11px;line-height:1.6}.order-card strong{display:block;color:#fff;font-size:12px}.order-card small{color:var(--muted)}.order-empty{color:var(--muted);font-size:11px;line-height:1.8}
+  #crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border:2px solid #ffffffd9;border-radius:50%;box-shadow:0 0 5px #0009}#crosshair:before,#crosshair:after{content:"";position:absolute;background:#ffffffc9}#crosshair:before{width:2px;height:5px;left:3.5px;top:-6px}#crosshair:after{width:5px;height:2px;left:-6px;top:3.5px}
+  #targetPrompt{position:absolute;left:50%;bottom:93px;transform:translateX(-50%);min-width:250px;max-width:min(92vw,540px);text-align:center;padding:10px 16px;border-radius:12px;background:rgba(7,16,12,.82);border:1px solid #ffffff25;font-size:13px;line-height:1.8;display:none}#targetPrompt b{color:var(--gold)}#toast{position:absolute;left:50%;top:19%;transform:translateX(-50%);padding:10px 16px;background:#0b1b12e8;border:1px solid #ffffff22;border-radius:12px;font-size:13px;line-height:1.7;opacity:0;transition:opacity .2s;max-width:min(92vw,520px);text-align:center;text-wrap:balance}#toast.show{opacity:1}
+  #heldTag{position:absolute;bottom:18px;left:14px;padding:9px 12px;min-width:145px;font-size:12px}.held-muted{color:var(--muted)}#controlsHint{position:absolute;bottom:16px;right:14px;padding:9px 12px;font-size:10px;color:var(--muted);line-height:1.9;max-width:260px}kbd{display:inline-block;border:1px solid #ffffff35;border-bottom-width:2px;border-radius:5px;background:#ffffff12;color:#fff;padding:1px 5px;font:inherit;margin:0 2px}
+  #screenOverlay{position:fixed;inset:0;z-index:50;background:linear-gradient(120deg,#06130bcf,#0c1c16df);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}.dialog{width:min(720px,100%);max-height:min(90vh,900px);overflow:auto;background:linear-gradient(150deg,#1a3528f5,#0e1d16f8);border:1px solid #ffffff20;border-radius:24px;box-shadow:0 28px 90px #0007;padding:clamp(20px,4vw,38px);text-align:right}.dialog-hero{text-align:center;margin-bottom:20px}.hero-icon{font-size:45px;filter:drop-shadow(0 8px 15px #e9c02a35)}.dialog h1{font-size:clamp(28px,5vw,43px);line-height:1.4;color:var(--gold);margin:5px 0}.dialog p{color:#d1dfd4;line-height:2;font-size:13px;margin:10px 0}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.feature{border:1px solid #ffffff15;border-radius:12px;background:#ffffff08;padding:12px;text-align:center}.feature span{font-size:23px;display:block;margin-bottom:5px}.feature strong{font-size:11px}.feature small{display:block;color:var(--muted);font-size:10px;line-height:1.7;margin-top:4px}.btn-row{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:17px}.btn{border:1px solid #ffffff24;border-radius:11px;padding:11px 16px;background:#ffffff10;color:#fff;font-weight:bold;font-family:inherit;font-size:12px;cursor:pointer;transition:transform .15s,background .15s}.btn:hover{transform:translateY(-1px);background:#ffffff1c}.btn.primary{background:linear-gradient(135deg,#ffe477,#f6bb30);color:#273018;border-color:#ffe477}.btn.primary:hover{background:#ffe98e}.btn.danger{color:#ffaaaa}.dialog-note{font-size:10px!important;color:#9eb3a3!important;text-align:center}.control-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:15px 0}.control-item{background:#ffffff08;border-radius:9px;padding:9px 11px;font-size:11px;line-height:1.8}.control-item b{color:var(--gold)}
+  #shopModal{position:fixed;inset:0;z-index:70;background:#06120bc2;display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(8px)}#shopModal .dialog{width:min(670px,100%)}.shop-header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:13px}.shop-header h2{margin:0;color:var(--gold);font-size:22px}.shop-balance{color:var(--mint);font-weight:bold;font-size:13px}.shop-items{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.shop-item{border:1px solid #ffffff17;background:#ffffff07;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;min-height:84px}.shop-emoji{font-size:27px}.shop-item-main{flex:1}.shop-item-main strong{font-size:12px;display:block}.shop-item-main small{font-size:10px;color:var(--muted);display:block;margin-top:4px;line-height:1.6}.shop-item .btn{padding:8px;font-size:10px}.price-row{display:flex;align-items:center;gap:12px;padding:13px 0}.price-row label{font-size:12px;min-width:110px}.price-row input{flex:1;accent-color:#ffda5c;min-width:60px}.price-row strong{color:var(--gold);min-width:55px;text-align:left}.shop-section-title{font-size:13px;color:var(--gold);margin:18px 0 9px}.staff-box{border:1px solid #ffffff18;border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px;background:#ffffff06}.staff-box .staff-info{flex:1}.staff-info strong{font-size:12px}.staff-info p{font-size:10px!important;margin:5px 0!important;color:var(--muted)!important}
+  #mobileControls{display:none;position:absolute;inset:0;pointer-events:none}.joystick{position:absolute;bottom:25px;left:22px;width:112px;height:112px;border-radius:50%;background:#10251ba8;border:1px solid #ffffff42;pointer-events:auto;touch-action:none}.joystick:before{content:"";position:absolute;inset:22px;border:1px dashed #ffffff50;border-radius:50%}.stick{position:absolute;left:35px;top:35px;width:42px;height:42px;background:#f8d856d9;border:2px solid #fff9;border-radius:50%;box-shadow:0 3px 10px #0005}.mobile-actions{position:absolute;right:20px;bottom:28px;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto}.mob-btn{border-radius:50%;width:64px;height:64px;border:1px solid #ffffff55;background:#0f241bd9;color:white;font-weight:bold;font-family:inherit;touch-action:manipulation}.mob-btn.interact{width:76px;height:76px;background:#f8d856e8;color:#25301a;border-color:#fff8}.mob-btn:active{transform:scale(.95)}#mobileLookHint{position:absolute;right:15px;top:45%;font-size:10px;color:#ffffff99;writing-mode:vertical-rl}
+  #dayToast{display:none}#footerTip{margin-top:14px;text-align:center;color:#96b09c;font-size:10px;line-height:1.8}
+  @media(max-width:760px){#topbar{top:7px;left:7px;right:7px;gap:5px}.stat{padding:7px 8px;min-width:75px;border-radius:11px}.stat-icon{font-size:15px}.stat small{font-size:9px}.stat strong{font-size:12px}#brand{min-width:130px;padding:6px 8px;gap:7px}.brand-lemon{width:28px;height:28px;font-size:14px}#brand strong{font-size:10px}#brand small{font-size:8px}#leftPanel{top:75px;left:7px;width:150px;padding:9px;border-radius:12px}#rightPanel{top:75px;right:7px;width:158px;padding:9px;border-radius:12px}#leftPanel h3,#rightPanel h3{font-size:11px;margin-bottom:6px}.stock-row{font-size:9px;padding:4px 0}#recipe-list{gap:4px;margin-top:6px}.recipe-item{padding:5px 4px;font-size:8px}.order-card{font-size:9px;padding:6px}.order-card strong{font-size:10px}#heldTag{bottom:154px;left:8px;font-size:10px;min-width:120px;padding:7px}#controlsHint{display:none}#targetPrompt{bottom:143px;min-width:200px;padding:8px 11px;font-size:11px}#toast{top:24%;font-size:11px}.feature-grid{grid-template-columns:repeat(2,1fr)}.shop-items{grid-template-columns:1fr}.dialog{padding:20px;border-radius:18px}.dialog h1{font-size:28px}.dialog p{font-size:11px}.control-grid{grid-template-columns:1fr 1fr}.control-item{font-size:10px;padding:7px}.price-row label{min-width:85px;font-size:10px}.shop-header h2{font-size:18px}#mobileControls{display:block}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="loading"><div class="load-card"><div class="load-title">🍋 LEMONADE STAND 3D</div><div class="load-text">در حال آماده‌سازی محیط سه‌بعدی و غرفه لیموناد…</div><div class="spinner"></div><div class="load-text" style="font-size:11px">برای اجرای بازی، اتصال اینترنت جهت بارگذاری کتابخانه Three.js لازم است.</div></div></div>
+<div id="hud">
+  <div id="topbar">
+    <div id="brand" class="panel"><div class="brand-lemon">✦</div><div><strong>LEMONADE STAND</strong><small>شبیه‌ساز فروش لیموناد</small></div></div>
+    <div class="stat panel"><span class="stat-icon">💰</span><div><small>موجودی پول</small><strong class="money" id="moneyValue">$45</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">📅</span><div><small>روز کاری</small><strong id="dayValue">روز ۱</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">🥤</span><div><small>لیوان آماده</small><strong id="drinkValue">۰</strong></div></div>
+    <div class="stat panel"><span class="stat-icon">⭐</span><div><small>فروش موفق</small><strong id="salesValue">۰</strong></div></div>
+  </div>
+  <div id="leftPanel" class="panel">
+    <h3>📦 انبار مواد اولیه</h3>
+    <div id="stockList"></div>
+    <div class="section-sep"></div>
+    <h3>🧪 دستور آماده‌سازی</h3>
+    <div id="recipe-list"></div>
+    <div class="section-sep"></div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.8">برای درست کردن یک لیوان، هر ۵ ماده را از انبار بردار و به میز آماده‌سازی ببر.</div>
+  </div>
+  <div id="rightPanel" class="panel">
+    <h3>🧍 مشتری‌ها</h3>
+    <div id="orders"><div class="order-empty">مشتری‌ها به‌زودی از راه می‌رسند…<br>آماده‌سازی را شروع کن!</div></div>
+    <div class="section-sep"></div>
+    <h3>🎯 هدف روزانه</h3>
+    <div id="questText" style="font-size:11px;line-height:1.8;color:#e8eee6">۳ لیوان لیموناد بفروش.</div>
+    <div id="questProgress" style="height:5px;border-radius:5px;background:#ffffff17;margin-top:7px;overflow:hidden"><div id="questBar" style="height:100%;width:0%;background:var(--gold);transition:width .2s"></div></div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="targetPrompt"></div>
+  <div id="toast"></div>
+  <div id="heldTag" class="panel"><span class="held-muted">دست‌ها:</span> <strong id="heldValue">خالی</strong></div>
+  <div id="controlsHint" class="panel"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> حرکت · موس نگاه کردن<br><kbd>E</kbd> تعامل · <kbd>Q</kbd> برگرداندن وسیله · <kbd>Shift</kbd> دویدن · <kbd>Esc</kbd> مکث</div>
+  <div id="mobileControls">
+    <div id="joystick" class="joystick"><div id="stick" class="stick"></div></div>
+    <div id="mobileLookHint">برای نگاه‌کردن سمت راست را بکش</div>
+    <div class="mobile-actions"><button id="mobileRun" class="mob-btn">دویدن</button><button id="mobileInteract" class="mob-btn interact">تعامل<br> E</button></div>
+  </div>
+</div>
+<div id="screenOverlay">
+  <div class="dialog">
+    <div class="dialog-hero"><div class="hero-icon">🍋🥤</div><h1 id="overlayTitle">غرفه لیموناد من</h1><p id="overlaySubtitle">از یک میز کوچک شروع کن؛ مواد را خودت جابه‌جا کن، لیموناد درست کن، مشتری‌ها را راضی نگه دار و کسب‌وکارت را بزرگ کن.</p></div>
+    <div class="feature-grid">
+      <div class="feature"><span>🧍</span><strong>کنترل اول‌شخص</strong><small>آزادانه راه برو و با محیط تعامل کن.</small></div>
+      <div class="feature"><span>📦</span><strong>کار با مواد اولیه</strong><small>مواد را بردار و تک‌تک به میز ببر.</small></div>
+      <div class="feature"><span>💵</span><strong>فروش و ارتقا</strong><small>درآمد کسب کن، کمک‌کار بگیر و غرفه را ارتقا بده.</small></div>
+    </div>
+    <div class="control-grid">
+      <div class="control-item"><b>حرکت:</b> WASD یا جوی‌استیک موبایل</div>
+      <div class="control-item"><b>نگاه:</b> حرکت موس یا کشیدن سمت راست صفحه</div>
+      <div class="control-item"><b>تعامل:</b> کلید E یا دکمه تعامل</div>
+      <div class="control-item"><b>برگرداندن وسیله:</b> کلید Q (روی موبایل از میزها استفاده کن)</div>
+      <div class="control-item"><b>دویدن:</b> Shift یا دکمه دویدن</div>
+    </div>
+    <div class="btn-row"><button id="startBtn" class="btn primary">شروع بازی 🍋</button><button id="resetBtn" class="btn danger">شروع از صفر</button></div>
+    <p class="dialog-note">بازی به‌صورت خودکار در همین مرورگر ذخیره می‌شود. برای دیدن و تعامل با اشیا، نشانه وسط صفحه را روی آن‌ها بگیر.</p>
+  </div>
+</div>
+<div id="shopModal">
+  <div class="dialog">
+    <div class="shop-header"><div><h2>🏪 مدیریت غرفه</h2><div style="font-size:10px;color:var(--muted);margin-top:5px">سفارش مواد، تعیین قیمت و ارتقای کسب‌وکار</div></div><div class="shop-balance" id="shopBalance">$45</div></div>
+    <div class="shop-section-title">🧺 سفارش مواد اولیه (هر بسته شامل ۵ عدد)</div>
+    <div class="shop-items" id="shopItems"></div>
+    <div class="shop-section-title">💵 قیمت فروش هر لیوان</div>
+    <div class="price-row"><label for="priceRange">قیمت لیموناد</label><input id="priceRange" type="range" min="5" max="20" step="1" value="12"><strong id="priceLabel">$12</strong></div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.8">قیمت بالاتر درآمد هر فروش را بیشتر می‌کند، اما ممکن است مشتری‌ها دیرتر سر برسند.</div>
+    <div class="shop-section-title">🧑‍🍳 استخدام و ارتقا</div>
+    <div id="staffUpgrade"></div>
+    <div class="btn-row"><button id="closeShop" class="btn primary">بازگشت به بازی</button></div>
+  </div>
+</div>
+<script type="module">
+(async()=>{
+try{
+const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+const $ = id => document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const fmt=n=>new Intl.NumberFormat('fa-IR').format(n);
+const moneyFmt=n=>'$'+Math.floor(n).toLocaleString('en-US');
+
+// ----- Persistent game state -----
+const defaults={money:45,day:1,dayTime:0,price:12,sales:0,daySales:0,totalRevenue:0,stock:{lemon:6,sugar:6,water:6,cup:6,ice:6},recipe:{lemon:0,sugar:0,water:0,cup:0,ice:0},readyDrinks:0,hired:false,upgrade:0,questClaimed:false};
+let state={...defaults,stock:{...defaults.stock},recipe:{...defaults.recipe}};
+function loadSave(){try{const raw=localStorage.getItem('lemonade-stand-3d-save-v1');if(raw){const v=JSON.parse(raw);state={...defaults,...v,stock:{...defaults.stock,...v.stock},recipe:{...defaults.recipe,...v.recipe}};}}catch(e){console.warn('Save load failed',e)}}
+function saveGame(){try{localStorage.setItem('lemonade-stand-3d-save-v1',JSON.stringify(state));}catch(e){}}
+loadSave();
+
+// ----- Three.js scene -----
+const container=$('game');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fd8f1);scene.fog=new THREE.Fog(0x9fd8f1,24,75);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.08,140);camera.rotation.order='YXZ';
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;container.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xdff4ff,0x435339,2.0));
+const sun=new THREE.DirectionalLight(0xfff1ce,3.0);sun.position.set(-12,22,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-22;sun.shadow.camera.right=22;sun.shadow.camera.top=22;sun.shadow.camera.bottom=-22;sun.shadow.bias=-0.00015;scene.add(sun);scene.add(sun.target);
+const mat=(color,roughness=.82,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+const mats={grass:mat(0x6b9c54),grassDark:mat(0x477945),concrete:mat(0xc9c5b8),road:mat(0x50575b),roadLine:mat(0xf0e9d0),wood:mat(0x98643b),woodLight:mat(0xc88c4d),woodDark:mat(0x583823),cream:mat(0xffedc4),yellow:mat(0xffd83d),yellow2:mat(0xf4b91b),green:mat(0x4c9a58),greenDark:mat(0x246341),red:mat(0xd75c4f),blue:mat(0x4f93b5),white:mat(0xf9f5e7),metal:mat(0x87999a,.42,.55),glass:new THREE.MeshPhysicalMaterial({color:0xdaf8f5,roughness:.13,metalness:0,transparent:true,opacity:.45}),water:new THREE.MeshStandardMaterial({color:0x60cce5,roughness:.22,transparent:true,opacity:.82}),lemon:mat(0xffdf26),skin:mat(0xf3bf91),dark:mat(0x302c2a),black:mat(0x202a2a),purple:mat(0x9877c7)};
+function box(parent,w,h,d,material,x=0,y=0,z=0,opts={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=opts.castShadow!==false;m.receiveShadow=opts.receiveShadow!==false;if(opts.rotation)m.rotation.set(...opts.rotation);parent.add(m);return m}
+function cyl(parent,rt,rb,h,material,x=0,y=0,z=0,segments=16){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,segments),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function sphere(parent,r,material,x=0,y=0,z=0,segments=12){const m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,Math.max(8,segments>>1)),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function group(parent,x=0,y=0,z=0){const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g}
+function makeTextTexture(text,bg='#183d2a',fg='#fff3bb',width=512,height=160){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=8;ctx.strokeRect(5,5,width-10,height-10);ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 56px Tahoma, Arial, sans-serif';ctx.fillText(text,width/2,height/2,width-25);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+function signPlane(parent,text,w,h,x,y,z,rotationY=0,bg='#183d2a',fg='#fff3bb'){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:makeTextTexture(text,bg,fg),side:THREE.DoubleSide}));mesh.position.set(x,y,z);mesh.rotation.y=rotationY;parent.add(mesh);return mesh;}
+const interactionRoots=[];const obstacles=[];
+function addTarget(root,data){root.userData.targetData=data;interactionRoots.push(root);return root}
+function addObstacle(x,z,hx,hz){obstacles.push({x,z,hx,hz})}
+
+// Ground, street and village scenery
+box(scene,160,.15,160,mats.grass,0,-.17,0,{castShadow:false});
+box(scene,34,.11,20,mats.concrete,0,-.055,0,{castShadow:false});
+box(scene,44,.12,9,mats.road,0,-.02,10,{castShadow:false});
+for(let x=-20;x<=20;x+=4)box(scene,.12,.015,1.5,mats.roadLine,x,.05,10,{castShadow:false});
+box(scene,38,.13,2.2,mats.concrete,0,.01,5.1,{castShadow:false});
+box(scene,38,.13,2.2,mats.concrete,0,.01,-5.2,{castShadow:false});
+// Decorative plots
+for(let x=-13;x<=13;x+=3.25){if(Math.abs(x)<2.2)continue;box(scene,1.35,.07,1.4,mats.grassDark,x,-.02,-2.2,{castShadow:false});}
+// buildings at both sides of square
+function makeBuilding(x,z,w,d,h,wallColor,roofColor){const g=group(scene,x,0,z);box(g,w,h,d,mat(wallColor),0,h/2,0);box(g,w+0.22,.25,d+.22,mat(roofColor),0,h+.13,0);for(let yy=1.2;yy<h-0.3;yy+=1.45){for(let xx=-w/2+.75;xx<w/2-.35;xx+=1.45){box(g,.62,.72,.08,mat(0x2f4a4c,.35,.1),xx,yy,d/2+.045);box(g,.68,.07,.1,mats.white,xx,yy+.37,d/2+.1);box(g,.07,.78,.1,mats.white,xx,yy,d/2+.1);}}box(g,.95,1.9,.12,mat(0x644a37),0,.98,d/2+.07);return g;}
+makeBuilding(-12,1.8,5.5,5,7,0xe9bd91,0x9c5844);makeBuilding(12,1.2,5.2,5.4,8,0xe1e8dc,0x66877b);makeBuilding(-9,12,4.7,4.5,6.2,0xc9dbd7,0x6e91a0);makeBuilding(9,12,5,4.5,7,0xf1d0a1,0x9d7051);
+function makeTree(x,z,s=1){const g=group(scene,x,0,z);cyl(g,.17*s,.26*s,1.6*s,mats.woodDark,0,.8*s,0,8);const leaves=mat([0x38794c,0x4c8b4b,0x5b9654][Math.floor(Math.random()*3)]);sphere(g,.78*s,leaves,0,1.8*s,0,10);sphere(g,.57*s,leaves,.38*s,2.22*s,.08*s,10);sphere(g,.55*s,leaves,-.36*s,2.1*s,-.12*s,10);return g;}
+for(const [x,z,s] of [[-8,-7,1.05],[8,-7,1.2],[-14,7,1.1],[14,6,1.15],[-7,9,.8],[7,9,.9],[-16,0,1.1],[16,0,1.1]])makeTree(x,z,s);
+// clouds
+const cloudMat=new THREE.MeshBasicMaterial({color:0xffffff});
+for(let i=0;i<6;i++){const cg=group(scene,rnd(-22,22),rnd(13,18),rnd(-25,-10));for(let k=0;k<4;k++)sphere(cg,rnd(.6,1.15),cloudMat,(k-1.5)*.8,rnd(-.15,.35),rnd(-.25,.25),10);}
+// benches and decorative bins
+function makeBench(x,z){const g=group(scene,x,0,z);for(let k=0;k<3;k++)box(g,1.65,.11,.17,mats.woodLight,0,.55+k*.14,0);for(const xx of [-.58,.58]){box(g,.1,.58,.12,mats.metal,xx,.28,0);box(g,.1,.55,.1,mats.metal,xx,.78,-.04);}return g;}
+makeBench(-7,3.5);makeBench(7,3.5);
+
+// Lemonade stand model
+const stand=group(scene,0,0,-.1);
+// counter foundation / feet / countertop
+for(const x of [-1.5,1.5]){box(stand,.15,1.05,.15,mats.woodDark,x,.53,-.25);}
+box(stand,3.5,.76,.82,mats.wood,0,.52,-.25);
+box(stand,3.8,.16,1.0,mats.woodLight,0,.99,-.25);
+box(stand,3.45,.08,.06,mats.woodDark,0,.68,.17);
+for(let i=0;i<7;i++)box(stand,.035,.64,.015,mats.woodDark,-1.5+i*.5,.5,.17,{castShadow:false});
+signPlane(stand,'LIMONAD',2.35,.38,0,.57,.22,0,'#275b37','#ffeb70');
+// awning with stripes
+const awning=group(stand,0,2.45,-.05);
+box(awning,4.0,.16,1.75,mats.red,0,0,0);
+for(let i=0;i<8;i++){const stripe=box(awning,.48,.17,1.76,i%2===0?mats.cream:mats.yellow,-1.74+i*.5,.005,0);}
+for(const x of [-1.8,1.8]){cyl(stand,.055,.055,2.4,mats.woodDark,x,1.8,-.05,8);box(stand,.12,.08,.12,mats.woodLight,x,3.01,-.05);}
+box(stand,4.0,.13,.22,mats.woodDark,0,2.35,.77);
+signPlane(stand,'ليموناد تازه',1.95,.52,0,2.36,.9,0,'#1b5433','#ffe56d');
+// little lemon decoration
+for(let i=0;i<3;i++){const lemon=sphere(stand,.12,mats.lemon,-1.3+i*.18,1.15,-.15,10);lemon.scale.set(1.3,.8,.85);}
+// prep station hardware
+const prep=group(stand,-.75,1.08,-.38);box(prep,.72,.12,.52,mats.greenDark,0,0,0);box(prep,.57,.08,.38,mats.metal,0,.09,0);cyl(prep,.16,.18,.24,mats.glass,0,.25,0,20);cyl(prep,.125,.13,.08,mats.water,0,.35,0,20);box(prep,.06,.16,.06,mats.metal,.25,.24,.08);signPlane(prep,'میز آماده‌سازی',.8,.22,0,.48,.17,0,'#16452e','#fff09a');
+// finished-drink tray
+const tray=group(stand,1.23,1.08,-.36);box(tray,.72,.08,.55,mats.woodDark,0,0,0);box(tray,.66,.025,.48,mats.metal,0,.05,0);signPlane(tray,'لیوان آماده',.8,.22,0,.2,.28,0,'#17452f','#ffe66a');
+// physical sample props on worktop
+function makeIngredientProp(type,parent,x,y,z,scale=1){const g=group(parent,x,y,z);if(type==='lemon'){const m=sphere(g,.105*scale,mats.lemon,0,.06*scale,0,10);m.scale.set(1.25,.8,.9);cyl(g,.018*scale,.015*scale,.035*scale,mats.greenDark,0,.15*scale,0,6);}else if(type==='sugar'){box(g,.17*scale,.19*scale,.15*scale,mats.white,0,.095*scale,0);box(g,.18*scale,.035*scale,.16*scale,mats.red,0,.18*scale,0);}else if(type==='water'){cyl(g,.07*scale,.085*scale,.22*scale,mats.water,0,.11*scale,0,12);cyl(g,.034*scale,.034*scale,.045*scale,mats.greenDark,0,.245*scale,0,10);}else if(type==='cup'||type==='drink'){cyl(g,.09*scale,.07*scale,.17*scale,type==='drink'?mats.water:mats.glass,0,.085*scale,0,16);cyl(g,.093*scale,.09*scale,.018*scale,mats.white,0,.175*scale,0,16);if(type==='drink'){cyl(g,.01*scale,.01*scale,.14*scale,mats.green,0,.2*scale,0,7);sphere(g,.025*scale,mats.lemon,.045*scale,.17*scale,0,8);}}else if(type==='ice'){box(g,.12*scale,.1*scale,.12*scale,new THREE.MeshPhysicalMaterial({color:0xc8f3ff,roughness:.1,transparent:true,opacity:.85}),0,.06*scale,0);box(g,.08*scale,.09*scale,.08*scale,new THREE.MeshPhysicalMaterial({color:0xe6fbff,roughness:.1,transparent:true,opacity:.75}),.06*scale,.04*scale,.04*scale);}return g;}
+
+// Supply table and five physical bins
+const supplyTable=group(scene,-4.0,0,-1.25);
+box(supplyTable,3.8,.18,1.55,mats.wood,0,.82,0);for(const x of [-1.6,1.6])for(const z of [-.55,.55])box(supplyTable,.12,.82,.12,mats.woodDark,x,.4,z);
+const supplyInfo=[
+ {key:'lemon',name:'لیمو',emoji:'🍋',cost:8,color:0xf3d52c,label:'لیمو'},
+ {key:'sugar',name:'شکر',emoji:'🧂',cost:6,color:0xeae3ce,label:'شکر'},
+ {key:'water',name:'آب',emoji:'💧',cost:5,color:0x5cbde0,label:'آب'},
+ {key:'cup',name:'لیوان',emoji:'🥤',cost:5,color:0xf5f2e8,label:'لیوان'},
+ {key:'ice',name:'یخ',emoji:'🧊',cost:5,color:0x9ce8f6,label:'یخ'}
+];
+const supplyTargets={};
+for(let i=0;i<supplyInfo.length;i++){
+ const info=supplyInfo[i],x=-1.42+i*.71;
+ const bin=group(supplyTable,x,.92,0);box(bin,.58,.22,.83,mat(info.color),0,0,0);box(bin,.63,.045,.88,mats.woodDark,0,.125,0);box(bin,.5,.12,.55,mat(info.color),0,.22,-.06);
+ if(info.key==='lemon'){for(let j=0;j<3;j++){const l=sphere(bin,.1,mats.lemon,-.15+j*.14,.35,rnd(-.13,.13),9);l.scale.set(1.25,.8,.9)}}
+ if(info.key==='sugar')box(bin,.25,.22,.25,mats.white,0,.38,0);
+ if(info.key==='water'){cyl(bin,.12,.14,.3,mats.water,0,.38,0,12);cyl(bin,.06,.06,.07,mats.greenDark,0,.57,0,8)}
+ if(info.key==='cup'){for(let j=0;j<3;j++)cyl(bin,.11,.075,.17,mats.glass,0,.34+j*.04,0,12)}
+ if(info.key==='ice'){for(let j=0;j<3;j++)box(bin,.12,.1,.12,new THREE.MeshPhysicalMaterial({color:0xb3ecf8,transparent:true,opacity:.8}),rnd(-.12,.12),.34,rnd(-.13,.13))}
+ box(bin,.62,.9,.9,new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false}),0,.43,0,{castShadow:false,receiveShadow:false});
+ signPlane(bin,info.label,.55,.22,0,.03,.45,0,'#1b3429','#fff1b0');
+ addTarget(bin,{type:'supply',key:info.key,info,title:`برداشتن ${info.name}`,radius:3.2});supplyTargets[info.key]=bin;
+}
+signPlane(supplyTable,'انبار مواد اولیه',2.6,.38,0,1.5,.8,0,'#264f35','#ffe36b');
+addObstacle(-4,-1.25,2.0,.9);
+// small step/stool beside the stand
+const stool=group(scene,-2.2,0,.1);cyl(stool,.32,.32,.12,mats.woodDark,0,.5,0,12);for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const x=Math.cos(a)*.23,z=Math.sin(a)*.23;box(stool,.07,.48,.07,mats.wood,x,.25,z)}
+
+// Management kiosk
+const kiosk=group(scene,3.25,0,-1.2);box(kiosk,1.1,1.2,.8,mats.greenDark,0,.6,0);box(kiosk,1.22,.1,.9,mats.woodLight,0,1.23,0);box(kiosk,.86,.54,.08,mats.black,0,.86,.43);const terminalScreen=box(kiosk,.72,.4,.035,mat(0x67d4a7,.3),0,.87,.49);signPlane(kiosk,'مدیریت',.8,.24,0,1.47,.46,0,'#173b2b','#ffed89');
+const kioskTarget=group(scene,3.25,1.0,-.68);box(kioskTarget,.58,.45,.08,mats.green,0,0,0,{castShadow:false});box(kioskTarget,.95,.9,.3,new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false}),0,.5,0,{castShadow:false,receiveShadow:false});addTarget(kioskTarget,{type:'kiosk',title:'باز کردن مدیریت غرفه',radius:3.5});addObstacle(3.25,-1.2,.7,.65);
+// small upgrade decoration placements
+let upgradeDecor=group(scene,0,0,0);
+function rebuildUpgradeVisual(){scene.remove(upgradeDecor);upgradeDecor=group(scene,0,0,0);
+ if(state.upgrade>=1){const umbrella=group(upgradeDecor,2.15,0,-.25);cyl(umbrella,.07,.07,2.5,mats.metal,0,1.25,0,10);cyl(umbrella,.95,.18,.2,mats.yellow,0,2.55,0,20);for(let i=0;i<8;i++){const a=i*Math.PI/4;box(umbrella,.32,.04,.82,i%2?mats.yellow:mats.red,Math.cos(a)*.45,2.62,Math.sin(a)*.45,{rotation:[0,-a,0]});}}
+ if(state.upgrade>=2){for(let i=0;i<2;i++){const chair=group(upgradeDecor,-2.9+i*1.0,0,1.0);box(chair,.5,.1,.5,mats.woodLight,0,.48,0);box(chair,.5,.55,.08,mats.wood,0,.78,-.22);for(const xx of [-.19,.19])for(const zz of [-.19,.19])box(chair,.07,.48,.07,mats.woodDark,xx,.23,zz);}}
+ if(state.upgrade>=3){box(upgradeDecor,4.1,.12,1.5,mats.woodLight,0,.06,0);for(const x of [-.6,.6])box(upgradeDecor,.1,.85,.1,mats.woodDark,4.1+x,.42,0);signPlane(upgradeDecor,'LEMONADE+',1.2,.35,4.1,1.4,.1,0,'#1b5738','#ffed6e');}
+}
+rebuildUpgradeVisual();
+
+// Player and first-person controls
+const player={position:new THREE.Vector3(0,1.68,-4.0),yaw:Math.PI,pitch:0,velocityY:0,onGround:true};camera.position.copy(player.position);camera.rotation.set(0,Math.PI,0,'YXZ');
+const keys={};let gameStarted=false,paused=true,menuOpen=false,interactTarget=null,carry=null,handProp=null,playerRunning=false;
+const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+const raycaster=new THREE.Raycaster();raycaster.far=5.0;const screenCenter=new THREE.Vector2(0,0);
+function makeHeld(type){if(handProp){camera.remove(handProp);handProp.traverse(o=>{if(o.geometry&&o.geometry.dispose)o.geometry.dispose();});handProp=null;}if(!type)return;handProp=makeIngredientProp(type,camera,.36,-.28,-.63,1.1);handProp.rotation.y=-.2;}
+function heldName(type){return ({lemon:'🍋 لیمو',sugar:'🧂 شکر',water:'💧 آب',cup:'🥤 لیوان خالی',ice:'🧊 یخ',drink:'🍋🥤 لیموناد آماده'})[type]||'خالی';}
+function setCarry(type){carry=type;makeHeld(type);$('heldValue').textContent=heldName(type);}
+function toast(msg){const el=$('toast');el.innerHTML=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2400);}
+function checkCollision(x,z){const r=.28;for(const o of obstacles){if(x>o.x-o.hx-r&&x<o.x+o.hx+r&&z>o.z-o.hz-r&&z<o.z+o.hz+r)return true;}return false;}
+function movePlayer(dx,dz){const nx=clamp(player.position.x+dx,-18,18),nz=clamp(player.position.z+dz,-17,17);if(!checkCollision(nx,player.position.z))player.position.x=nx;if(!checkCollision(player.position.x,nz))player.position.z=nz;}
+function getTarget(){raycaster.setFromCamera(screenCenter,camera);const hits=raycaster.intersectObjects(interactionRoots,true);for(const hit of hits){let o=hit.object;while(o&&!o.userData.targetData)o=o.parent;if(!o)continue;const d=o.userData.targetData;const world=new THREE.Vector3();o.getWorldPosition(world);if(camera.position.distanceTo(world)>d.radius)continue;if(d.type==='customer'&&d.customer.state!=='waiting')continue;return {root:o,data:d,hit};}return null;}
+
+// Recipe visuals on the preparation counter
+const recipeVisuals=group(stand,0,0,0);
+function clearGroup(g){while(g.children.length){const o=g.children[0];g.remove(o);o.traverse?.(c=>{if(c.geometry)c.geometry.dispose();});}}
+function updateRecipeVisuals(){clearGroup(recipeVisuals);const types=['lemon','sugar','water','cup','ice'];types.forEach((t,i)=>{if(state.recipe[t]){const x=-1.55+i*.29;makeIngredientProp(t,recipeVisuals,x,1.12,-.92,.72);}});}
+updateRecipeVisuals();
+
+// Ready cup visuals
+const drinkVisuals=group(tray,0,0,0);
+function updateDrinkVisuals(){clearGroup(drinkVisuals);const count=Math.min(state.readyDrinks,8);for(let i=0;i<count;i++){const col=i%4,row=Math.floor(i/4);makeIngredientProp('drink',drinkVisuals,-.24+col*.16,.1+row*.015,-.13+row*.20,.54);}}
+updateDrinkVisuals();
+
+// Customer models and queue
+const customers=[];let customerSerial=0;let customerSpawnTimer=4.0;
+const shirtMats=[mat(0x477db0),mat(0xcf6a4e),mat(0x60a66a),mat(0x9977bb),mat(0xe1b64d),mat(0x4b8b89)];
+function makeCustomerModel(id){const g=group(scene);const shirt=shirtMats[Math.floor(Math.random()*shirtMats.length)];const skin=mat([0xf4c6a0,0xd69b72,0x9c6749,0xe8b98e][Math.floor(Math.random()*4)]);const pants=mat([0x343e50,0x53463c,0x365143][Math.floor(Math.random()*3)]);
+ const body=cyl(g,.22,.28,.68,shirt,0,1.0,0,10);body.rotation.z=rnd(-.06,.06);sphere(g,.19,skin,0,1.48,0,12);sphere(g,.2,mat([0x382c22,0x65442c,0x242321][Math.floor(Math.random()*3)]),0,1.61,-.015,10).scale.set(1.02,.62,.95);
+ box(g,.055,.035,.02,mats.white,-.065,1.49,.175,{castShadow:false});box(g,.055,.035,.02,mats.white,.065,1.49,.175,{castShadow:false});sphere(g,.016,mats.black,-.065,1.49,.19,6);sphere(g,.016,mats.black,.065,1.49,.19,6);box(g,.07,.018,.015,mat(0xa9534c),0,1.405,.183,{castShadow:false});
+ const legs=[];for(const x of [-.105,.105]){const leg=cyl(g,.075,.08,.47,pants,x,.39,0,8);legs.push(leg);box(g,.09,.1,.18,mats.dark,x,.14,.04);}
+ const arms=[];for(const x of [-.29,.29]){const arm=cyl(g,.055,.065,.48,shirt,x,1.02,0,8);arm.rotation.z=x<0?-.18:.18;arms.push(arm);sphere(g,.065,skin,x, .77,0,8);}
+ const name= ['سارا','آرمان','نیما','رها','کیان','هلیا','پارسا','آوا'][Math.floor(Math.random()*8)];
+ g.userData.limbs={legs,arms};g.userData.name=name;return g;}
+function addCustomer(){if(customers.filter(c=>c.state!=='leaving').length>=3)return;const id=++customerSerial;const model=makeCustomerModel(id);model.position.set(rnd(-1.0,1.0),0,7.3);const data={id,name:model.userData.name,model,state:'walking',wait:0,walkX:rnd(-1.05,1.05),targetX:0,targetZ:2.55,paid:false};const target=group(scene,0,0,0);const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false});sphere(target,.34,hitMat,0,0,0,8); // invisible but raycastable target follows the customer
+ addTarget(target,{type:'customer',customer:data,title:'تحویل سفارش',radius:4.6});data.target=target;customers.push(data);return data;}
+function relayoutQueue(){const waiting=customers.filter(c=>c.state==='waiting');waiting.forEach((c,i)=>{c.targetX=(i-(waiting.length-1)/2)*1.1;c.targetZ=2.55;});}
+function removeCustomer(c){scene.remove(c.model);scene.remove(c.target);const i=customers.indexOf(c);if(i>=0)customers.splice(i,1);relayoutQueue();}
+function customerUpdate(dt){customerSpawnTimer-=dt;const active=customers.filter(c=>c.state!=='leaving').length;const interval=state.price<=12?8.2:state.price<=16?11.2:15.0;if(customerSpawnTimer<=0&&active<3){addCustomer();customerSpawnTimer=interval*rnd(.85,1.18);}
+ for(const c of [...customers]){const p=c.model.position;if(c.state==='walking'){const dx=c.walkX-p.x,dz=c.targetZ-p.z;const d=Math.hypot(dx,dz);if(d<.11){c.state='waiting';p.x=c.walkX;p.z=c.targetZ;relayoutQueue();}else{p.x+=dx/d*dt*1.15;p.z+=dz/d*dt*1.15;const l=c.model.userData.limbs;const swing=Math.sin(performance.now()*.009+c.id)*.32;l.legs[0].rotation.x=swing;l.legs[1].rotation.x=-swing;l.arms[0].rotation.x=-swing*.8;l.arms[1].rotation.x=swing*.8;}}
+ else if(c.state==='waiting'){c.wait+=dt;p.x+=(c.targetX-p.x)*Math.min(1,dt*2.5);p.z+=(c.targetZ-p.z)*Math.min(1,dt*2.5);c.model.userData.limbs.legs.forEach(l=>l.rotation.x=0);c.model.userData.limbs.arms.forEach(a=>a.rotation.x=0);}
+ else if(c.state==='leaving'){p.z+=dt*1.7;if(p.z>8.5)removeCustomer(c);}
+ c.model.rotation.y=Math.PI; c.target.position.set(p.x,1.48,p.z);}}
+
+// Business logic
+const ingredientNames={lemon:'لیمو',sugar:'شکر',water:'آب',cup:'لیوان',ice:'یخ'};
+const recipeKeys=['lemon','sugar','water','cup','ice'];
+function recipeComplete(){return recipeKeys.every(k=>state.recipe[k]>=1)}
+function interact(data){if(!gameStarted||paused||menuOpen)return;
+ if(data.type==='supply'){
+   if(carry){toast('اول چیزی که در دست داری را روی میز آماده‌سازی بگذار.');return;}
+   if(state.stock[data.key]<=0){toast(`موجودی ${ingredientNames[data.key]} تمام شده؛ از کامپیوتر غرفه سفارش بده.`);return;}
+   state.stock[data.key]--;setCarry(data.key);updateHud();saveGame();toast(`${ingredientNames[data.key]} را برداشتی. آن را به میز آماده‌سازی ببر.`);return;
+ }
+ if(data.type==='prep'){
+   if(carry){const key=carry==='drink'?'drink':carry;if(key==='drink'){toast('لیوان آماده را به مشتری تحویل بده، نه میز آماده‌سازی.');return;}if(!recipeKeys.includes(key)){toast('این وسیله در دستور لیموناد استفاده نمی‌شود.');return;}if(state.recipe[key]>=1){toast(`برای این دستور دیگر به ${ingredientNames[key]} نیاز نیست.`);return;}state.recipe[key]=1;setCarry(null);updateRecipeVisuals();updateHud();saveGame();toast(`${ingredientNames[key]} به دستور اضافه شد.`);return;}
+   if(recipeComplete()){
+     state.readyDrinks++;state.recipe={lemon:0,sugar:0,water:0,cup:0,ice:0};updateRecipeVisuals();updateDrinkVisuals();updateHud();saveGame();toast('🍋 لیموناد آماده شد! حالا لیوان را از سینی بردار و به مشتری بده.');return;
+   }
+   const missing=recipeKeys.filter(k=>!state.recipe[k]).map(k=>ingredientNames[k]).join('، ');toast(`مواد باقی‌مانده: ${missing}`);return;
+ }
+ if(data.type==='tray'){
+   if(carry){toast('اول وسیله‌ای که در دست داری را استفاده کن.');return;}
+   if(state.readyDrinks<=0){toast('هنوز لیوان آماده‌ای وجود ندارد؛ دستور را کامل کن و لیموناد بساز.');return;}
+   state.readyDrinks--;updateDrinkVisuals();setCarry('drink');updateHud();saveGame();toast('لیوان لیموناد را برداشتی؛ مشتری را هدف بگیر و E بزن.');return;
+ }
+ if(data.type==='customer'){
+   const c=data.customer;if(!c||c.state!=='waiting')return;
+   if(carry!=='drink'){toast(carry?'برای تحویل سفارش باید لیوان لیموناد آماده در دستت باشد.':'برای تحویل سفارش، اول از سینی یک لیوان لیموناد بردار.');return;}
+   const price=state.price;const tip=c.wait<12?Math.floor(Math.random()*3):0;state.money+=price+tip;state.totalRevenue+=price+tip;state.sales++;state.daySales++;setCarry(null);c.state='leaving';updateHud();saveGame();toast(`✅ سفارش ${c.name} تحویل شد! +${moneyFmt(price)}${tip?` و ${moneyFmt(tip)} انعام`:''}`);if(state.daySales>=3&&!state.questClaimed){state.questClaimed=true;state.money+=15;toast('🎉 هدف روزانه تکمیل شد! پاداش +$15');}updateHud();return;
+ }
+ if(data.type==='kiosk'){openShop();return;}
+}
+
+// Targets for preparation counter and drink tray
+const prepTarget=group(scene,0,1.31,-.68);box(prepTarget,.62,.22,.12,mats.yellow,0,0,0,{castShadow:false});box(prepTarget,.85,.8,.22,new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false}),0,.25,0,{castShadow:false,receiveShadow:false});signPlane(prepTarget,'آماده‌سازی',.9,.25,0,.18,.07,0,'#1d5638','#ffeb65');addTarget(prepTarget,{type:'prep',title:'میز آماده‌سازی لیموناد',radius:3.4});
+const trayTarget=group(scene,1.23,1.3,-.65);box(trayTarget,.55,.22,.12,mats.yellow,0,0,0,{castShadow:false});box(trayTarget,.85,.8,.22,new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false}),0,.25,0,{castShadow:false,receiveShadow:false});signPlane(trayTarget,'برداشتن لیوان',.95,.24,0,.18,.07,0,'#1d5638','#ffeb65');addTarget(trayTarget,{type:'tray',title:'سینی لیوان‌های آماده',radius:3.4});
+
+// Shop, price, staff and upgrades
+function openShop(){menuOpen=true;$('shopModal').style.display='flex';if(document.pointerLockElement)document.exitPointerLock();buildShop();}
+function closeShop(){menuOpen=false;$('shopModal').style.display='none';if(gameStarted&&!isTouch){renderer.domElement.requestPointerLock?.();}else paused=false;}
+function buildShop(){
+ $('shopBalance').textContent=moneyFmt(state.money);$('priceRange').value=state.price;$('priceLabel').textContent=moneyFmt(state.price);
+ $('shopItems').innerHTML=supplyInfo.map(i=>`<div class="shop-item"><div class="shop-emoji">${i.emoji}</div><div class="shop-item-main"><strong>${i.name} <span style="color:var(--mint)">×${fmt(state.stock[i.key])}</span></strong><small>۵ عدد · ${moneyFmt(i.cost)}<br>قیمت هر عدد: ${moneyFmt(i.cost/5)}</small></div><button class="btn" data-action="buy" data-key="${i.key}">خرید بسته</button></div>`).join('');
+ const upgradeCosts=[100,260,520];const upgradeNames=['غرفه رنگی و چتر آفتاب‌گیر','میز و فضای نشستن مشتری‌ها','بخش فروش ویژه و تابلوی بزرگ'];let staffHtml=state.hired?`<div class="staff-box"><div style="font-size:28px">🧑‍🍳</div><div class="staff-info"><strong>کمک‌کار تو استخدام شده</strong><p>وقتی لیوان آماده در سینی باشد، به‌طور خودکار سفارش مشتری‌ها را تحویل می‌دهد. دستمزد: $5 در پایان هر روز.</p></div><span style="color:var(--mint);font-size:11px">فعال ✓</span></div>`:`<div class="staff-box"><div style="font-size:28px">🧑‍🍳</div><div class="staff-info"><strong>استخدام کمک‌کار</strong><p>هزینه استخدام $65؛ در صورت وجود لیوان آماده، هر چند لحظه یک سفارش را به‌طور خودکار تحویل می‌دهد. دستمزد روزانه: $5.</p></div><button class="btn" data-action="hire">استخدام $65</button></div>`;
+ let upHtml='';if(state.upgrade>=3)upHtml=`<div class="staff-box"><div style="font-size:27px">🏆</div><div class="staff-info"><strong>غرفه در بالاترین سطح است</strong><p>همه ارتقاهای فعلی خریداری شده‌اند.</p></div></div>`;else{const next=state.upgrade;upHtml=`<div class="staff-box" style="margin-top:9px"><div style="font-size:28px">${['☂️','🪑','🏪'][next]}</div><div class="staff-info"><strong>ارتقا ${next+1}: ${upgradeNames[next]}</strong><p>هزینه $${upgradeCosts[next]} · افزایش جذابیت و ظرفیت مشتری‌ها.</p></div><button class="btn" data-action="upgrade">ارتقا $${upgradeCosts[next]}</button></div>`;}
+ $('staffUpgrade').innerHTML=staffHtml+upHtml;
+}
+function buyPack(key){const item=supplyInfo.find(i=>i.key===key);if(!item)return;if(state.money<item.cost){toast('پول کافی نداری؛ چند سفارش دیگر بفروش.');return;}state.money-=item.cost;state.stock[key]+=5;updateHud();saveGame();buildShop();toast(`📦 ۵ عدد ${item.name} به انبار اضافه شد.`);}
+function hireWorker(){if(state.hired)return;if(state.money<65){toast('برای استخدام کمک‌کار به $65 نیاز داری.');return;}state.money-=65;state.hired=true;updateHud();saveGame();buildShop();toast('🧑‍🍳 کمک‌کار استخدام شد! حالا اگر لیوان آماده باشد، خودش سفارش تحویل می‌دهد.');}
+function upgradeStand(){const costs=[100,260,520];if(state.upgrade>=3)return;const cost=costs[state.upgrade];if(state.money<cost){toast(`برای ارتقا به ${moneyFmt(cost)} نیاز داری.`);return;}state.money-=cost;state.upgrade++;rebuildUpgradeVisual();updateHud();saveGame();buildShop();toast('🎉 غرفه‌ات ارتقا پیدا کرد!');}
+$('shopItems').addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='buy')buyPack(b.dataset.key);});
+$('staffUpgrade').addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='hire')hireWorker();if(b.dataset.action==='upgrade')upgradeStand();});
+$('priceRange').addEventListener('input',e=>{state.price=Number(e.target.value);$('priceLabel').textContent=moneyFmt(state.price);saveGame();updateHud();});
+$('closeShop').addEventListener('click',closeShop);
+let employeeTimer=11;
+function employeeUpdate(dt){if(!state.hired)return;employeeTimer-=dt;if(employeeTimer>0)return;employeeTimer=17;if(state.readyDrinks<=0)return;const c=customers.find(c=>c.state==='waiting');if(!c)return;state.readyDrinks--;state.money+=state.price;state.totalRevenue+=state.price;state.sales++;state.daySales++;c.state='leaving';updateDrinkVisuals();updateHud();saveGame();toast(`🧑‍🍳 کمک‌کار سفارش ${c.name} را تحویل داد. +${moneyFmt(state.price)}`);if(state.daySales>=3&&!state.questClaimed){state.questClaimed=true;state.money+=15;toast('🎉 هدف روزانه تکمیل شد! پاداش +$15');updateHud();}}
+
+// HUD refresh
+function updateHud(){ $('moneyValue').textContent=moneyFmt(state.money);$('dayValue').textContent=`روز ${fmt(state.day)}`;$('drinkValue').textContent=fmt(state.readyDrinks);$('salesValue').textContent=fmt(state.sales);
+ $('stockList').innerHTML=supplyInfo.map(i=>`<div class="stock-row"><span>${i.emoji} ${i.name}</span><span>${fmt(state.stock[i.key])} عدد</span></div>`).join('');
+ $('recipe-list').innerHTML=recipeKeys.map(k=>`<div class="recipe-item ${state.recipe[k]?'ready':''}">${state.recipe[k]?'✓':'○'} ${ingredientNames[k]}</div>`).join('');
+ const waiters=customers.filter(c=>c.state==='waiting');$('orders').innerHTML=waiters.length?waiters.map(c=>`<div class="order-card"><strong>🥤 ${c.name} · لیموناد</strong><small>زمان انتظار: ${fmt(Math.floor(c.wait))} ثانیه · قیمت ${moneyFmt(state.price)}</small></div>`).join(''):`<div class="order-empty">مشتری منتظر وجود ندارد.<br>کمی صبر کن، مشتری جدید می‌آید.</div>`;
+ $('questText').textContent=state.questClaimed?'✅ هدف روزانه انجام شد؛ فردا هدف تازه‌ای داری.':`فروش ${fmt(Math.min(state.daySales,3))} از ۳ لیوان · پاداش $15`;$('questBar').style.width=(state.questClaimed?100:Math.min(100,state.daySales/3*100))+'%';$('heldValue').textContent=heldName(carry);
+}
+updateHud();
+
+// Interact target styling and prompt
+function updateTargetPrompt(){interactTarget=getTarget();const p=$('targetPrompt');if(!interactTarget){p.style.display='none';return;}const d=interactTarget.data;let label=d.title||'تعامل';let action='برای تعامل <b>E</b> را بزن';
+ if(d.type==='supply'){label=`${d.info.name} · موجودی ${fmt(state.stock[d.key])}`;action=carry?'دستت پر است؛ اول مواد را روی میز بگذار':state.stock[d.key]>0?'برای برداشتن <b>E</b> را بزن':'موجودی تمام شده؛ از کامپیوتر سفارش بده';}
+ else if(d.type==='prep'){label='میز آماده‌سازی';if(carry)action='برای اضافه کردن مواد به دستور <b>E</b> را بزن';else if(recipeComplete())action='دستور کامل است؛ برای ساخت یک لیوان <b>E</b> را بزن';else action='مواد موردنیاز را یکی‌یکی از انبار بردار';}
+ else if(d.type==='tray'){label=`سینی لیموناد · ${fmt(state.readyDrinks)} لیوان آماده`;action=state.readyDrinks>0&&!carry?'برای برداشتن لیوان <b>E</b> را بزن':carry?'دستت پر است':'اول لیموناد آماده کن';}
+ else if(d.type==='customer'){label=`مشتری ${d.customer.name}`;action=carry==='drink'?'برای تحویل لیموناد <b>E</b> را بزن':'برای تحویل، یک لیوان آماده بردار';}
+ else if(d.type==='kiosk'){label='کامپیوتر مدیریت غرفه';action='سفارش کالا، قیمت، استخدام و ارتقا · <b>E</b>';}
+ p.innerHTML=`<div>${label}</div><div style="color:#d7e5da;font-size:11px">${action}</div>`;p.style.display='block';}
+
+// Keyboard and mouse input
+let runTouch=false;const mobileAxes={x:0,y:0};let joyPointer=null,lookPointer=null,lastTouchX=0,lastTouchY=0;
+function onKeyDown(e){if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.code==='KeyE'&&!e.repeat){if(interactTarget)interact(interactTarget.data);}if(e.code==='KeyQ'&&!e.repeat&&carry&&!menuOpen){if(carry==='drink'){state.readyDrinks++;updateDrinkVisuals();setCarry(null);toast('لیوان را به سینی برگرداندی.');}else{const old=carry;state.stock[old]++;setCarry(null);toast(`${ingredientNames[old]} را به انبار برگرداندی.`);}updateHud();saveGame();}if(e.code==='Escape'&&menuOpen){closeShop();}}
+function onKeyUp(e){keys[e.code]=false;}
+window.addEventListener('keydown',onKeyDown,{passive:false});window.addEventListener('keyup',onKeyUp);
+renderer.domElement.addEventListener('click',()=>{if(gameStarted&&!isTouch&&!menuOpen&&!document.pointerLockElement){renderer.domElement.requestPointerLock?.();}});
+document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement===renderer.domElement){paused=false;}else if(gameStarted&&!menuOpen&&!isTouch){paused=true;showPause();}});
+document.addEventListener('mousemove',e=>{if(!gameStarted||paused||menuOpen||document.pointerLockElement!==renderer.domElement)return;player.yaw-=e.movementX*.0022;player.pitch=clamp(player.pitch-e.movementY*.0022,-1.25,1.25);});
+function showPause(){if(!$('screenOverlay').style.display||$('screenOverlay').style.display==='none'){ $('overlayTitle').textContent='بازی متوقف شد';$('overlaySubtitle').textContent='برای ادامه، دکمه زیر را بزن یا روی صفحه بازی کلیک کن.';$('startBtn').textContent='ادامه بازی';$('resetBtn').textContent='ذخیره و بازگشت به منو';$('screenOverlay').style.display='flex';}}
+function startGame(){gameStarted=true;paused=false;$('screenOverlay').style.display='none';if(!isTouch)renderer.domElement.requestPointerLock?.();toast('به غرفه‌ات خوش آمدی! مواد اولیه را از میز انبار بردار.');}
+$('startBtn').addEventListener('click',()=>{if(gameStarted&&paused){$('screenOverlay').style.display='none';if(!isTouch)renderer.domElement.requestPointerLock?.();else paused=false;return;}startGame();});
+$('resetBtn').addEventListener('click',()=>{if(gameStarted&&paused){saveGame();$('overlayTitle').textContent='غرفه لیموناد من';$('overlaySubtitle').textContent='بازی ذخیره شد. هر زمان آماده‌ای، دوباره وارد شو.';$('startBtn').textContent='ادامه بازی';$('resetBtn').textContent='ذخیره و بازگشت به منو';return;}if(confirm('همه پیشرفت ذخیره‌شده پاک شود و بازی از ابتدا آغاز شود؟')){try{localStorage.removeItem('lemonade-stand-3d-save-v1')}catch(e){}location.reload();}});
+$('mobileInteract').addEventListener('click',()=>{if(interactTarget)interact(interactTarget.data);});
+$('mobileRun').addEventListener('touchstart',e=>{e.preventDefault();runTouch=true;},{passive:false});$('mobileRun').addEventListener('touchend',()=>runTouch=false);$('mobileRun').addEventListener('pointerdown',()=>runTouch=true);$('mobileRun').addEventListener('pointerup',()=>runTouch=false);$('mobileRun').addEventListener('pointerleave',()=>runTouch=false);
+const joystick=$('joystick'),stick=$('stick');
+joystick.addEventListener('pointerdown',e=>{joyPointer=e.pointerId;joystick.setPointerCapture(e.pointerId);updateJoy(e);});
+joystick.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)updateJoy(e);});
+function updateJoy(e){const r=joystick.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;const dx=e.clientX-cx,dy=e.clientY-cy;const max=36,dist=Math.hypot(dx,dy),f=dist>max?max/dist:1;mobileAxes.x=clamp(dx*f/max,-1,1);mobileAxes.y=clamp(dy*f/max,-1,1);stick.style.left=(35+mobileAxes.x*28)+'px';stick.style.top=(35+mobileAxes.y*28)+'px';}
+function joyEnd(e){if(joyPointer===e.pointerId){joyPointer=null;mobileAxes.x=0;mobileAxes.y=0;stick.style.left='35px';stick.style.top='35px';}}joystick.addEventListener('pointerup',joyEnd);joystick.addEventListener('pointercancel',joyEnd);
+renderer.domElement.addEventListener('pointerdown',e=>{if(!isTouch||!gameStarted||paused||menuOpen)return;if(e.clientX>innerWidth*.38&&e.pointerType==='touch'){lookPointer=e.pointerId;lastTouchX=e.clientX;lastTouchY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);}});
+renderer.domElement.addEventListener('pointermove',e=>{if(isTouch&&lookPointer===e.pointerId){const dx=e.clientX-lastTouchX,dy=e.clientY-lastTouchY;lastTouchX=e.clientX;lastTouchY=e.clientY;player.yaw-=dx*.006;player.pitch=clamp(player.pitch-dy*.005,-1.2,1.2);}});
+function lookEnd(e){if(lookPointer===e.pointerId)lookPointer=null;}renderer.domElement.addEventListener('pointerup',lookEnd);renderer.domElement.addEventListener('pointercancel',lookEnd);
+
+// Day and employee wage
+let autosaveTimer=0,uiTimer=0,dayLength=150;
+function clockUpdate(dt){state.dayTime+=dt;if(state.dayTime>=dayLength){state.dayTime-=dayLength;state.day++;state.daySales=0;state.questClaimed=false;if(state.hired){if(state.money>=5){state.money-=5;toast('🌙 روز کاری تمام شد؛ دستمزد کمک‌کار پرداخت شد: -$5.');}else{toast('🌙 روز تمام شد، اما برای دستمزد کمک‌کار پول کافی نداشتی.');}}updateHud();saveGame();}}
+
+// Frame loop
+let lastTime=performance.now();
+function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,(now-lastTime)/1000);lastTime=now;
+ if(gameStarted&&!paused&&!menuOpen){
+  const fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-mobileAxes.y;
+  const str=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+mobileAxes.x;
+  let vx=Math.sin(player.yaw)*fwd+Math.cos(player.yaw)*str;let vz=-Math.cos(player.yaw)*fwd+Math.sin(player.yaw)*str;const len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;}
+  const sprint=!!(keys.ShiftLeft||keys.ShiftRight||runTouch);const speed=sprint?5.0:3.05;movePlayer(vx*speed*dt,vz*speed*dt);
+  player.position.y=1.68;camera.position.copy(player.position);camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
+  customerUpdate(dt);employeeUpdate(dt);clockUpdate(dt);
+  // simple daylight movement
+  const phase=(state.dayTime/dayLength)*Math.PI*2;sun.position.set(Math.cos(phase)*16,Math.max(6,Math.sin(phase)*17+9),8);sun.intensity=.9+Math.max(0,Math.sin(phase))*2.2;
+  updateTargetPrompt();uiTimer+=dt;autosaveTimer+=dt;if(uiTimer>.45){updateHud();uiTimer=0;}if(autosaveTimer>9){saveGame();autosaveTimer=0;}
+ }else if(gameStarted){customerUpdate(0);updateTargetPrompt();}
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));});
+window.addEventListener('beforeunload',saveGame);
+$('loading').style.display='none';$('hud').style.display='block';
+// The player starts on the working side of the counter, facing the stand.
+// Restore saved recipe and stocks visually before the first frame.
+updateHud();updateRecipeVisuals();updateDrinkVisuals();
+}catch(err){console.error(err);const l=document.getElementById('loading');l.innerHTML=`<div class="load-card"><div class="load-title">مشکل در بارگذاری بازی</div><div class="load-text">کتابخانه سه‌بعدی بارگذاری نشد. اتصال اینترنت را بررسی کن و فایل را دوباره در مرورگر باز کن.<br><small style="opacity:.7">${String(err).replace(/[<>&]/g,'')}</small></div><div class="btn-row"><button class="btn primary" onclick="location.reload()">تلاش دوباره</button></div></div>`;}
+})();
+</script>
+</body>
+</html>

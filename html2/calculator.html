@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>AG9 Engineering Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#fbf5ea;--card:#fff;--ink:#2a1d10;--mut:#7a6a56;--acc:#d97706;--acc2:#c2410c;--line:#e6d8c2;--key:#f4e8d3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120d09;--card:#1c1510;--ink:#f6ead8;--mut:#b39d82;--acc:#ffb347;--acc2:#ff7a45;--line:#3a2d20;--key:#2a2018}}
+:root[data-theme="dark"]{--bg:#120d09;--card:#1c1510;--ink:#f6ead8;--mut:#b39d82;--acc:#ffb347;--acc2:#ff7a45;--line:#3a2d20;--key:#2a2018}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}h1 span{color:var(--acc)}
+.row{display:flex;gap:6px}
+button,select,input{font:inherit;color:var(--ink)}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.tabs{display:flex;gap:6px;margin:12px 0 8px;overflow-x:auto}
+.tabs button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;white-space:nowrap}
+.tabs button.on{background:var(--acc);color:#1a0f05;border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
+#hist{max-height:110px;overflow:auto;font-size:14px;color:var(--mut)}
+#hist div{padding:2px 0;cursor:pointer;border-bottom:1px dashed var(--line)}
+#in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:18px;font-family:ui-monospace,Menlo,Consolas,monospace}
+#out{font:600 22px/1.3 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;margin-top:8px;min-height:30px;color:var(--acc2)}
+#fr{color:var(--mut);font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+#out.err{color:#d33;font-size:16px}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.keys button{background:var(--key);border:1px solid var(--line);border-radius:10px;min-height:46px;font-size:16px;cursor:pointer}
+.keys button.op{background:var(--card)}.keys button.eq{background:var(--acc);color:#1a0f05;font-weight:700}
+.keys button:active{transform:scale(.96)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font:13px ui-monospace,Menlo,monospace;cursor:pointer}
+label{display:block;font-size:13px;color:var(--mut);margin-top:8px}
+.card input,.card textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+pre{white-space:pre-wrap;margin:8px 0 0;font:15px/1.4 ui-monospace,Menlo,monospace;color:var(--acc2)}
+h3{margin:0 0 4px;font-size:16px}small{color:var(--mut)}
+[hidden]{display:none!important}
+</style></head><body>
+<main>
+<header><h1>AG9 <span>Engineering Calculator</span></h1>
+<div class="row"><button id="mode" class="pill" title="Angle mode">DEG</button>
+<select id="prec" class="pill" title="Displayed digits"><option>10</option><option>15</option><option selected>30</option><option>60</option><option>100</option></select>
+<button id="kb" class="pill" title="System keyboard">⌨</button></div></header>
+<nav class="tabs" id="main"><button data-p="calc" class="on">Calculator</button><button data-p="tools">Electronics</button></nav>
+<section id="calc">
+<div class="card"><div id="hist"></div>
+<input id="in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="none" placeholder="Type or tap: 1/3 + 1/6">
+<div id="out"></div><div id="fr"></div></div>
+<nav class="tabs" id="ktabs"></nav>
+<div class="keys" id="keys"></div>
+<div class="card" style="margin-top:10px"><h3>Try these</h3><div class="chips" id="ex"></div>
+<p><small>Exact 128-digit decimal arithmetic. Fractions are detected automatically (1/3 shows as 1/3). Variables work: <code>a=5</code>, then <code>a^2</code>. <code>ans</code> is the last result. Calculus helpers (integral, nsolve) use radians; the integral is numeric (about 13 correct digits).</small></p></div>
+</section>
+<section id="tools" hidden></section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+if(typeof math==='undefined'){document.querySelector('main').insertAdjacentHTML('afterbegin','<p class="card">The math library could not be loaded. Check your connection and reload.</p>');return}
+var M=math.create(math.all,{number:'BigNumber',precision:128});
+var N=math.create(math.all);
+var P=30,deg=true,hist=[],hi=0,scope={};
+function num(x){return typeof x==='number'?x:M.number(x)}
+function B(x){return M.bignumber(+Number(x).toPrecision(15))}
+function mkFn(f){var c=N.compile(String(f)),s={x:0};return function(t){s.x=t;return Number(c.evaluate(s))}}
+function simpson(f,a,b){
+  var cnt=0;function g(t){if(++cnt>400000)throw new Error('integral: did not converge');return f(t)}
+  function rec(a,b,fa,fm,fb,S,eps,d){
+    var m=(a+b)/2,flm=g((a+m)/2),frm=g((m+b)/2);
+    var Sl=(m-a)/6*(fa+4*flm+fm),Sr=(b-m)/6*(fm+4*frm+fb),D=Sl+Sr-S;
+    if(d<=0||Math.abs(D)<=15*eps)return Sl+Sr+D/15;
+    return rec(a,m,fa,flm,fm,Sl,eps/2,d-1)+rec(m,b,fm,frm,fb,Sr,eps/2,d-1)}
+  var n=8,tot=0,h=(b-a)/n;
+  for(var i=0;i<n;i++){var x0=a+i*h,x1=x0+h,fa=g(x0),fb=g(x1),fm=g((x0+x1)/2);
+    tot+=rec(x0,x1,fa,fm,fb,h/6*(fa+4*fm+fb),1e-14,40)}
+  return tot}
+scope.integral=function(f,a,b){var r=simpson(mkFn(f),num(a),num(b));if(!isFinite(r))throw new Error('integral: not finite');return B(r)};
+scope.nsolve=function(f,x0){
+  var c=M.compile(String(f)),d=M.derivative(String(f),'x').compile(),s={x:M.bignumber(x0)};
+  for(var i=0;i<200;i++){var fx=c.evaluate(s),dx=d.evaluate(s);
+    if(M.isZero(dx))throw new Error('nsolve: zero derivative, try another start');
+    var nx=M.subtract(s.x,M.divide(fx,dx));
+    if(M.smaller(M.abs(M.subtract(nx,s.x)),M.bignumber('1e-100'))){s.x=nx;return nx}
+    s.x=nx}
+  throw new Error('nsolve: no convergence')};
+scope.quad=function(a,b,c){
+  var d=M.sqrt(M.subtract(M.multiply(b,b),M.multiply(4,M.multiply(a,c)))),t=M.multiply(2,a),nb=M.unaryMinus(b);
+  return [M.divide(M.add(nb,d),t),M.divide(M.subtract(nb,d),t)]};
+scope.factor=function(n){
+  n=num(n);if(!Number.isInteger(n)||n<2||n>9007199254740991)throw new Error('factor: integer from 2 to 9e15');
+  var o=[],p=2;
+  while(p*p<=n){var k=0;while(n%p===0){n/=p;k++}if(k)o.push(k>1?p+'^'+k:''+p);p+=p===2?1:2}
+  if(n>1)o.push(''+n);return o.join(' × ')};
+var TR=['sin','cos','tan','sec','csc','cot'],IV=['asin','acos','atan','asec','acsc','acot'];
+function setDeg(f){
+  deg=f;TR.concat(IV,['atan2']).forEach(function(n){delete scope[n]});
+  if(f){
+    var k=M.divide(M.pi,180),r=M.divide(180,M.pi);
+    TR.forEach(function(n){scope[n]=function(x){return M[n](M.typeOf(x)==='Unit'?x:M.multiply(x,k))}});
+    IV.forEach(function(n){scope[n]=function(x){return M.multiply(M[n](x),r)}});
+    scope.atan2=function(y,x){return M.multiply(M.atan2(y,x),r)}}
+  $('mode').textContent=f?'DEG':'RAD'}
+function toFrac(x){
+  if(!x||!x.isFinite||!x.isFinite())return null;
+  var Bn=M.bignumber,r=x,h1=Bn(1),h2=Bn(0),k1=Bn(0),k2=Bn(1),eps=Bn('1e-60');
+  for(var i=0;i<80;i++){
+    var a=r.floor(),h=a.times(h1).plus(h2),k=a.times(k1).plus(k2);
+    if(k.gt(1e9))return null;
+    h2=h1;h1=h;k2=k1;k1=k;
+    if(h.div(k).minus(x).abs().lt(eps))return k.eq(1)?null:h.toFixed(0)+'/'+k.toFixed(0);
+    var f=r.minus(a);if(f.isZero())return null;r=Bn(1).div(f)}
+  return null}
+function show(v){
+  if(v&&v.isNode)return v.toString();
+  if(typeof v==='string')return v;
+  return M.format(v,{precision:P,lowerExp:-12,upperExp:60})}
+function clean(s){
+  return s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,'pi').replace(/²/g,'^2').replace(/³/g,'^3')
+    .replace(/√\s*\(/g,'sqrt(').replace(/√\s*([\w.]+)/g,'sqrt($1)')}
+function run(){
+  var raw=$('in').value.trim();if(!raw)return;
+  var out=$('out'),fr=$('fr');out.className='';fr.textContent='';
+  try{
+    var r=M.evaluate(clean(raw),scope);
+    if(r&&r.entries)r=r.entries[r.entries.length-1];
+    if(r===undefined)throw new Error('Nothing to show');
+    var s=show(r);out.textContent=s;
+    if(M.typeOf(r)==='BigNumber'){var f=toFrac(r);if(f)fr.textContent='= '+f+' (exact fraction)'}
+    if(typeof r!=='function'&&!(r&&r.isNode)&&typeof r!=='string')scope.ans=r;
+    hist.push([raw,s]);hi=hist.length;drawHist()}
+  catch(e){out.className='err';out.textContent=(e&&e.message)||String(e)}}
+function drawHist(){
+  var h=$('hist');h.innerHTML='';
+  hist.slice(-8).forEach(function(it){var d=document.createElement('div');d.textContent=it[0]+'  =  '+it[1].slice(0,60);
+    d.onclick=function(){$('in').value=it[0]};h.appendChild(d)});h.scrollTop=1e5}
+function ins(t){
+  var el=$('in'),s=el.selectionStart,e=el.selectionEnd,i=t.indexOf('‸'),c=t.replace('‸',''),v=el.value;
+  el.value=v.slice(0,s)+c+v.slice(e);var p=s+(i<0?c.length:i);el.focus();el.setSelectionRange(p,p)}
+function del(){
+  var el=$('in'),s=el.selectionStart,e=el.selectionEnd,v=el.value;
+  if(s===e&&s>0){s--}el.value=v.slice(0,s)+v.slice(e);el.focus();el.setSelectionRange(s,s)}
+var KEYS={
+'123':['(','(',')',')','^','^','√','sqrt(‸)','⌫','DEL','7','7','8','8','9','9','÷','/','AC','CLR','4','4','5','5','6','6','×','*','ans','ans','1','1','2','2','3','3','−','-',',',',','0','0','.','.','π','pi','+','+','=','EQ'],
+'f(x)':['sin','sin(‸)','cos','cos(‸)','tan','tan(‸)','asin','asin(‸)','acos','acos(‸)','atan','atan(‸)','sinh','sinh(‸)','cosh','cosh(‸)','tanh','tanh(‸)','ln','log(‸)','log₁₀','log10(‸)','log₂','log(‸,2)','eˣ','exp(‸)','x²','^2','x³','^3','n!','!','1/x','1/(‸)','|x|','abs(‸)','e','e','i','i','∛','cbrt(‸)','ⁿ√','nthRoot(‸,3)','mod','mod(‸,)','round','round(‸,2)','floor','floor(‸)','ceil','ceil(‸)','sign','sign(‸)','Γ','gamma(‸)','atan2','atan2(‸,)','hypot','hypot(‸,)'],
+'Calc':['d/dx','derivative("‸","x")','∫ dx','integral("‸",0,1)','solve f=0','nsolve("‸",1)','ax²+bx+c','quad(‸,,)','simplify','simplify("‸")','rationalize','rationalize("‸")','factor','factor(‸)','gcd','gcd(‸,)','lcm','lcm(‸,)','isPrime','isPrime(‸)','f(x)=','f(x)=‸','Σ','sum(‸)','Π','prod(‸)','C(n,k)','combinations(‸,)','P(n,k)','permutations(‸,)','fraction','fraction(‸)','floor÷','floor(‸/)','random','random()','randInt','randomInt(‸,)','lgamma','gamma(‸)','sqrt','sqrt(‸)','xʸ','pow(‸,)','exp','exp(‸)'],
+'Matrix·Stats':['[[ ]]','[[1,2],[3,4]]','det','det(‸)','inv','inv(‸)','transpose','transpose(‸)','lusolve','lusolve(‸,)','eigs','eigs(‸)','cross','cross(‸,)','dot','dot(‸,)','norm','norm(‸)','identity','identity(‸)','mean','mean(‸)','median','median(‸)','mode','mode(‸)','std','std(‸)','variance','variance(‸)','min','min(‸)','max','max(‸)','sort','sort(‸)','cumsum','cumsum(‸)','range','range(1,10)','quartiles','quantileSeq(‸,[0.25,0.5,0.75])','mad','mad(‸)','trace','trace(‸)','kron','kron(‸,)','size','size(‸)'],
+'More':['to',' to ','cm','cm','kg','kg','inch','inch','mph','mph','°C','celsius','bin','bin(‸)','oct','oct(‸)','hex','hex(‸)','0b','0b','0x','0x','re','re(‸)','im','im(‸)','arg','arg(‸)','conj','conj(‸)','abs','abs(‸)','complex','complex(‸,)','bitAnd','bitAnd(‸,)','bitOr','bitOr(‸,)','bitXor','bitXor(‸,)','<<','<<','>>','>>','==','==','<','<','>','>','a=','a=','"',"\"",'[',"[",']',']']};
+function mkKeys(name){
+  var g=$('keys');g.innerHTML='';var a=KEYS[name];
+  for(var i=0;i<a.length;i+=2){(function(l,t){
+    var b=document.createElement('button');b.textContent=l;
+    if(t==='EQ')b.className='eq';else if(/^[\/*\-+^]$/.test(t))b.className='op';
+    b.onclick=function(){t==='EQ'?run():t==='CLR'?($('in').value='',$('out').textContent='',$('fr').textContent=''):t==='DEL'?del():ins(t)};
+    g.appendChild(b)})(a[i],a[i+1])}
+  Array.prototype.forEach.call($('ktabs').children,function(b){b.classList.toggle('on',b.dataset.k===name)})}
+Object.keys(KEYS).forEach(function(k){var b=document.createElement('button');b.textContent=k;b.dataset.k=k;b.onclick=function(){mkKeys(k)};$('ktabs').appendChild(b)});
+['1/3 + 1/6','sqrt(2)','sin(30)','(2+3i)*(4-i)','det([[1,2],[3,4]])','derivative("x^3*sin(x)","x")','integral("sin(x)",0,pi)','nsolve("x^2-2",1)','quad(1,-3,2)','factor(360)','5 inch to cm','hex(255)','50!','lusolve([[2,1],[1,3]],[3,5])','std([2,4,4,4,5,5,7,9])','combinations(10,3)','2^0.5^2','e^(i*pi)'].forEach(function(s){
+  var b=document.createElement('button');b.textContent=s;b.onclick=function(){$('in').value=s;run()};$('ex').appendChild(b)});
+$('in').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){e.preventDefault();run()}
+  else if(e.key==='ArrowUp'&&hist.length){hi=Math.max(0,hi-1);this.value=hist[hi][0]}
+  else if(e.key==='ArrowDown'&&hist.length){hi=Math.min(hist.length,hi+1);this.value=hist[hi]?hist[hi][0]:''}});
+$('mode').onclick=function(){setDeg(!deg)};
+$('prec').onchange=function(){P=+this.value;run()};
+$('kb').onclick=function(){var el=$('in');el.inputMode=el.inputMode==='none'?'text':'none';el.blur();el.focus()};
+/* ---------- Electronics tools ---------- */
+function pv(s){
+  var m=String(s).trim().match(/^([+-]?\d*\.?\d+(?:e[+-]?\d+)?)\s*([pnuµmkKMG]?)$/);
+  if(!m)return NaN;
+  var u={p:1e-12,n:1e-9,u:1e-6,'µ':1e-6,m:1e-3,k:1e3,K:1e3,M:1e6,G:1e9};
+  return parseFloat(m[1])*(m[2]?u[m[2]]:1)}
+function si(v,u){
+  if(!isFinite(v))return '—';if(v===0)return '0 '+u;
+  var pf=['p','n','µ','m','','k','M','G'],e=Math.max(-4,Math.min(3,Math.floor(Math.log10(Math.abs(v))/3)));
+  return +(v/Math.pow(10,e*3)).toPrecision(6)+' '+pf[e+4]+u}
+var E24=[1,1.1,1.2,1.3,1.5,1.6,1.8,2,2.2,2.4,2.7,3,3.3,3.6,3.9,4.3,4.7,5.1,5.6,6.2,6.8,7.5,8.2,9.1];
+function e24up(r){var d=Math.pow(10,Math.floor(Math.log10(r)));for(var i=0;i<24;i++)if(E24[i]*d>=r*0.9999)return E24[i]*d;return 10*d}
+var COL={black:0,brown:1,red:2,orange:3,yellow:4,green:5,blue:6,violet:7,grey:8,gray:8,white:9};
+var TOL={gold:'±5%',silver:'±10%',brown:'±1%',red:'±2%',green:'±0.5%',blue:'±0.25%',violet:'±0.1%'};
+var TOOLS=[
+{n:'Ohm’s law & power',h:'Fill any two values (suffixes k, M, m, u allowed).',f:[['V','Voltage (V)'],['I','Current (A)'],['R','Resistance (Ω)'],['P','Power (W)']],
+run:function(a){var V=pv(a.V),I=pv(a.I),R=pv(a.R),P=pv(a.P),k=function(x){return !isNaN(x)};
+  if(k(V)&&k(I)){R=V/I;P=V*I}else if(k(V)&&k(R)){I=V/R;P=V*V/R}else if(k(V)&&k(P)){I=P/V;R=V*V/P}
+  else if(k(I)&&k(R)){V=I*R;P=I*I*R}else if(k(I)&&k(P)){V=P/I;R=V/I}else if(k(R)&&k(P)){V=Math.sqrt(P*R);I=Math.sqrt(P/R)}
+  else return 'Enter two values.';
+  return 'V = '+si(V,'V')+'\nI = '+si(I,'A')+'\nR = '+si(R,'Ω')+'\nP = '+si(P,'W')}},
+{n:'LED resistor',h:'Series resistor for an LED.',f:[['Vs','Supply (V)','5'],['Vf','LED forward voltage (V)','2'],['I','LED current (A or mA, e.g. 15m)','15m']],
+run:function(a){var s=pv(a.Vs),f=pv(a.Vf),i=pv(a.I);if([s,f,i].some(isNaN)||s<=f||i<=0)return 'Need Vs > Vf and I > 0.';
+  var r=(s-f)/i,st=e24up(r);return 'R = '+si(r,'Ω')+'\nNext E24 value up: '+si(st,'Ω')+'\nCurrent with it: '+si((s-f)/st,'A')+'\nResistor power: '+si(Math.pow((s-f)/st,2)*st,'W')}},
+{n:'Voltage divider',h:'Vout = Vin · R2 / (R1 + R2)',f:[['Vin','Vin (V)','5'],['R1','R1 (Ω)','10k'],['R2','R2 (Ω)','10k']],
+run:function(a){var v=pv(a.Vin),r1=pv(a.R1),r2=pv(a.R2);if([v,r1,r2].some(isNaN))return 'Enter values.';
+  return 'Vout = '+si(v*r2/(r1+r2),'V')+'\nCurrent = '+si(v/(r1+r2),'A')}},
+{n:'RC filter',h:'Time constant and cutoff frequency.',f:[['R','R (Ω)','10k'],['C','C (F)','100n']],
+run:function(a){var r=pv(a.R),c=pv(a.C);if(isNaN(r)||isNaN(c))return 'Enter values.';
+  return 'τ = '+si(r*c,'s')+'\nfc = '+si(1/(2*Math.PI*r*c),'Hz')+'\n5τ settling = '+si(5*r*c,'s')}},
+{n:'Series / parallel resistors',h:'List values separated by spaces or commas.',f:[['L','Resistors','100 220 330']],
+run:function(a){var v=a.L.split(/[\s,]+/).filter(Boolean).map(pv);if(!v.length||v.some(isNaN))return 'Enter values.';
+  return 'Series = '+si(v.reduce(function(x,y){return x+y},0),'Ω')+'\nParallel = '+si(1/v.reduce(function(x,y){return x+1/y},0),'Ω')}},
+{n:'Resistor color code',h:'4 or 5 bands, e.g. brown black red gold',f:[['B','Bands','brown black red gold']],
+run:function(a){var w=a.B.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  if(w.length<4||w.length>5||w.slice(0,w.length-2).some(function(x){return !(x in COL)}))return 'Use 4 or 5 band names.';
+  var d=w.slice(0,w.length-2).reduce(function(s,x){return s*10+COL[x]},0),mc=w[w.length-2],m=mc==='gold'?0.1:mc==='silver'?0.01:Math.pow(10,COL[mc]);
+  if(isNaN(m))return 'Bad multiplier band.';return si(d*m,'Ω')+'  '+(TOL[w[w.length-1]]||'')}},
+{n:'ADC converter',h:'Raw counts to volts.',f:[['bits','Resolution (bits)','10'],['vref','Vref (V)','5'],['raw','Raw reading','512']],
+run:function(a){var b=pv(a.bits),v=pv(a.vref),r=pv(a.raw);if([b,v,r].some(isNaN))return 'Enter values.';
+  var lv=v/Math.pow(2,b);return 'Voltage = '+si(r*lv,'V')+'\n1 LSB = '+si(lv,'V')+'\nLevels = '+Math.pow(2,b)}}];
+var tw=$('tools');
+TOOLS.forEach(function(t){
+  var c=document.createElement('div');c.className='card';c.innerHTML='<h3></h3><small></small>';
+  c.firstChild.textContent=t.n;c.children[1].textContent=t.h;var ins_={},pre=document.createElement('pre');
+  t.f.forEach(function(f){var l=document.createElement('label');l.textContent=f[1];var i=document.createElement('input');i.value=f[2]||'';i.setAttribute('inputmode','text');i.autocomplete='off';
+    i.oninput=go;ins_[f[0]]=i;l.appendChild(i);c.appendChild(l)});
+  function go(){var a={};for(var k in ins_)a[k]=ins_[k].value;try{pre.textContent=t.run(a)}catch(e){pre.textContent='Error'}}
+  c.appendChild(pre);tw.appendChild(c);go()});
+Array.prototype.forEach.call($('main').children,function(b){b.onclick=function(){
+  Array.prototype.forEach.call($('main').children,function(x){x.classList.toggle('on',x===b)});
+  $('calc').hidden=b.dataset.p!=='calc';$('tools').hidden=b.dataset.p!=='tools'}});
+setDeg(true);mkKeys('123');
+})();
+</script></body></html>
