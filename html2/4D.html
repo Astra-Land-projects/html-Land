@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hypercube Explorer 4D to 10D</title>
+<style>
+:root{color-scheme:dark;--bg:#04050d;--panel:rgba(14,16,34,.74);--line:rgba(255,255,255,.14);--text:#e8ebff;--dim:#8f95b8;--acc:#7aa2ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+canvas{display:block;position:fixed;inset:0;touch-action:none}
+#top{position:fixed;left:14px;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;pointer-events:none}
+h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.02em}
+#info{color:var(--acc);margin-top:2px}
+#hint{color:var(--dim);font-size:12px;margin-top:2px}
+#panel{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);max-width:640px;margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.row{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+#dims{display:flex;gap:6px;overflow-x:auto}
+button,select{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font:inherit}
+button.on{background:var(--acc);color:#05070f;border-color:var(--acc);font-weight:600}
+#dims button{flex:1;min-width:46px}
+input[type=range]{flex:1;min-width:90px;accent-color:var(--acc)}
+label{display:flex;gap:6px;align-items:center;color:var(--dim)}
+</style>
+</head>
+<body>
+<div id="top"><h1>Hypercube Explorer</h1><div id="info"></div><div id="hint">Drag to orbit. Scroll or pinch to zoom.</div></div>
+<div id="panel">
+  <div id="dims"></div>
+  <div class="row"><label>Plane <select id="plane"></select></label><input type="range" id="angle" min="-3.1416" max="3.1416" step="0.01" value="0"></div>
+  <div class="row"><label>Speed <input type="range" id="speed" min="0" max="3" step="0.05" value="1"></label><label><input type="checkbox" id="auto" checked> Auto</label><button id="reset">Reset view</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const AX=["X","Y","Z","W","V","U","T","S","R","Q"];
+const NAMES={4:"Tesseract",5:"Penteract",6:"Hexeract",7:"Hepteract",8:"Octeract",9:"Enneract",10:"Dekeract"};
+
+// ---- MATH START
+function planesOf(n){const p=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)p.push([i,j]);return p;}
+function identity(n){const m=new Float64Array(n*n);for(let i=0;i<n;i++)m[i*n+i]=1;return m;}
+function rotateInPlace(m,n,i,j,a){
+  const c=Math.cos(a),s=Math.sin(a);
+  for(let k=0;k<n;k++){const x=m[i*n+k],y=m[j*n+k];m[i*n+k]=c*x-s*y;m[j*n+k]=s*x+c*y;}
+}
+function buildCube(n){
+  const V=1<<n,verts=new Float64Array(V*n),e=[];
+  for(let v=0;v<V;v++)for(let d=0;d<n;d++)verts[v*n+d]=((v>>d)&1)?1:-1;
+  for(let v=0;v<V;v++)for(let d=0;d<n;d++)if(!((v>>d)&1))e.push(v,v|(1<<d));
+  return {V,verts,edges:new Uint16Array(e)};
+}
+function projectAll(n,m,verts,V,out,hue,dist){
+  const r=new Float64Array(n),norm=1/Math.sqrt(n);
+  for(let v=0;v<V;v++){
+    for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=m[i*n+k]*verts[v*n+k];r[i]=s*norm;}
+    hue[v]=0.5+0.5*r[3];
+    for(let d=n-1;d>=3;d--){const f=dist/(dist-r[d]);for(let i=0;i<d;i++)r[i]*=f;}
+    let L=Math.hypot(r[0],r[1],r[2]),f=1;
+    if(L>2)f=(2+1*Math.tanh(L-2))/L;
+    out[v*3]=r[0]*f;out[v*3+1]=r[1]*f;out[v*3+2]=r[2]*f;
+  }
+}
+// ---- MATH END
+
+const cv=document.createElement("canvas");document.body.prepend(cv);
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(55,1,0.1,300);
+let camZ=7;camera.position.z=camZ;
+
+function glowTex(inner){
+  const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d");
+  const gr=g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,"rgba(255,255,255,1)");gr.addColorStop(inner,"rgba(255,255,255,.55)");gr.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
+}
+// Space: stars + nebula clouds
+const space=new THREE.Group();scene.add(space);
+(function(){
+  const N=1800,p=new Float32Array(N*3),c=new Float32Array(N*3),col=new THREE.Color();
+  for(let i=0;i<N;i++){
+    const r=60+Math.random()*90,th=Math.random()*6.2832,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);
+    col.setHSL(0.55+Math.random()*0.25,0.5,0.55+Math.random()*0.4);c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b;
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(p,3));g.setAttribute("color",new THREE.BufferAttribute(c,3));
+  space.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.6,map:glowTex(.3),vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})));
+  const nt=glowTex(.1);
+  [[0x3b2a9a,-60,20,-90,120],[0x0b6f9c,70,-30,-100,140],[0x8a2a7a,10,45,-110,110]].forEach(([hex,x,y,z,s])=>{
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:nt,color:hex,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending}));
+    sp.position.set(x,y,z);sp.scale.set(s,s,1);space.add(sp);
+  });
+})();
+
+// Hypercube state
+const rig=new THREE.Group();scene.add(rig);
+const dotTex=glowTex(.45);
+let S=null; // current shape state
+let angles=[],rates=[],planes=[],sel=0,grow=0;
+const ui={dims:document.getElementById("dims"),plane:document.getElementById("plane"),angle:document.getElementById("angle"),speed:document.getElementById("speed"),auto:document.getElementById("auto"),info:document.getElementById("info")};
+
+function setDim(n){
+  if(S){rig.remove(S.lines);rig.remove(S.pts);S.geo.dispose();S.pgeo.dispose();S.lines.material.dispose();S.pts.material.dispose();}
+  const cube=buildCube(n);planes=planesOf(n);
+  angles=planes.map((pl,k)=>pl[1]>=3?0.5+k*0.37:0);
+  rates=planes.map((pl,k)=>pl[1]>=3?0.18+0.07*((k*5)%7):0);
+  sel=planes.findIndex(p=>p[0]===0&&p[1]===3);
+  const pos=new Float32Array(cube.V*3),col=new Float32Array(cube.V*3);
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute("position",new THREE.BufferAttribute(pos,3));geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+  geo.setIndex(new THREE.BufferAttribute(cube.edges,1));
+  const pgeo=new THREE.BufferGeometry();
+  pgeo.setAttribute("position",geo.attributes.position);pgeo.setAttribute("color",geo.attributes.color);
+  const lines=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:Math.max(.3,1.1-n*.08),depthWrite:false,blending:THREE.AdditiveBlending}));
+  const pts=new THREE.Points(pgeo,new THREE.PointsMaterial({size:n<=5?.22:n<=7?.15:.09,map:dotTex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
+  lines.frustumCulled=false;pts.frustumCulled=false;
+  rig.add(lines);rig.add(pts);
+  S={n,cube,pos,col,geo,pgeo,lines,pts,m:identity(n),hue:new Float32Array(cube.V),color:new THREE.Color()};
+  grow=0;
+  ui.info.textContent=NAMES[n]+" ("+n+"D) - "+cube.V+" vertices, "+(cube.edges.length/2)+" edges, "+planes.length+" rotation planes";
+  ui.plane.innerHTML="";
+  planes.forEach((pl,k)=>{const o=document.createElement("option");o.value=k;o.textContent=AX[pl[0]]+AX[pl[1]]+(pl[1]>=3?"":" (view)");ui.plane.appendChild(o);});
+  ui.plane.value=sel;
+  [...ui.dims.children].forEach(b=>b.classList.toggle("on",+b.dataset.n===n));
+}
+for(let n=4;n<=10;n++){const b=document.createElement("button");b.textContent=n+"D";b.dataset.n=n;b.onclick=()=>setDim(n);ui.dims.appendChild(b);}
+ui.plane.onchange=()=>{sel=+ui.plane.value;};
+ui.angle.oninput=()=>{angles[sel]=+ui.angle.value;};
+document.getElementById("reset").onclick=()=>{rig.quaternion.identity();camZ=window.innerWidth<600?9:7;vel.x=.002;vel.y=0;};
+
+// Orbit controls (drag, inertia, wheel, pinch)
+const ptrs=new Map();let pinch=0;const vel={x:.002,y:0};
+const AXY=new THREE.Vector3(0,1,0),AXX=new THREE.Vector3(1,0,0),qa=new THREE.Quaternion(),qb=new THREE.Quaternion();
+function spin(dx,dy){qa.setFromAxisAngle(AXY,dx);qb.setFromAxisAngle(AXX,dy);rig.quaternion.premultiply(qa).premultiply(qb);}
+function zoom(f){camZ=Math.min(22,Math.max(3,camZ*f));}
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});pinch=0;});
+cv.addEventListener("pointermove",e=>{
+  const p=ptrs.get(e.pointerId);if(!p)return;
+  if(ptrs.size===1){vel.x=(e.clientX-p.x)*.006;vel.y=(e.clientY-p.y)*.006;spin(vel.x,vel.y);}
+  p.x=e.clientX;p.y=e.clientY;
+  if(ptrs.size===2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)zoom(pinch/d);pinch=d;}
+});
+const up=e=>{ptrs.delete(e.pointerId);pinch=0;};
+cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+cv.addEventListener("wheel",e=>{e.preventDefault();zoom(1+e.deltaY*.001);},{passive:false});
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);cv.style.width=w+"px";cv.style.height=h+"px";
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+window.addEventListener("resize",resize);resize();
+if(window.innerWidth<600)camZ=9;
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(ptrs.size===0){vel.x*=.96;vel.y*=.96;if(Math.abs(vel.x)<.0015&&Math.abs(vel.y)<.0004)vel.x=.0015;spin(vel.x,vel.y);}
+  if(ui.auto.checked){
+    const sp=+ui.speed.value;
+    for(let k=0;k<angles.length;k++)angles[k]+=rates[k]*sp*dt;
+    let a=angles[sel]%(Math.PI*2);if(a>Math.PI)a-=Math.PI*2;if(a<-Math.PI)a+=Math.PI*2;ui.angle.value=a;
+  }
+  const {n,cube,pos,col,hue,color,m}=S;
+  m.set(identity(n));
+  for(let k=0;k<planes.length;k++)if(angles[k]!==0)rotateInPlace(m,n,planes[k][0],planes[k][1],angles[k]);
+  projectAll(n,m,cube.verts,cube.V,pos,hue,2.2);
+  for(let v=0;v<cube.V;v++){color.setHSL(0.92-0.75*hue[v],0.85,0.6);col[v*3]=color.r;col[v*3+1]=color.g;col[v*3+2]=color.b;}
+  S.geo.attributes.position.needsUpdate=true;S.geo.attributes.color.needsUpdate=true;
+  grow=Math.min(1,grow+dt/0.9);const e=1-Math.pow(1-grow,3);
+  rig.scale.setScalar(Math.max(.001,e*2.1));
+  camera.position.z+=(camZ-camera.position.z)*.12;
+  space.rotation.y+=dt*.01;
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+setDim(4);requestAnimationFrame(frame);
+</script>
+</body>
+</html>

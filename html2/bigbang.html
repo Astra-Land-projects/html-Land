@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Big Bang Universe Explorer</title>
+<style>
+:root{color-scheme:dark;--bg:#020309;--panel:rgba(12,14,30,.72);--line:rgba(255,255,255,.14);--text:#e8ebff;--dim:#8f95b8;--acc:#ffb36b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;inset:0;touch-action:none}
+#top{position:fixed;left:14px;right:14px;top:calc(env(safe-area-inset-top,0px) + 12px);pointer-events:none}
+h1{margin:0;font-size:18px;font-weight:600}
+#near{color:var(--acc);margin-top:2px}
+#hint{color:var(--dim);font-size:12px;margin-top:2px}
+#toast{position:fixed;left:0;right:0;top:34%;text-align:center;font-size:22px;font-weight:600;letter-spacing:.04em;opacity:0;transition:opacity .8s;pointer-events:none;text-shadow:0 0 18px #000}
+#panel{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);max-width:720px;margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#warp{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.row{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+button{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font:inherit;white-space:nowrap;touch-action:manipulation}
+button:active{background:var(--acc);color:#120a02}
+input[type=range]{flex:1;min-width:90px;accent-color:var(--acc)}
+label{display:flex;gap:6px;align-items:center;color:var(--dim)}
+</style>
+</head>
+<body>
+<div id="top"><h1>Big Bang Universe Explorer</h1><div id="near"></div><div id="hint">Drag to look. WASD to fly, Q/E down/up, Shift to boost, wheel for speed.</div></div>
+<div id="toast"></div>
+<div id="panel">
+  <div id="warp"></div>
+  <div class="row"><label>Speed <input type="range" id="speed" min="0" max="100" value="50"></label><label><input type="checkbox" id="cruise"> Cruise</label><button id="back">Back</button><button id="fwd">Forward</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=document.createElement("canvas");document.body.prepend(cv);
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,1,0.5,9000);
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const rnd=(a,b)=>a+Math.random()*(b-a), gauss=()=>Math.random()+Math.random()+Math.random()-1.5;
+const mats=[];
+
+// Shared glowing-point shader; body edits p (position), a (alpha), vC (color)
+function mk(body,size){
+  const m=new THREE.ShaderMaterial({
+    uniforms:{uT:{value:0},uS:{value:size}},
+    vertexShader:"uniform float uT,uS;attribute vec3 aCol;attribute vec4 aP;varying vec3 vC;varying float vA;void main(){vec3 p=position;float a=1.;vC=aCol;"+body+"vA=a;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(uS*(300./-mv.z),1.5,64.);}",
+    fragmentShader:"varying vec3 vC;varying float vA;void main(){float d=length(gl_PointCoord-.5)*2.;float g=smoothstep(1.,0.,d);gl_FragColor=vec4(vC,g*vA);}",
+    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+  mats.push(m);return m;
+}
+function pts(n,fill,mat){
+  const p=new Float32Array(n*3),c=new Float32Array(n*3),q=new Float32Array(n*4),col=new THREE.Color();
+  for(let i=0;i<n;i++)fill(i,p,c,q,col);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.BufferAttribute(p,3));g.setAttribute("aCol",new THREE.BufferAttribute(c,3));g.setAttribute("aP",new THREE.BufferAttribute(q,4));
+  const o=new THREE.Points(g,mat);o.frustumCulled=false;return o;
+}
+function unit(i,p,s){const u=rnd(-1,1),t=rnd(0,6.2832),r=Math.sqrt(1-u*u);p[i*3]=r*Math.cos(t)*s;p[i*3+1]=u*s;p[i*3+2]=r*Math.sin(t)*s;}
+function glowTex(inner){
+  const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d");
+  const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,"rgba(255,255,255,1)");gr.addColorStop(inner,"rgba(255,255,255,.5)");gr.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=gr;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);
+}
+function cloudTex(){
+  const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d");
+  for(let i=0;i<14;i++){const x=rnd(30,98),y=rnd(30,98),r=rnd(18,44),gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,"rgba(255,255,255,.35)");gr.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=gr;g.fillRect(0,0,128,128);}
+  return new THREE.CanvasTexture(c);
+}
+const glow=glowTex(.25),clouds=[cloudTex(),cloudTex(),cloudTex(),cloudTex()];
+function sprite(tex,hex,x,y,z,s,o){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:hex,transparent:true,opacity:o,depthWrite:false,blending:THREE.AdditiveBlending}));
+  sp.position.set(x,y,z);sp.scale.set(s,s,1);return sp;
+}
+
+// Background stars (follow the camera)
+const stars=pts(3500,(i,p,c,q,col)=>{unit(i,p,rnd(3500,5000));col.setHSL(rnd(.5,.75),.4,rnd(.5,.9));c.set([col.r,col.g,col.b],i*3);},mk("",1.4));
+scene.add(stars);
+
+// Big Bang at the origin
+const BB=new THREE.Group();scene.add(BB);
+const bbPalette=[[1,.55,.2],[1,.2,.5],[.4,.5,1],[1,.9,.7],[.6,.3,1]];
+const bbMat=mk("float e=1.-exp(-uT*.3);p=position*(8.+300.*aP.x)*e;vC=mix(vec3(1.,.95,.8),aCol,smoothstep(0.,9.,uT));a=.55+.45*(1.-smoothstep(0.,25.,uT));",3.2);
+BB.add(pts(9000,(i,p,c,q)=>{unit(i,p,1);q[i*4]=Math.pow(Math.random(),.5);const k=bbPalette[i%5];c.set(k,i*3);},bbMat));
+const flash=sprite(glow,0xfff1cc,0,0,0,300,1);BB.add(flash);
+let bbT=0;
+
+// Galaxies
+const spinners=[];
+function galaxy(x,y,z,R,hue,arms,tx,tz){
+  const outer=new THREE.Group(),inner=new THREE.Group();outer.position.set(x,y,z);outer.rotation.set(tx,0,tz);outer.add(inner);
+  inner.add(pts(9000,(i,p,c,q,col)=>{
+    const rr=Math.pow(Math.random(),.65)*R,th=(i%arms)*6.2832/arms+rr/R*4.2+gauss()*.35;
+    p[i*3]=Math.cos(th)*rr+gauss()*R*.04;p[i*3+1]=gauss()*R*.03*(1-rr/R*.6);p[i*3+2]=Math.sin(th)*rr+gauss()*R*.04;
+    if(rr<R*.22)col.setHSL(.1,.6,.8);else col.setHSL(hue+gauss()*.08,.75,.5+.4*(1-rr/R));
+    c.set([col.r,col.g,col.b],i*3);},mk("",1.6)));
+  outer.add(sprite(glow,0xffe2a8,0,0,0,R*.55,.8));
+  scene.add(outer);spinners.push(inner);return outer;
+}
+galaxy(650,90,-350,170,.62,2,.5,.2);
+galaxy(-800,-120,260,230,.9,4,-.4,.3);
+
+// Nebulae
+function nebula(x,y,z,R,hues){
+  const g=new THREE.Group();g.position.set(x,y,z);
+  for(let i=0;i<46;i++){const col=new THREE.Color().setHSL(hues[i%hues.length],.8,.5);
+    g.add(sprite(clouds[i%4],col,gauss()*R,gauss()*R*.6,gauss()*R,rnd(R*.5,R*1.2),rnd(.12,.3)));}
+  g.add(pts(500,(i,p,c,q,col)=>{p[i*3]=gauss()*R;p[i*3+1]=gauss()*R*.6;p[i*3+2]=gauss()*R;col.setHSL(.6,.3,.9);c.set([col.r,col.g,col.b],i*3);},mk("",2.2)));
+  scene.add(g);return g;
+}
+nebula(-300,150,-760,130,[.95,.75,.6]);
+nebula(420,-220,780,110,[.05,.12,.5]);
+
+// Black hole
+const BH=V(950,-80,520),BHR=14;
+const bhG=new THREE.Group();bhG.position.copy(BH);scene.add(bhG);
+bhG.add(new THREE.Mesh(new THREE.SphereGeometry(BHR,32,32),new THREE.MeshBasicMaterial({color:0x000000})));
+const disk=pts(9000,(i,p,c,q,col)=>{const r=rnd(22,85),t=(r-22)/63;p[i*3]=r;p[i*3+1]=rnd(0,6.2832);p[i*3+2]=gauss()*1.6*(1+t*2);col.setHSL(.02+.1*(1-t),1,.45+.3*(1-t));c.set([col.r,col.g,col.b],i*3);},
+  mk("float th=position.y+uT*45./pow(position.x,1.5);p=vec3(position.x*cos(th),position.z,position.x*sin(th));",2.2));
+disk.rotation.set(.35,0,.15);bhG.add(disk);
+const lens=sprite(glow,0xffa04a,0,0,0,BHR*5,.9);bhG.add(lens);
+
+// White hole
+const WH=V(-900,60,-600);
+const whG=new THREE.Group();whG.position.copy(WH);scene.add(whG);
+whG.add(pts(3500,(i,p,c,q,col)=>{unit(i,p,1);q[i*4]=Math.random();q[i*4+1]=rnd(.5,1.5);col.setHSL(.58,.6,.7);c.set([col.r,col.g,col.b],i*3);},
+  mk("float t=fract(uT*.1*aP.y+aP.x);p=position*(10.+130.*t);a=1.-t;vC=mix(vec3(1.),aCol,t);",3)));
+whG.add(sprite(glow,0xcfe6ff,0,0,0,90,1));
+
+// Flight state
+const OBJ=[
+  {name:"Big Bang",pos:V(0,0,0),stand:420,r:300},
+  {name:"Galaxy A",pos:V(650,90,-350),stand:420,r:170},
+  {name:"Galaxy B",pos:V(-800,-120,260),stand:520,r:230},
+  {name:"Nebula I",pos:V(-300,150,-760),stand:300,r:130},
+  {name:"Nebula II",pos:V(420,-220,780),stand:260,r:110},
+  {name:"Black Hole",pos:BH,stand:230,r:60},
+  {name:"White Hole",pos:WH,stand:200,r:60}
+];
+let yaw=0,pitch=0,warp=null,lock=0;
+const keys={},hold={f:0,b:0};
+const speedEl=$("speed"),toastEl=$("toast");
+function lookAngles(from,to){const d=to.clone().sub(from).normalize();return [Math.atan2(-d.x,-d.z),Math.asin(d.y)];}
+function toast(t){toastEl.textContent=t;toastEl.style.opacity=1;clearTimeout(toast.h);toast.h=setTimeout(()=>toastEl.style.opacity=0,2600);}
+function warpTo(pos,stand,lookAt,label){
+  const dir=camera.position.clone().sub(pos);if(dir.length()<1)dir.set(0,.2,1);dir.normalize();
+  const dest=pos.clone().add(dir.multiplyScalar(stand));
+  const [ty,tp]=lookAt?lookAngles(dest,lookAt):[yaw,pitch];
+  warp={t:0,from:camera.position.clone(),to:dest,y0:yaw,p0:pitch,dy:((ty-yaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI,dp:tp-pitch};
+  if(label)toast(label);
+}
+function replayBang(){bbT=0;camera.position.set(0,0,420);yaw=0;pitch=0;warp=null;toast("The Big Bang");}
+const wbox=$("warp");
+function addBtn(t,fn){const b=document.createElement("button");b.textContent=t;b.onclick=fn;wbox.appendChild(b);}
+addBtn("Replay Big Bang",replayBang);
+addBtn("Enter Big Bang",()=>warpTo(V(0,0,0),30,null,"Inside the Big Bang"));
+OBJ.slice(1).forEach(o=>addBtn(o.name,()=>warpTo(o.pos,o.stand,o.pos,o.name)));
+
+// Input
+addEventListener("keydown",e=>keys[e.code]=1);addEventListener("keyup",e=>keys[e.code]=0);
+let drag=null;
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY};});
+cv.addEventListener("pointermove",e=>{if(!drag||warp)return;yaw-=(e.clientX-drag.x)*.004;pitch=Math.max(-1.55,Math.min(1.55,pitch-(e.clientY-drag.y)*.004));drag.x=e.clientX;drag.y=e.clientY;});
+const endDrag=()=>drag=null;cv.addEventListener("pointerup",endDrag);cv.addEventListener("pointercancel",endDrag);
+cv.addEventListener("wheel",e=>{e.preventDefault();speedEl.value=Math.max(0,Math.min(100,+speedEl.value-e.deltaY*.03));},{passive:false});
+[["fwd","f"],["back","b"]].forEach(([id,k])=>{const b=$(id);b.addEventListener("pointerdown",e=>{e.preventDefault();hold[k]=1;});["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,()=>hold[k]=0));});
+
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);cv.style.width=w+"px";cv.style.height=h+"px";camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener("resize",resize);resize();
+replayBang();
+
+const fwd=V(0,0,0),right=V(0,0,0),mv=V(0,0,0),UP=V(0,1,0);
+let last=performance.now(),clock=0;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;clock+=dt;bbT+=dt;
+  mats.forEach(m=>m.uniforms.uT.value=m===bbMat?bbT:clock);
+  flash.material.opacity=.15+.85*Math.exp(-bbT*.7);const fs=120+700*Math.exp(-bbT*.5);flash.scale.set(fs,fs,1);
+  spinners.forEach((s,i)=>s.rotation.y+=dt*(.03+.01*i));
+  let fov=60;
+  if(warp){
+    warp.t+=dt/3;const k=Math.min(1,warp.t),e=k*k*(3-2*k);
+    camera.position.lerpVectors(warp.from,warp.to,e);yaw=warp.y0+warp.dy*e;pitch=warp.p0+warp.dp*e;
+    fov=60+45*Math.sin(Math.PI*k);if(k>=1){warp=null;lock=1.5;}
+  }else{
+    camera.rotation.set(pitch,yaw,0,"YXZ");camera.getWorldDirection(fwd);right.crossVectors(fwd,UP).normalize();
+    const f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)+hold.f-hold.b+($("cruise").checked?1:0);
+    const s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),u=(keys.KeyE?1:0)-(keys.KeyQ?1:0);
+    const sp=4*Math.pow(10,+speedEl.value/40)*(keys.ShiftLeft||keys.ShiftRight?4:1);
+    mv.set(0,0,0).addScaledVector(fwd,f).addScaledVector(right,s).addScaledVector(UP,u);
+    camera.position.addScaledVector(mv,sp*dt);
+    lock=Math.max(0,lock-dt);
+    if(!lock&&camera.position.distanceTo(BH)<BHR){warpTo(WH,70,WH,"Event horizon crossed - wormhole to the white hole");}
+  }
+  camera.rotation.set(pitch,yaw,0,"YXZ");
+  if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix();}
+  stars.position.copy(camera.position);
+  let best=null,bd=1e9;OBJ.forEach(o=>{const d=camera.position.distanceTo(o.pos);if(d<bd){bd=d;best=o;}});
+  const bbR=(1-Math.exp(-bbT*.3))*300;
+  $("near").textContent=(best===OBJ[0]&&bd<bbR?"Inside the Big Bang":"Nearest: "+best.name)+" - "+Math.round(bd)+" units";
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
